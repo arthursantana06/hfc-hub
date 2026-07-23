@@ -1,3 +1,5 @@
+"use client";
+
 import { LayoutDashboard, Users, LineChart, Settings } from "lucide-react";
 import { SideNavLink } from "./SideNavLink";
 

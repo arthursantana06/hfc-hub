@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft, LayoutDashboard, Compass, Target, Calculator, Download } from "lucide-react";
 import type { Client } from "@/lib/types";
