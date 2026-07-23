@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-inter: var(--font-inter), sans-serif;
+  --font-poppins: var(--font-poppins), sans-serif;
+
+  /* Brand palette — single source of truth, replaces inline bg-[#hex] utilities */
+  --color-brand-950: #032c40;
+  --color-brand-900: #034260;
+  --color-brand-600: #026694;
+  --color-brand-300: #82bdd4;
+}
