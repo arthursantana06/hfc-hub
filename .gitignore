@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# reference material with real client data — keep local, never commit
+/past
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
