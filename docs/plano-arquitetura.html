@@ -1,0 +1,1109 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HFC Hub — Plano de Desenvolvimento & Arquitetura</title>
+<style>*{box-sizing:border-box}html,body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>HFC Hub — Plano de Desenvolvimento & Arquitetura</title>
+<style>
+  :root {
+    --ground: #F6F8F6;
+    --surface: #FFFFFF;
+    --surface-2: #EEF2EE;
+    --ink: #14201B;
+    --ink-soft: #45564E;
+    --ink-faint: #78887F;
+    --line: #DBE3DD;
+    --line-strong: #C6D1CA;
+    --accent: #0B6E5B;
+    --accent-soft: #0F8E75;
+    --accent-wash: #E7F1ED;
+    --gold: #A9791F;
+    --gold-wash: #F5EBD6;
+    --good: #2E7D52;
+    --warn: #B07E1F;
+    --crit: #B24329;
+    --m-crm: #0B6E5B;
+    --m-plan: #2F6DB4;
+    --m-inv-an: #A9791F;
+    --m-inv: #7A57C0;
+    --m-mfg: #78887F;
+    --blueprint-bg: #FBFCFA;
+    --blueprint-ink: #16241E;
+    --blueprint-line: #5A6B63;
+
+    --font-display: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+
+    --maxw: 1080px;
+    --readw: 74ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0D1512;
+      --surface: #131E1A;
+      --surface-2: #182823;
+      --ink: #E9EFEB;
+      --ink-soft: #A7B6AD;
+      --ink-faint: #6F7E76;
+      --line: #24322C;
+      --line-strong: #31423A;
+      --accent: #3CBBA0;
+      --accent-soft: #2FA189;
+      --accent-wash: #14231E;
+      --gold: #D2A85C;
+      --gold-wash: #241E12;
+      --good: #4CA877;
+      --warn: #D2A85C;
+      --crit: #D9765C;
+      --m-crm: #3CBBA0;
+      --m-plan: #6BA6E6;
+      --m-inv-an: #D2A85C;
+      --m-inv: #AB8CEB;
+      --m-mfg: #8A998F;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #F6F8F6; --surface: #FFFFFF; --surface-2: #EEF2EE;
+    --ink: #14201B; --ink-soft: #45564E; --ink-faint: #78887F;
+    --line: #DBE3DD; --line-strong: #C6D1CA;
+    --accent: #0B6E5B; --accent-soft: #0F8E75; --accent-wash: #E7F1ED;
+    --gold: #A9791F; --gold-wash: #F5EBD6;
+    --good: #2E7D52; --warn: #B07E1F; --crit: #B24329;
+    --m-crm: #0B6E5B; --m-plan: #2F6DB4; --m-inv-an: #A9791F; --m-inv: #7A57C0; --m-mfg: #78887F;
+  }
+  :root[data-theme="dark"] {
+    --ground: #0D1512; --surface: #131E1A; --surface-2: #182823;
+    --ink: #E9EFEB; --ink-soft: #A7B6AD; --ink-faint: #6F7E76;
+    --line: #24322C; --line-strong: #31423A;
+    --accent: #3CBBA0; --accent-soft: #2FA189; --accent-wash: #14231E;
+    --gold: #D2A85C; --gold-wash: #241E12;
+    --good: #4CA877; --warn: #D2A85C; --crit: #D9765C;
+    --m-crm: #3CBBA0; --m-plan: #6BA6E6; --m-inv-an: #D2A85C; --m-inv: #AB8CEB; --m-mfg: #8A998F;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  section { padding: 52px 0; border-top: 1px solid var(--line); }
+  section:first-of-type { border-top: 0; }
+
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; }
+  h2 { font-size: clamp(1.5rem, 3vw, 2rem); letter-spacing: -0.01em; line-height: 1.15; }
+  h3 { font-size: 1.15rem; letter-spacing: -0.005em; }
+  p { margin: 0; }
+  a { color: var(--accent); }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--accent);
+    font-weight: 600;
+    display: inline-block;
+  }
+  .lede { color: var(--ink-soft); font-size: 1.05rem; max-width: var(--readw); }
+  .sec-head { margin-bottom: 28px; }
+  .sec-head .eyebrow { margin-bottom: 10px; }
+  .sec-head p { margin-top: 8px; color: var(--ink-soft); max-width: var(--readw); }
+
+  /* ---------- Header ---------- */
+  header.hero {
+    padding: 68px 0 46px;
+    background:
+      radial-gradient(120% 90% at 88% -10%, var(--accent-wash) 0%, transparent 55%),
+      var(--ground);
+    border-bottom: 1px solid var(--line);
+  }
+  .brandline { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+  .glyph {
+    width: 38px; height: 38px; border-radius: 9px;
+    background: var(--accent); color: #fff;
+    display: grid; place-items: center;
+    font-family: var(--font-display); font-weight: 700; font-size: 1.1rem;
+    box-shadow: 0 2px 10px rgba(11,110,91,0.28);
+  }
+  :root[data-theme="dark"] .glyph, .glyph { color: #06231C; }
+  @media (prefers-color-scheme: dark) { .glyph { color: #06231C; } }
+  .brandline .bn { font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+  header.hero h1 { font-size: clamp(2.1rem, 5.4vw, 3.4rem); line-height: 1.04; letter-spacing: -0.02em; max-width: 16ch; }
+  header.hero h1 em { font-style: italic; color: var(--accent); }
+  header.hero .lede { margin-top: 20px; font-size: 1.14rem; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 30px; }
+  .meta { display: flex; flex-direction: column; gap: 2px; }
+  .meta .k { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
+  .meta .v { font-weight: 600; font-size: 0.95rem; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+  /* ---------- Pills ---------- */
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-soft); background: var(--surface);
+  }
+  .pill.now { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, var(--line)); background: color-mix(in srgb, var(--good) 10%, var(--surface)); }
+  .pill.next { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); background: color-mix(in srgb, var(--warn) 10%, var(--surface)); }
+  .pill.later { color: var(--ink-faint); }
+  .pill.link { color: var(--m-inv-an); border-color: color-mix(in srgb, var(--m-inv-an) 40%, var(--line)); }
+
+  /* ---------- Decisions grid ---------- */
+  .decisions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .decision { background: var(--surface); padding: 20px 22px; }
+  .decision .k { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 7px; }
+  .decision .v { font-family: var(--font-display); font-size: 1.12rem; font-weight: 600; line-height: 1.25; }
+  .decision .note { margin-top: 6px; font-size: 0.88rem; color: var(--ink-soft); }
+
+  /* ---------- Module cards ---------- */
+  .modules { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .mod {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 14px; padding: 22px; position: relative;
+    border-top: 3px solid var(--mc, var(--accent));
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .mod .mhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .mod h3 { color: var(--mc); }
+  .mod .tag { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+  .mod p { color: var(--ink-soft); font-size: 0.94rem; }
+  .mod ul { margin: 2px 0 0; padding-left: 1.1em; color: var(--ink-soft); font-size: 0.9rem; }
+  .mod ul li { margin: 3px 0; }
+
+  /* ---------- Blueprint (mermaid) ---------- */
+  .blueprint {
+    background: var(--blueprint-bg);
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    padding: 8px 8px 4px;
+    overflow-x: auto;
+    box-shadow: inset 0 0 0 1px rgba(11,110,91,0.04);
+  }
+  .blueprint .cap {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent);
+    padding: 10px 12px 4px;
+  }
+  .blueprint .cap::before { content: ""; width: 9px; height: 9px; border-radius: 2px; background: var(--accent); }
+  .mermaid { min-width: 640px; text-align: center; color: var(--blueprint-ink); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; font-size: 0.82rem; color: var(--ink-soft); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  /* ---------- Roles ---------- */
+  .roles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .role { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .role h3 { font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+  .role .cap { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+  .role ul { margin: 10px 0 0; padding-left: 1.05em; font-size: 0.86rem; color: var(--ink-soft); }
+  .role.future { opacity: 0.72; }
+
+  /* ---------- Roadmap ---------- */
+  .roadmap { display: flex; flex-direction: column; gap: 0; }
+  .phase {
+    display: grid; grid-template-columns: 92px 1fr; gap: 22px;
+    padding: 22px 0; border-top: 1px dashed var(--line);
+  }
+  .phase:first-child { border-top: 0; }
+  .phase .pnum {
+    font-family: var(--font-display); font-size: 2rem; font-weight: 700;
+    color: var(--accent); line-height: 1;
+  }
+  .phase .pnum small { display: block; font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.14em; color: var(--ink-faint); text-transform: uppercase; margin-top: 6px; }
+  .phase .pbody h3 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .phase .pbody p { color: var(--ink-soft); font-size: 0.95rem; margin-bottom: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip { font-family: var(--font-mono); font-size: 0.72rem; padding: 3px 9px; border-radius: 7px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft); }
+
+  /* ---------- Risks ---------- */
+  .risks { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .risk { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--warn); border-radius: 10px; padding: 16px 18px; }
+  .risk .q { font-weight: 600; margin-bottom: 5px; }
+  .risk .a { font-size: 0.9rem; color: var(--ink-soft); }
+  .risk .a b { color: var(--ink); font-weight: 600; }
+
+  footer { padding: 40px 0 60px; color: var(--ink-faint); font-size: 0.85rem; font-family: var(--font-mono); }
+
+  @media (max-width: 720px) {
+    .decisions, .modules, .risks { grid-template-columns: 1fr; }
+    .roles { grid-template-columns: repeat(2, 1fr); }
+    .phase { grid-template-columns: 56px 1fr; gap: 14px; }
+    .phase .pnum { font-size: 1.5rem; }
+  }
+
+  /* ---------- Arquitetura interativa ---------- */
+  .arch { display: flex; flex-direction: column; gap: 14px; }
+  .arch-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+  .arch-hint { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.02em; color: var(--ink-faint); }
+  .arch-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.78rem; color: var(--ink-soft); }
+  .arch-legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .arch-legend i { width: 22px; height: 0; border-top: 2.5px solid; display: inline-block; border-radius: 2px; }
+  .arch-legend i.l-core { border-color: var(--accent); }
+  .arch-legend i.l-integ { border-color: var(--gold); border-top-style: dashed; }
+  .arch-legend i.l-future { border-color: var(--m-mfg); border-top-style: dotted; }
+
+  .arch-stage-outer { background: var(--blueprint-bg); border: 1px solid var(--line-strong); border-radius: 16px; padding: 16px; overflow-x: auto; }
+  .arch-stage { position: relative; width: 100%; min-width: 760px; aspect-ratio: 1000 / 620; }
+  .arch-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .arch-edge { fill: none; stroke-linecap: round; transition: stroke-opacity .25s, stroke-width .25s; }
+  .arch-edge.core { stroke: var(--accent); stroke-width: 1.7; stroke-opacity: .30; }
+  .arch-edge.integ { stroke: var(--gold); stroke-width: 1.7; stroke-opacity: .45; stroke-dasharray: 7 5; }
+  .arch-edge.future { stroke: var(--m-mfg); stroke-width: 1.7; stroke-opacity: .5; stroke-dasharray: 1.5 5; }
+  .arch.sel .arch-edge { stroke-opacity: .07; }
+  .arch .arch-edge.on { stroke-opacity: 1; stroke-width: 2.8; }
+  @media (prefers-reduced-motion: no-preference) {
+    .arch .arch-edge.on { stroke-dasharray: 8 6; animation: archflow 1s linear infinite; }
+  }
+  @keyframes archflow { to { stroke-dashoffset: -28; } }
+
+  .arch-node {
+    position: absolute; display: flex; flex-direction: column; justify-content: center; gap: 2px;
+    text-align: left; padding: 8px 12px; border: 0; cursor: pointer;
+    background: var(--surface); color: var(--ink);
+    border-radius: 11px; box-shadow: 0 1px 2px rgba(20,32,27,0.08), 0 0 0 1px var(--line);
+    border-left: 3px solid var(--nc, var(--accent));
+    transition: transform .18s, box-shadow .2s, opacity .25s, filter .25s;
+    font-family: inherit;
+  }
+  .arch-node:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(20,32,27,0.16), 0 0 0 1px var(--nc); }
+  .arch-node:focus-visible { outline: 2px solid var(--nc); outline-offset: 2px; }
+  .arch-node .n-kick { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--nc); font-weight: 700; }
+  .arch-node .n-title { font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; line-height: 1.08; color: var(--ink); }
+  .arch-node .n-sub { font-family: var(--font-mono); font-size: 0.6rem; color: var(--ink-faint); letter-spacing: 0.02em; }
+  .arch.sel .arch-node { opacity: .34; filter: saturate(.55); }
+  .arch.sel .arch-node.on { opacity: 1; filter: none; box-shadow: 0 8px 22px rgba(20,32,27,0.16), 0 0 0 2px var(--nc); }
+  .arch-node.pinned { box-shadow: 0 8px 22px rgba(20,32,27,0.20), 0 0 0 2px var(--nc); }
+
+  .arch-detail { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 16px 18px; }
+  .arch-detail .ad-kicker { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .arch-detail .ad-title { font-size: 1.15rem; margin: 6px 0; }
+  .arch-detail .ad-desc { color: var(--ink-soft); font-size: 0.92rem; max-width: 72ch; }
+  .arch-detail .ad-conns { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+  .arch-detail .ad-conn { font-family: var(--font-mono); font-size: 0.72rem; padding: 4px 9px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft); }
+  .arch-detail .ad-conn b { color: var(--ink); font-weight: 600; }
+
+  @media (max-width: 720px) {
+    .arch-node .n-title { font-size: 0.82rem; }
+    .arch-node .n-sub { display: none; }
+    .arch-node { padding: 6px 9px; }
+  }
+
+  /* ---------- Modelo de dados (ERD por domínio) ---------- */
+  .erd-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 16px; }
+  .erd-cap { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .erd { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+  .erd-lane { display: flex; flex-direction: column; gap: 10px; }
+  .erd-lane-h { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lc, var(--accent)); font-weight: 700; }
+  .erd-lane-h::before { content: ""; width: 10px; height: 10px; border-radius: 3px; background: var(--lc, var(--accent)); flex: none; }
+  .ent { background: var(--surface); border: 1px solid var(--line); border-top: 2.5px solid var(--lc, var(--accent)); border-radius: 10px; padding: 11px 13px; }
+  .ent.root { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--lc) 55%, transparent); }
+  .ent-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .ent-name { font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; color: var(--ink); letter-spacing: 0.01em; }
+  .ent-badge { font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lc); border: 1px solid color-mix(in srgb, var(--lc) 45%, var(--line)); padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
+  .ent-f { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .ent-f li { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-soft); padding: 3px 0; border-bottom: 1px dotted var(--line); }
+  .ent-f li:last-child { border-bottom: 0; }
+  .ent-f li b { color: var(--ink); font-weight: 700; }
+  .ent-f li.fk b { color: var(--lc); }
+  .ent-f li .ty { color: var(--ink-faint); font-size: 0.62rem; letter-spacing: 0.03em; text-align: right; white-space: nowrap; }
+  .ent-rel { margin-top: 8px; font-family: var(--font-mono); font-size: 0.62rem; color: var(--ink-faint); line-height: 1.4; }
+  .ent-rel b { color: var(--ink-soft); font-weight: 600; }
+  .erd-invest { margin-top: 16px; border: 1px dashed var(--line-strong); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .erd-invest-row { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 12px; align-items: start; }
+  .erd-note { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 0.82rem; color: var(--ink-soft); line-height: 1.5; }
+  .erd-note b { color: var(--ink); font-weight: 600; }
+  @media (max-width: 900px) { .erd { grid-template-columns: 1fr 1fr; } .erd-invest-row { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) { .erd { grid-template-columns: 1fr; } }
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="brandline">
+      <div class="glyph">H</div>
+      <div class="bn">HFC Hub · Consultoria Financeira</div>
+    </div>
+    <h1>Um <em>hub</em> único para planejar, acompanhar e encantar cada cliente.</h1>
+    <p class="lede">Plano de desenvolvimento e arquitetura de sistemas. Substitui a planilha de acompanhamento por uma plataforma viva: CRM, planejamento financeiro (Raio-X), análise de investimentos e relatórios profissionais — com login sólido e base pronta para escalar.</p>
+    <div class="meta-row">
+      <div class="meta"><span class="k">Produto</span><span class="v">HFC Hub</span></div>
+      <div class="meta"><span class="k">Documento</span><span class="v">Plano mestre v1</span></div>
+      <div class="meta"><span class="k">Atualizado</span><span class="v">24 jul 2026</span></div>
+      <div class="meta"><span class="k">Stack</span><span class="v">Next.js 16 · Supabase</span></div>
+      <div class="meta"><span class="k">Fase atual</span><span class="v"><span class="dot" style="background:var(--good)"></span>Fase 0 — Fundações</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- VISÃO -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">01 · Visão</span>
+      <h2>O ecossistema, em uma frase</h2>
+    </div>
+    <p class="lede" style="max-width:70ch">
+      O HFC Hub centraliza a vida financeira de cada cliente e a operação da consultoria em um só lugar.
+      O <b>planejador</b> cadastra clientes, coleta dados mensais, monta o Raio-X Financeiro, define metas e
+      gera relatórios bonitos; o <b>cliente</b> (em fase futura) acompanha gastos e evolução por um portal.
+      Em volta, uma camada logística de CRM — agenda, reuniões e objetivos da consultoria — mantém o time no ritmo.
+    </p>
+  </section>
+
+  <!-- DECISÕES -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">02 · Decisões travadas</span>
+      <h2>As escolhas que definem a espinha do projeto</h2>
+      <p>Fechadas em conjunto no kickoff. Servem de contrato: mudanças aqui reverberam em toda a arquitetura.</p>
+    </div>
+    <div class="decisions">
+      <div class="decision">
+        <span class="k">Escopo do produto</span>
+        <span class="v">Interno agora, pronto para SaaS</span>
+        <p class="note">Uso exclusivo da HFC hoje, mas com <code>org_id</code> em todas as tabelas desde o dia 1 — migrar para multi-consultoria depois sai barato, sem re-migração.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Plataforma / backend</span>
+        <span class="v">Supabase (Postgres + Auth + Storage)</span>
+        <p class="note">Postgres relacional com Row-Level Security, autenticação nativa com papéis e storage para os PDFs de relatório. Caminho mais curto para um login sólido e dados seguros.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Modelo de acesso</span>
+        <span class="v">Papéis internos (Admin · Planejador · Assistente)</span>
+        <p class="note">MVP só para o time, com níveis de permissão. Portal do cliente entra numa fase posterior — a modelagem já reserva o papel <code>client</code>.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Integração rendafixa</span>
+        <span class="v">Sincronização via API</span>
+        <p class="note">O módulo de Investimentos puxa carteira e rentabilidade da rendafixa por API. Requer um contrato de API do lado da rendafixa; até lá, a costura fica isolada por um adaptador.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Dados da planilha atual</span>
+        <span class="v">Excel convive em paralelo</span>
+        <p class="note">A planilha (CADASTRO, ORÇAMENTO, PLANILHA MENSAL, OBJETIVOS, PROJEÇÕES…) é o <b>blueprint do schema</b>. O time segue no Excel até cada módulo atingir paridade — migração módulo a módulo.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Idioma & relatórios</span>
+        <span class="v">pt-BR · exportação em PDF prioritária</span>
+        <p class="note">Interface em português. Relatórios vivem in-app <b>e</b> exportam para um PDF polido no padrão do “Relatório Junho — Aurélio”.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Agenda & reuniões</span>
+        <span class="v">Integração com Google Calendar</span>
+        <p class="note">Reuniões por cliente sincronizam com a agenda Google do planejador via OAuth. Adiciona sync de duas vias como parte do CRM logístico.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Primeiro marco (MVP)</span>
+        <span class="v">Planejamento / Raio-X real</span>
+        <p class="note">Depois de Auth + Settings, aprofundar o fluxo “Ponto de Partida” que já existe no esqueleto — agora com banco de dados de verdade por cliente.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MÓDULOS -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">03 · Módulos do sistema</span>
+      <h2>Seis ferramentas, uma casa</h2>
+      <p>Divisão lógica do sistema. O CRM é o tronco; o Planejamento nasce dentro dele; os demais se acoplam por costuras bem definidas. Ao final, duas ferramentas de <b>report</b> voltadas ao cliente — o Portal e o MyFinancialGeek.</p>
+    </div>
+    <div class="modules">
+      <div class="mod" style="--mc:var(--m-crm)">
+        <div class="mhead"><h3>CRM — Núcleo</h3><span class="pill next">Fase 1</span></div>
+        <span class="tag">tronco · logística da consultoria</span>
+        <p>Carteira de clientes, agenda, reuniões, tarefas e metas da consultoria. É a porta de entrada e o eixo de tudo.</p>
+        <ul>
+          <li>Lista e ficha de clientes (substitui os mocks)</li>
+          <li>Agenda + reuniões por cliente (Google Calendar)</li>
+          <li>Metas e tarefas do time · dashboard operacional</li>
+        </ul>
+      </div>
+      <div class="mod" style="--mc:var(--m-plan)">
+        <div class="mhead"><h3>Planejamento (Raio-X)</h3><span class="pill now">MVP</span></div>
+        <span class="tag">nativo · dentro do CRM</span>
+        <p>O “Ponto de Partida” de cada cliente, alimentado pelos dados mensais que o planejador coleta.</p>
+        <ul>
+          <li>Fluxo de caixa · Orçamento (ideal × real) · Sobras</li>
+          <li>Patrimônio (ativos × passivos) · Objetivos ★–★★★★★</li>
+          <li>Linha do tempo · Projeções · Aposentadoria</li>
+        </ul>
+      </div>
+      <div class="mod" style="--mc:var(--m-inv-an)">
+        <div class="mhead"><h3>Análise de Investimentos</h3><span class="pill link">rendafixa</span></div>
+        <span class="tag">sistema externo · via API</span>
+        <p>A rendafixa (em desenvolvimento) faz a análise. O Hub apenas se conecta e traz os dados.</p>
+        <ul>
+          <li>Deep-link + sincronização de carteira por API</li>
+          <li>Adaptador isola a integração até a API existir</li>
+        </ul>
+      </div>
+      <div class="mod" style="--mc:var(--m-inv)">
+        <div class="mhead"><h3>Investimentos</h3><span class="pill later">Fase 5</span></div>
+        <span class="tag">CRM adaptado · área de investimentos</span>
+        <p>Uma adaptação do CRM focada na área de investimentos: alocação, rentabilidade e acompanhamento de carteira.</p>
+        <ul>
+          <li>Renda fixa · variável · previdência</li>
+          <li>Consome dados sincronizados da rendafixa</li>
+        </ul>
+      </div>
+      <div class="mod" style="--mc:var(--m-inv)">
+        <div class="mhead"><h3>Portal do Cliente</h3><span class="pill later">Futuro · report</span></div>
+        <span class="tag">voltado ao cliente · leitura</span>
+        <p>A face de <b>report</b> da plataforma: o cliente final entra com acesso restrito aos próprios dados para acompanhar gastos, metas e a evolução do seu planejamento.</p>
+        <ul>
+          <li>Login do papel <code>client</code>, só os próprios dados</li>
+          <li>Raio-X e relatórios publicados, em modo leitura</li>
+          <li>Reaproveita o Planejamento — sem duplicar dados</li>
+        </ul>
+      </div>
+      <div class="mod" style="--mc:var(--m-mfg)">
+        <div class="mhead"><h3>MyFinancialGeek</h3><span class="pill later">Futuro · report</span></div>
+        <span class="tag">Open Finance · projeto separado</span>
+        <p>Também voltado ao <b>report</b> do cliente: projeto de Open Finance que conecta as contas bancárias para acompanhamento automático de gastos. Fora do escopo atual; a arquitetura só reserva a costura.</p>
+        <ul>
+          <li>Sincronização automática de gastos via Open Finance</li>
+          <li>Alimenta o Portal do Cliente com dados reais</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARQUITETURA -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">04 · Arquitetura de sistemas</span>
+      <h2>Como as peças conversam</h2>
+      <p>Visão de alto nível: o app Next.js na frente, o Supabase como cérebro de dados e auth, e as integrações externas costuradas por adaptadores.</p>
+    </div>
+    <div class="arch">
+      <div class="arch-toolbar">
+        <span class="arch-hint">Passe o mouse ou toque em um bloco para destacar suas conexões · clique para fixar</span>
+        <div class="arch-legend">
+          <span><i class="l-core"></i> Fluxo do núcleo</span>
+          <span><i class="l-integ"></i> Integração externa</span>
+          <span><i class="l-future"></i> Reservado / futuro</span>
+        </div>
+      </div>
+      <div class="arch-stage-outer">
+        <div class="arch-stage" id="archStage">
+          <svg class="arch-svg" id="archSvg" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+        </div>
+      </div>
+      <div class="arch-detail" id="archDetail" aria-live="polite">
+        <span class="ad-kicker">Diagrama interativo</span>
+        <h3 class="ad-title">Arquitetura do HFC Hub</h3>
+        <p class="ad-desc">Quatro camadas — acesso, aplicação (Next.js), Supabase e integrações. A camada de <b>Server Actions / API</b> é o hub que orquestra tudo. Selecione um bloco para destacar suas conexões.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODELO DE DADOS -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">05 · Lógica de dados</span>
+      <h2>Modelo de dados — do Excel para o Postgres</h2>
+      <p>Entidades derivadas diretamente da planilha de acompanhamento e da operação do CRM. <code>organization</code> é a raiz multi-tenant; tudo pendura em <code>client</code>.</p>
+    </div>
+    <div class="erd-head">
+      <span class="erd-cap">Esquema por domínio · organization → client → planejamento</span>
+      <div class="legend">
+        <span><i style="background:var(--m-crm)"></i> Núcleo &amp; CRM</span>
+        <span><i style="background:var(--m-plan)"></i> Planejamento / Raio-X</span>
+        <span><i style="background:var(--m-inv)"></i> Investimentos</span>
+        <span><i style="background:var(--gold)"></i> Gamificação</span>
+      </div>
+    </div>
+    <div class="erd">
+      <div class="erd-lane" style="--lc:var(--m-crm)">
+        <div class="erd-lane-h">Núcleo &amp; CRM</div>
+        <div class="ent root">
+          <div class="ent-h"><span class="ent-name">organization</span><span class="ent-badge">raiz</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li>name<span class="ty">text</span></li>
+            <li>plano<span class="ty">text</span></li>
+          </ul>
+          <div class="ent-rel">raiz multi-tenant — contém usuários e clientes</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">app_user</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>org_id</b><span class="ty">fk</span></li>
+            <li>role<span class="ty">admin|planner|assistant|client</span></li>
+          </ul>
+          <div class="ent-rel">◂ organization · responsável por clientes</div>
+        </div>
+        <div class="ent root">
+          <div class="ent-h"><span class="ent-name">client</span><span class="ent-badge">hub</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>org_id</b><span class="ty">fk</span></li>
+            <li class="fk"><b>planner_id</b><span class="ty">fk → app_user</span></li>
+            <li>profissao<span class="ty">text</span></li>
+            <li>risco<span class="ty">enum</span></li>
+            <li>plano_status<span class="ty">enum</span></li>
+            <li>pontos_total<span class="ty">numeric · gamif.</span></li>
+            <li>tier<span class="ty">bronze|prata|ouro</span></li>
+          </ul>
+          <div class="ent-rel">◂ organization · <b>tudo do planejamento pendura aqui</b></div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">meeting</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li>quando<span class="ty">timestamp</span></li>
+            <li>gcal_event_id<span class="ty">text</span></li>
+          </ul>
+          <div class="ent-rel">◂ client + planejador · ↔ Google Calendar</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">report</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li>periodo<span class="ty">text</span></li>
+            <li>pdf_url<span class="ty">text · storage</span></li>
+            <li>status<span class="ty">enum</span></li>
+          </ul>
+          <div class="ent-rel">◂ client · lido também pelo Portal do Cliente</div>
+        </div>
+      </div>
+
+      <div class="erd-lane" style="--lc:var(--m-plan)">
+        <div class="erd-lane-h">Fluxo &amp; Orçamento</div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">monthly_record</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li>ref_mes<span class="ty">month</span></li>
+            <li>sobras_calc<span class="ty">numeric</span></li>
+          </ul>
+          <div class="ent-rel">◂ client (1/mês) · ▸ receitas e despesas</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">income_entry</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>record_id</b><span class="ty">fk</span></li>
+            <li>fonte<span class="ty">Salário|Plantões…</span></li>
+            <li>valor<span class="ty">numeric</span></li>
+          </ul>
+          <div class="ent-rel">◂ monthly_record — RECEITAS</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">expense_entry</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>record_id</b><span class="ty">fk</span></li>
+            <li class="fk"><b>categoria_id</b><span class="ty">fk</span></li>
+            <li>valor<span class="ty">numeric</span></li>
+            <li>fixo<span class="ty">bool</span></li>
+          </ul>
+          <div class="ent-rel">◂ monthly_record + categoria — DESPESAS</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">budget_category</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li>nome<span class="ty">text</span></li>
+            <li>grupo<span class="ty">fixo|pessoal|consultório</span></li>
+          </ul>
+          <div class="ent-rel">▸ classifica despesas e metas</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">budget_target</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li class="fk"><b>categoria_id</b><span class="ty">fk</span></li>
+            <li>ideal<span class="ty">numeric</span></li>
+          </ul>
+          <div class="ent-rel">◂ client + categoria — ORÇAMENTO IDEAL</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">debt</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li>total<span class="ty">numeric</span></li>
+            <li>parcela<span class="ty">numeric</span></li>
+          </ul>
+          <div class="ent-rel">◂ client — DÍVIDAS</div>
+        </div>
+      </div>
+
+      <div class="erd-lane" style="--lc:var(--m-plan)">
+        <div class="erd-lane-h">Patrimônio, Metas &amp; Projeções</div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">asset</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li>nome<span class="ty">text</span></li>
+            <li>valor<span class="ty">numeric</span></li>
+          </ul>
+          <div class="ent-rel">◂ client — ATIVOS</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">liability</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li>nome<span class="ty">text</span></li>
+            <li>valor<span class="ty">numeric</span></li>
+          </ul>
+          <div class="ent-rel">◂ client — PASSIVOS · líquido = ativos − passivos</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">goal</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li>prazo<span class="ty">curto|longo</span></li>
+            <li>alvo / atual<span class="ty">numeric</span></li>
+            <li>prioridade<span class="ty">1–5 ★</span></li>
+          </ul>
+          <div class="ent-rel">◂ client — OBJETIVOS</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">timeline_event</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li>data<span class="ty">date</span></li>
+            <li>titulo<span class="ty">text</span></li>
+          </ul>
+          <div class="ent-rel">◂ client — LINHA DO TEMPO</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">retirement_plan</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk · 1:1</span></li>
+            <li>idade_atual / alvo<span class="ty">int</span></li>
+            <li>renda_desejada<span class="ty">numeric</span></li>
+          </ul>
+          <div class="ent-rel">◂ client (1:1) — APOSENTADORIA</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">projection</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li>horizonte<span class="ty">curta|longa</span></li>
+            <li>serie<span class="ty">jsonb</span></li>
+          </ul>
+          <div class="ent-rel">◂ client — PROJEÇÕES</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="erd-invest" style="--lc:var(--m-inv)">
+      <div class="erd-lane-h">Investimentos &amp; integração rendafixa</div>
+      <div class="erd-invest-row">
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">investment</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li>classe<span class="ty">RF | RV | Prev</span></li>
+            <li>valor<span class="ty">numeric</span></li>
+          </ul>
+          <div class="ent-rel">◂ client — INVESTIMENTOS</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">rendafixa_link</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>investment_id</b><span class="ty">fk</span></li>
+            <li>external_id<span class="ty">text</span></li>
+            <li>synced_at<span class="ty">timestamp</span></li>
+          </ul>
+          <div class="ent-rel">↔ sincroniza com a rendafixa via API</div>
+        </div>
+        <div class="erd-note">
+          <b>Costura com a rendafixa.</b> A rendafixa é o sistema externo de análise de investimentos. O módulo Investimentos consome a carteira e a rentabilidade sincronizadas; <code>rendafixa_link</code> guarda o vínculo (adaptador), isolando a integração enquanto a API é construída.
+        </div>
+      </div>
+    </div>
+
+    <div class="erd-invest" style="--lc:var(--gold)">
+      <div class="erd-lane-h">Gamificação &amp; Indicações <span style="font-weight:400;color:var(--ink-faint);letter-spacing:0;text-transform:none">· Fase 7</span></div>
+      <div class="erd-invest-row" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr))">
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">point_event</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li>tipo<span class="ty">meta|indicacao|engajamento</span></li>
+            <li>pontos<span class="ty">int</span></li>
+            <li>ref_id<span class="ty">ex → goal</span></li>
+          </ul>
+          <div class="ent-rel">▸ acumula <code>client.pontos_total</code></div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">referral</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk · indicador</span></li>
+            <li>indicado_nome<span class="ty">text</span></li>
+            <li>status<span class="ty">pendente|convertido</span></li>
+            <li>pontos_premio<span class="ty">int</span></li>
+          </ul>
+          <div class="ent-rel">◂ client — INDICAÇÕES · gera point_event</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">reward</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>org_id</b><span class="ty">fk</span></li>
+            <li>nome<span class="ty">text</span></li>
+            <li>custo_pontos<span class="ty">int</span></li>
+            <li>tier_min<span class="ty">bronze|prata|ouro</span></li>
+          </ul>
+          <div class="ent-rel">catálogo de recompensas por organization</div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">reward_redemption</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li class="fk"><b>reward_id</b><span class="ty">fk</span></li>
+            <li>status<span class="ty">solicitado|entregue</span></li>
+            <li>data<span class="ty">timestamp</span></li>
+          </ul>
+          <div class="ent-rel">◂ client + reward — RESGATE</div>
+        </div>
+        <div class="erd-note">
+          <b>Como funciona.</b> Cada <code>point_event</code> soma pontos ao <code>client</code> (por atingir metas ou indicar amigos). O <code>tier</code> — <b>Bronze → Prata → Ouro</b> — é derivado do total acumulado e destrava recompensas do catálogo, resgatadas em <code>reward_redemption</code>. Camada de engajamento sobre o Planejamento e o Portal do Cliente.
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:16px; color:var(--ink-soft); font-size:0.9rem; max-width:70ch">
+      <b>Nota de segurança:</b> toda tabela carrega <code>org_id</code> e é protegida por políticas de Row-Level Security no Postgres — um usuário só enxerga dados da sua organização (e o cliente, no futuro, só os próprios). É o que torna o salto para SaaS seguro e barato.
+    </p>
+  </section>
+
+  <!-- PAPÉIS -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">06 · Papéis & autenticação</span>
+      <h2>Quem entra e o que vê</h2>
+      <p>Login sólido via Supabase Auth, com controle de acesso por papel (RBAC) refletido nas políticas de RLS.</p>
+    </div>
+    <div class="roles">
+      <div class="role">
+        <span class="cap">nível 1</span>
+        <h3><span class="dot" style="background:var(--accent)"></span>Admin / Dono</h3>
+        <ul>
+          <li>Configurações da organização</li>
+          <li>Gerencia planejadores e permissões</li>
+          <li>Acesso total à carteira</li>
+        </ul>
+      </div>
+      <div class="role">
+        <span class="cap">nível 2</span>
+        <h3><span class="dot" style="background:var(--m-plan)"></span>Planejador</h3>
+        <ul>
+          <li>Seus clientes: Raio-X completo</li>
+          <li>Reuniões, metas, relatórios</li>
+          <li>Coleta de dados mensais</li>
+        </ul>
+      </div>
+      <div class="role">
+        <span class="cap">nível 3</span>
+        <h3><span class="dot" style="background:var(--gold)"></span>Assistente</h3>
+        <ul>
+          <li>Apoio operacional</li>
+          <li>Agenda e cadastro</li>
+          <li>Sem dados sensíveis por padrão</li>
+        </ul>
+      </div>
+      <div class="role future">
+        <span class="cap">futuro</span>
+        <h3><span class="dot" style="background:var(--m-mfg)"></span>Cliente</h3>
+        <ul>
+          <li>Portal com os próprios dados</li>
+          <li>Acompanha gastos e evolução</li>
+          <li>Vê relatórios publicados</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">07 · Roadmap</span>
+      <h2>Fases de construção</h2>
+      <p>Sequência pragmática: fundações sólidas primeiro, depois o Raio-X (MVP), relatórios, CRM logístico e, por fim, investimentos e Open Finance.</p>
+    </div>
+    <div class="roadmap">
+      <div class="phase">
+        <div class="pnum">0<small>Fundações</small></div>
+        <div class="pbody">
+          <h3>Fundações &amp; identidade <span class="pill now">Em andamento</span></h3>
+          <p>Base técnica e visual antes de qualquer feature: projeto Supabase, schema com <code>org_id</code> + RLS, autenticação com papéis, aba de Settings redesenhada e o design system da interface.</p>
+          <div class="chips"><span class="chip">Supabase setup</span><span class="chip">Schema + RLS</span><span class="chip">Auth (papéis)</span><span class="chip">Settings</span><span class="chip">Design system</span><span class="chip">Shell/layout</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="pnum">1<small>CRM</small></div>
+        <div class="pbody">
+          <h3>CRM núcleo mínimo <span class="pill next">A seguir</span></h3>
+          <p>Trocar os clientes mock por dados reais: CRUD de clientes, atribuição a planejadores, busca e a ficha do cliente conectada ao banco.</p>
+          <div class="chips"><span class="chip">Client CRUD</span><span class="chip">Lista + busca</span><span class="chip">Ficha do cliente</span><span class="chip">Atribuição planner</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="pnum">2<small>MVP</small></div>
+        <div class="pbody">
+          <h3>Planejamento / Raio-X real <span class="pill next">Marco MVP</span></h3>
+          <p>Aprofundar o “Ponto de Partida”: fluxo de caixa, orçamento (ideal × real), patrimônio, objetivos com prioridade em estrelas e linha do tempo — tudo por cliente, com registro mensal.</p>
+          <div class="chips"><span class="chip">Fluxo de caixa</span><span class="chip">Orçamento</span><span class="chip">Patrimônio</span><span class="chip">Objetivos ★</span><span class="chip">Linha do tempo</span><span class="chip">Registro mensal</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="pnum">3<small>Relatórios</small></div>
+        <div class="pbody">
+          <h3>Motor de relatórios <span class="pill later">Planejado</span></h3>
+          <p>Gerar o relatório no padrão “Relatório Junho — Aurélio”: página bonita in-app e exportação em PDF, arquivada no Supabase Storage.</p>
+          <div class="chips"><span class="chip">Template do relatório</span><span class="chip">HTML → PDF</span><span class="chip">Arquivo em Storage</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="pnum">4<small>Logística</small></div>
+        <div class="pbody">
+          <h3>CRM logístico <span class="pill later">Planejado</span></h3>
+          <p>Camada operacional da consultoria: agenda com Google Calendar, reuniões por cliente, metas e tarefas do time, dashboard.</p>
+          <div class="chips"><span class="chip">Google Calendar</span><span class="chip">Reuniões</span><span class="chip">Metas do time</span><span class="chip">Dashboard</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="pnum">5<small>Invest.</small></div>
+        <div class="pbody">
+          <h3>Investimentos + rendafixa <span class="pill later">Planejado</span></h3>
+          <p>Módulo de investimentos consumindo a API da rendafixa: alocação, rentabilidade e carteira sincronizadas.</p>
+          <div class="chips"><span class="chip">Adaptador rendafixa</span><span class="chip">Sync de carteira</span><span class="chip">Alocação &amp; rentab.</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="pnum">6<small>Futuro</small></div>
+        <div class="pbody">
+          <h3>MyFinancialGeek / Open Finance <span class="pill later">Futuro</span></h3>
+          <p>Conectar contas bancárias por Open Finance para acompanhamento automático de gastos do cliente. Fora do escopo atual — a costura fica reservada.</p>
+          <div class="chips"><span class="chip">Open Finance</span><span class="chip">Sync de gastos</span><span class="chip">Portal do cliente</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="pnum">7<small>Engajamento</small></div>
+        <div class="pbody">
+          <h3>Gamificação &amp; Recompensas <span class="pill later">Futuro</span></h3>
+          <p>Cada cliente ganha pontos ao atingir metas ou indicar amigos e evolui entre os níveis <b>Bronze · Prata · Ouro</b> — pontos que depois viram recompensas. Uma camada de engajamento montada sobre as metas do Planejamento e o Portal do Cliente.</p>
+          <div class="chips"><span class="chip">Pontos por meta</span><span class="chip">Indicações</span><span class="chip">Níveis Bronze/Prata/Ouro</span><span class="chip">Catálogo de recompensas</span><span class="chip">Resgates</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RISCOS -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">08 · Riscos &amp; questões abertas</span>
+      <h2>O que ainda precisa de resposta</h2>
+      <p>Pontos a resolver antes que virem gargalo. Fecham à medida que o projeto avança.</p>
+    </div>
+    <div class="risks">
+      <div class="risk">
+        <div class="q">API da rendafixa ainda não existe</div>
+        <div class="a"><b>Mitigação:</b> desenhar o contrato de dados agora e isolar tudo atrás de um adaptador, para o módulo de Investimentos não travar esperando a rendafixa.</div>
+      </div>
+      <div class="risk">
+        <div class="q">Paridade com o Excel é ampla</div>
+        <div class="a"><b>Mitigação:</b> migrar módulo a módulo; o Excel segue como fonte oficial até cada peça (orçamento, projeções, aposentadoria) atingir paridade real.</div>
+      </div>
+      <div class="risk">
+        <div class="q">Motor de PDF em Next.js 16</div>
+        <div class="a"><b>A decidir:</b> abordagem de geração (render server-side vs. serviço dedicado) respeitando as convenções desta versão do Next — conferir os docs antes de codar.</div>
+      </div>
+      <div class="risk">
+        <div class="q">Sync bidirecional com Google Calendar</div>
+        <div class="a"><b>A decidir:</b> escopo OAuth, resolução de conflitos e o que é fonte da verdade (Hub × Google) nas reuniões.</div>
+      </div>
+      <div class="risk">
+        <div class="q">Sensibilidade dos dados financeiros</div>
+        <div class="a"><b>Mitigação:</b> RLS por <code>org_id</code> desde o dia 1, mínimo de dados no assistente e trilha para consentimento do cliente no portal futuro.</div>
+      </div>
+      <div class="risk">
+        <div class="q">Modelo de dados mensal × pontual</div>
+        <div class="a"><b>A validar:</b> o que é <i>snapshot</i> mensal (fluxo de caixa) versus estado corrente (patrimônio, dívidas) — impacta histórico e gráficos de evolução.</div>
+      </div>
+      <div class="risk">
+        <div class="q">Economia de pontos da gamificação</div>
+        <div class="a"><b>A definir:</b> quantos pontos por meta × indicação, os limiares de cada nível (Bronze/Prata/Ouro), a validade dos pontos e como as recompensas são custeadas e entregues — para o incentivo não distorcer o planejamento nem virar passivo financeiro da consultoria.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    HFC Hub · Plano mestre v1 · 24 jul 2026 — documento vivo de acompanhamento do projeto.
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  var stage = document.getElementById('archStage');
+  var svg = document.getElementById('archSvg');
+  var detail = document.getElementById('archDetail');
+  var archRoot = document.querySelector('.arch');
+  if (!stage || !svg || !archRoot) return;
+
+  var VBW = 1000, VBH = 620;
+  var COLORS = { access: 'var(--ink-soft)', app: 'var(--accent)', data: 'var(--m-plan)', integ: 'var(--gold)', future: 'var(--m-mfg)' };
+
+  var NODES = [
+    { id: 'P',    x: 30,  y: 26,  w: 200, h: 66, kind: 'access', kick: 'Acesso',            title: 'Planejador / Admin',    sub: 'painel completo',       desc: 'Cadastra clientes, coleta os dados mensais, monta o Raio-X, conduz reuniões e publica relatórios. O Admin também gerencia a organização e os papéis.' },
+    { id: 'A',    x: 260, y: 26,  w: 200, h: 66, kind: 'access', kick: 'Acesso',            title: 'Assistente',            sub: 'acesso restrito',       desc: 'Apoio operacional — agenda, cadastro e tarefas. Sem acesso a dados financeiros sensíveis por padrão.' },
+    { id: 'C',    x: 490, y: 26,  w: 200, h: 66, kind: 'future', kick: 'Acesso · futuro',   title: 'Cliente',               sub: 'portal próprio',        desc: 'Em fase futura, acompanha os próprios gastos, metas e relatórios por um portal restrito aos seus dados.' },
+    { id: 'UI',   x: 250, y: 150, w: 220, h: 66, kind: 'app',    kick: 'Aplicação',         title: 'Interface pt-BR',       sub: 'Next.js · App Router',  desc: 'As telas do produto: CRM, Raio-X, agenda e relatórios. Conversa apenas com a camada de API / Server Actions.' },
+    { id: 'API',  x: 250, y: 280, w: 220, h: 72, kind: 'app',    kick: 'Aplicação · hub',   title: 'Server Actions / API',  sub: 'regras de negócio',     desc: 'O orquestrador central: aplica regras, autentica, lê e grava no Postgres, dispara relatórios e conversa com as integrações externas.' },
+    { id: 'PDF',  x: 510, y: 281, w: 190, h: 66, kind: 'app',    kick: 'Aplicação',         title: 'Motor de Relatórios',   sub: 'HTML → PDF',            desc: 'Renderiza o relatório no padrão HFC e exporta em PDF, arquivando o arquivo no Storage.' },
+    { id: 'AUTH', x: 30,  y: 412, w: 200, h: 66, kind: 'data',   kick: 'Supabase',          title: 'Auth',                  sub: 'papéis + sessão',       desc: 'Login sólido com papéis (admin / planejador / assistente / cliente). Base do controle de acesso refletido nas políticas de RLS.' },
+    { id: 'DB',   x: 250, y: 410, w: 220, h: 72, kind: 'data',   kick: 'Supabase',          title: 'Postgres',              sub: 'RLS · org_id em tudo',  desc: 'Banco relacional com Row-Level Security por organização. Fonte da verdade de clientes, planejamento, patrimônio e metas.' },
+    { id: 'ST',   x: 510, y: 412, w: 190, h: 66, kind: 'data',   kick: 'Supabase',          title: 'Storage',               sub: 'arquivos',              desc: 'Guarda os PDFs de relatório e anexos, com acesso controlado por políticas.' },
+    { id: 'RF',   x: 760, y: 150, w: 210, h: 66, kind: 'integ',  kick: 'Integração',        title: 'rendafixa API',         sub: 'carteira · rentab.',    desc: 'Sistema de análise de investimentos (em desenvolvimento). O Hub puxa carteira e rentabilidade por API, isolado atrás de um adaptador.' },
+    { id: 'GC',   x: 760, y: 281, w: 210, h: 66, kind: 'integ',  kick: 'Integração',        title: 'Google Calendar',       sub: 'OAuth · 2 vias',        desc: 'Sincroniza as reuniões por cliente com a agenda Google do planejador.' },
+    { id: 'OF',   x: 760, y: 412, w: 210, h: 66, kind: 'future', kick: 'Integração · futuro', title: 'MyFinancialGeek',     sub: 'Open Finance',          desc: 'Projeto de Open Finance para acompanhamento automático de gastos. Fora do escopo atual; a costura fica reservada.' }
+  ];
+
+  var EDGES = [
+    { a: 'P',   b: 'UI',   t: 'core',   rel: 'acessa a interface' },
+    { a: 'A',   b: 'UI',   t: 'core',   rel: 'acessa a interface' },
+    { a: 'C',   b: 'UI',   t: 'future', rel: 'portal do cliente (futuro)' },
+    { a: 'UI',  b: 'API',  t: 'core',   rel: 'envia ações do usuário' },
+    { a: 'API', b: 'PDF',  t: 'core',   rel: 'dispara geração de relatório' },
+    { a: 'API', b: 'AUTH', t: 'core',   rel: 'valida sessão e papel' },
+    { a: 'API', b: 'DB',   t: 'core',   rel: 'lê e grava dados (RLS)' },
+    { a: 'PDF', b: 'ST',   t: 'core',   rel: 'arquiva o PDF' },
+    { a: 'API', b: 'RF',   t: 'integ',  rel: 'sincroniza carteira (adaptador)' },
+    { a: 'API', b: 'GC',   t: 'integ',  rel: 'sincroniza reuniões (2 vias)', bow: { x: 600, y: 432 } },
+    { a: 'API', b: 'OF',   t: 'future', rel: 'conexão reservada (futuro)' }
+  ];
+
+  var byId = {}; NODES.forEach(function (n) { byId[n.id] = n; });
+  function center(n) { return { x: n.x + n.w / 2, y: n.y + n.h / 2 }; }
+  function anchor(n, tx, ty) {
+    var c = center(n), dx = tx - c.x, dy = ty - c.y;
+    if (dx === 0 && dy === 0) return c;
+    var sx = dx === 0 ? 1e9 : (n.w / 2) / Math.abs(dx);
+    var sy = dy === 0 ? 1e9 : (n.h / 2) / Math.abs(dy);
+    var s = Math.min(sx, sy);
+    return { x: c.x + dx * s, y: c.y + dy * s };
+  }
+
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var edgeEls = [];
+  EDGES.forEach(function (e) {
+    var A = byId[e.a], B = byId[e.b], ca = center(A), cb = center(B), p1, p2, d;
+    if (e.bow) {
+      p1 = anchor(A, e.bow.x, e.bow.y); p2 = anchor(B, e.bow.x, e.bow.y);
+      d = 'M' + p1.x + ' ' + p1.y + ' Q ' + e.bow.x + ' ' + e.bow.y + ' ' + p2.x + ' ' + p2.y;
+    } else {
+      p1 = anchor(A, cb.x, cb.y); p2 = anchor(B, ca.x, ca.y);
+      d = 'M' + p1.x + ' ' + p1.y + ' L ' + p2.x + ' ' + p2.y;
+    }
+    var path = document.createElementNS(SVGNS, 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('class', 'arch-edge ' + e.t);
+    svg.appendChild(path);
+    edgeEls.push({ el: path, e: e });
+  });
+
+  var nodeEls = {};
+  NODES.forEach(function (n) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'arch-node';
+    b.style.left = (n.x / VBW * 100) + '%';
+    b.style.top = (n.y / VBH * 100) + '%';
+    b.style.width = (n.w / VBW * 100) + '%';
+    b.style.height = (n.h / VBH * 100) + '%';
+    b.style.setProperty('--nc', COLORS[n.kind]);
+    b.innerHTML = '<span class="n-kick">' + n.kick + '</span><span class="n-title">' + n.title + '</span><span class="n-sub">' + n.sub + '</span>';
+    b.setAttribute('aria-label', n.title + ' — ' + n.sub);
+    stage.appendChild(b);
+    nodeEls[n.id] = b;
+    b.addEventListener('mouseenter', function () { setHover(n.id); });
+    b.addEventListener('mouseleave', function () { setHover(null); });
+    b.addEventListener('focus', function () { setHover(n.id); });
+    b.addEventListener('blur', function () { setHover(null); });
+    b.addEventListener('click', function (ev) { ev.stopPropagation(); togglePin(n.id); });
+  });
+
+  var hovered = null, pinned = null;
+  function active() { return hovered || pinned; }
+  function neighborsOf(id) {
+    var set = {}; set[id] = true;
+    EDGES.forEach(function (e) { if (e.a === id) set[e.b] = true; if (e.b === id) set[e.a] = true; });
+    return set;
+  }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function showDefault() {
+    detail.innerHTML = '<span class="ad-kicker">Diagrama interativo</span><h3 class="ad-title">Arquitetura do HFC Hub</h3><p class="ad-desc">Quatro camadas — acesso, aplicação (Next.js), Supabase e integrações. A camada de <b>Server Actions / API</b> é o hub que orquestra tudo. Selecione um bloco para destacar suas conexões.</p>';
+  }
+  function showNode(id) {
+    var n = byId[id], conns = [];
+    EDGES.forEach(function (e) {
+      if (e.a === id) conns.push('→ <b>' + esc(byId[e.b].title) + '</b> · ' + esc(e.rel));
+      else if (e.b === id) conns.push('← <b>' + esc(byId[e.a].title) + '</b> · ' + esc(e.rel));
+    });
+    var chips = conns.map(function (c) { return '<span class="ad-conn">' + c + '</span>'; }).join('');
+    detail.innerHTML = '<span class="ad-kicker" style="color:' + COLORS[n.kind] + '">' + esc(n.kick) + '</span><h3 class="ad-title">' + esc(n.title) + '</h3><p class="ad-desc">' + esc(n.desc) + '</p><div class="ad-conns">' + chips + '</div>';
+  }
+  function render() {
+    var id = active();
+    if (!id) {
+      archRoot.classList.remove('sel');
+      edgeEls.forEach(function (o) { o.el.classList.remove('on'); });
+      NODES.forEach(function (n) { nodeEls[n.id].classList.remove('on'); nodeEls[n.id].classList.remove('pinned'); });
+      showDefault();
+      return;
+    }
+    archRoot.classList.add('sel');
+    var nb = neighborsOf(id);
+    edgeEls.forEach(function (o) { o.el.classList.toggle('on', o.e.a === id || o.e.b === id); });
+    NODES.forEach(function (n) {
+      nodeEls[n.id].classList.toggle('on', !!nb[n.id]);
+      nodeEls[n.id].classList.toggle('pinned', pinned === n.id);
+    });
+    showNode(id);
+  }
+  function setHover(id) { hovered = id; render(); }
+  function togglePin(id) { pinned = (pinned === id) ? null : id; hovered = null; render(); }
+  stage.addEventListener('click', function () { if (pinned) { pinned = null; render(); } });
+  render();
+})();
+</script>
+
+</body>
+</html>
