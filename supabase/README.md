@@ -21,6 +21,7 @@ tenta reaplicar tudo.
 | `20260725144824_0005_storage_reports.sql` | Bucket privado `reports` para os PDFs + políticas de acesso por org. |
 | `20260725145645_0006_restore_anon_helper_grants.sql` | Corrige o 0004: devolve `EXECUTE` das funções auxiliares a `anon`. |
 | `20260725150257_0007_perf_indexes_and_policy_cleanup.sql` | Índices em `org_id` (toda RLS filtra por ele), `(select auth.uid())` e troca de `for all` por ins/upd/del. |
+| `20260725160000_0008_signup_role_hardening.sql` | `handle_new_user()` para de ler o papel do metadata (escalada para `admin` no signup) e fixa `planner`. |
 
 Estado atual: **23 tabelas**, RLS ativa em todas, **93 políticas** em `public` + 4 no bucket
 `reports`, 1 organização (HFC) e 7 categorias de orçamento no seed.
@@ -55,8 +56,16 @@ supabase db push           # aplica as migrations/ em ordem
 - **client** — **sem acesso** nesta fase; as políticas do Portal do Cliente entram numa fase futura.
 
 Novos usuários viram `app_user` automaticamente **se** o signup enviar `org_id` (e opcionalmente
-`role`, `nome`) em `raw_user_meta_data` — ver `handle_new_user()` em `0002_rls.sql`.
+`nome`) em `raw_user_meta_data` — ver `handle_new_user()`, redefinido em `0008`.
 Signup sem `org_id` **não** cria perfil, e um usuário sem perfil não enxerga nada (testado).
+
+O **papel não vem do metadata**: todo cadastro nasce `planner` e a promoção é ato de um admin.
+Até o `0008`, `role` era lido de `raw_user_meta_data` — como esse campo é escolhido por quem
+chama `/auth/v1/signup`, qualquer pessoa podia se cadastrar direto como `admin`.
+
+⚠️ **Em aberto:** `org_id` ainda vem do metadata, então um cadastro feito fora do app pode
+entrar em qualquer organização. O fechamento correto é signup por convite; enquanto isso,
+manter *Allow new users to sign up* **desligado** no painel em produção.
 
 ## Storage
 
@@ -91,5 +100,6 @@ num banco ainda sem tráfego. Reavaliar quando houver uso real.
 ## Ainda não coberto (próximas fases)
 
 - Políticas de RLS do **Portal do Cliente** (papel `client`).
-- Telas de login/signup (o `proxy.ts` e o DAL já esperam `/login`).
+- Signup **por convite** (hoje `org_id` vem do metadata — ver aviso acima).
+- Recuperação de senha (`/auth/recover`) e reenvio do link de confirmação.
 - Reconciliação `report.pdf_url` ↔ objetos no bucket `reports`.
