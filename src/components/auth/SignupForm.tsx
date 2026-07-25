@@ -21,6 +21,7 @@ export function SignupForm() {
         label="Nome completo"
         autoComplete="name"
         placeholder="Seu nome"
+        defaultValue={state?.values?.nome}
         errors={state?.errors?.nome}
       />
       <Field
@@ -29,6 +30,7 @@ export function SignupForm() {
         type="email"
         autoComplete="email"
         placeholder="voce@hfc.com.br"
+        defaultValue={state?.values?.email}
         errors={state?.errors?.email}
       />
       <Field

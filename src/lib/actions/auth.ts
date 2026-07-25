@@ -13,6 +13,8 @@ export type AuthFormState =
       };
       message?: string;
       success?: string;
+      /** Devolvido para repopular o formulário — nunca inclui a senha. */
+      values?: { nome?: string; email?: string };
     }
   | undefined;
 
@@ -42,14 +44,14 @@ export async function login(
   const password = String(formData.get("password") ?? "");
 
   const errors = validate({ email, password });
-  if (errors) return { errors };
+  if (errors) return { errors, values: { email } };
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     // Mensagem genérica de propósito: não revela se o e-mail existe.
-    return { message: "E-mail ou senha inválidos." };
+    return { message: "E-mail ou senha inválidos.", values: { email } };
   }
 
   revalidatePath("/", "layout");
@@ -64,14 +66,17 @@ export async function signup(
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
+  const values = { nome, email };
+
   const errors = validate({ nome, email, password });
-  if (errors) return { errors };
+  if (errors) return { errors, values };
 
   const orgId = process.env.NEXT_PUBLIC_DEFAULT_ORG_ID;
   if (!orgId) {
     return {
       message:
         "Organização padrão não configurada (NEXT_PUBLIC_DEFAULT_ORG_ID). Fale com o administrador.",
+      values,
     };
   }
 
@@ -85,7 +90,10 @@ export async function signup(
   });
 
   if (error) {
-    return { message: "Não foi possível criar a conta. Tente novamente." };
+    return {
+      message: "Não foi possível criar a conta. Tente novamente.",
+      values,
+    };
   }
 
   // Sem sessão = confirmação de e-mail ativada no projeto Supabase.

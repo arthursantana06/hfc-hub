@@ -17,6 +17,7 @@ export function LoginForm() {
         type="email"
         autoComplete="email"
         placeholder="voce@hfc.com.br"
+        defaultValue={state?.values?.email}
         errors={state?.errors?.email}
       />
       <Field
