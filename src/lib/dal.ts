@@ -2,16 +2,15 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { Enums, Tables } from "@/lib/supabase/database.types";
 
-export type UserRole = "admin" | "planner" | "assistant" | "client";
+export type UserRole = Enums<"user_role">;
 
-export interface AppUser {
-  id: string;
-  org_id: string;
-  nome: string | null;
-  email: string | null;
-  role: UserRole;
-}
+/** Subconjunto de `app_user` que o DAL expõe. */
+export type AppUser = Pick<
+  Tables<"app_user">,
+  "id" | "org_id" | "nome" | "email" | "role"
+>;
 
 /**
  * Data Access Layer — centraliza a checagem de sessão e autorização.
@@ -41,7 +40,7 @@ export const getCurrentUser = cache(async (): Promise<AppUser | null> => {
     .eq("id", userId)
     .single();
 
-  return (data as AppUser) ?? null;
+  return data ?? null;
 });
 
 /** Garante que o usuário tem um dos papéis exigidos; senão, redireciona. */

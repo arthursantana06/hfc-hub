@@ -10,24 +10,24 @@
 -- Funções auxiliares
 -- ─────────────────────────────────────────────────────────────
 create or replace function public.current_org_id()
-returns uuid language sql stable security definer set search_path = public as $$
+returns uuid language sql stable security definer set search_path = public as $fn$
   select org_id from public.app_user where id = auth.uid();
-$$;
+$fn$;
 
 create or replace function public.current_user_role()
-returns public.user_role language sql stable security definer set search_path = public as $$
+returns public.user_role language sql stable security definer set search_path = public as $fn$
   select role from public.app_user where id = auth.uid();
-$$;
+$fn$;
 
 create or replace function public.is_staff()
-returns boolean language sql stable as $$
+returns boolean language sql stable set search_path = public as $fn$
   select public.current_user_role() in ('admin', 'planner', 'assistant');
-$$;
+$fn$;
 
 create or replace function public.can_write()
-returns boolean language sql stable as $$
+returns boolean language sql stable set search_path = public as $fn$
   select public.current_user_role() in ('admin', 'planner');
-$$;
+$fn$;
 
 -- ─────────────────────────────────────────────────────────────
 -- organization: staff lê a própria org; apenas admin altera
@@ -63,7 +63,7 @@ create policy app_user_admin_write on public.app_user
 --   SELECT  → staff da org
 --   INSERT/UPDATE/DELETE → admin|planner da org
 -- ─────────────────────────────────────────────────────────────
-do $$
+do $do$
 declare
   t text;
   org_tables text[] := array[
@@ -100,7 +100,7 @@ begin
         for delete using (org_id = public.current_org_id() and public.can_write());
     $f$, t);
   end loop;
-end $$;
+end $do$;
 
 -- ─────────────────────────────────────────────────────────────
 -- Provisionamento de perfil no signup
@@ -111,7 +111,7 @@ end $$;
 -- Signups sem org_id NÃO criam perfil (evita usuário órfão sem tenant).
 -- ─────────────────────────────────────────────────────────────
 create or replace function public.handle_new_user()
-returns trigger language plpgsql security definer set search_path = public as $$
+returns trigger language plpgsql security definer set search_path = public as $fn$
 begin
   if (new.raw_user_meta_data ? 'org_id') then
     insert into public.app_user (id, org_id, nome, email, role)
@@ -124,8 +124,9 @@ begin
     );
   end if;
   return new;
-end $$;
+end $fn$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();

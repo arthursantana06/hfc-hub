@@ -3,46 +3,93 @@
 Backend do HFC Hub: Postgres + Auth + Storage, com **Row-Level Security** por organização
 (`org_id` em todas as tabelas). Estas migrações são a fundação da **Fase 0**.
 
+**Projeto de dev:** `vidiyibzirsbfsjfuqxo` · <https://vidiyibzirsbfsjfuqxo.supabase.co>
+**Estado:** todas as migrações abaixo estão **aplicadas** no projeto de dev.
+
 ## Migrações
+
+Os nomes dos arquivos usam o `version` (timestamp) que consta no histórico remoto
+(`supabase_migrations.schema_migrations`) — não renomear, senão `supabase db push`
+tenta reaplicar tudo.
 
 | Arquivo | O que faz |
 | --- | --- |
-| `migrations/0001_schema.sql` | Enums, tabelas (Núcleo/CRM, Planejamento, Investimentos, Gamificação) e índices. |
-| `migrations/0002_rls.sql` | Funções auxiliares, RLS por `org_id` + papéis, e trigger de provisionamento de perfil no signup. |
-| `migrations/0003_seed.sql` | Cria a organização **HFC** (uuid fixo) e categorias de orçamento base. |
+| `20260724194235_0001_schema.sql` | Enums, 23 tabelas (Núcleo/CRM, Planejamento, Investimentos, Gamificação) e índices. |
+| `20260724194253_0002_rls.sql` | Funções auxiliares, RLS por `org_id` + papéis, trigger de provisionamento de perfil no signup. |
+| `20260724194301_0003_seed.sql` | Cria a organização **HFC** (uuid fixo) e 7 categorias de orçamento base. |
+| `20260725144803_0004_harden_function_grants.sql` | Revoga `EXECUTE` de `handle_new_user()` (é função de trigger, não RPC). |
+| `20260725144824_0005_storage_reports.sql` | Bucket privado `reports` para os PDFs + políticas de acesso por org. |
+| `20260725145645_0006_restore_anon_helper_grants.sql` | Corrige o 0004: devolve `EXECUTE` das funções auxiliares a `anon`. |
+| `20260725150257_0007_perf_indexes_and_policy_cleanup.sql` | Índices em `org_id` (toda RLS filtra por ele), `(select auth.uid())` e troca de `for all` por ins/upd/del. |
 
-Ordem importa: aplicar 0001 → 0002 → 0003.
+Estado atual: **23 tabelas**, RLS ativa em todas, **93 políticas** em `public` + 4 no bucket
+`reports`, 1 organização (HFC) e 7 categorias de orçamento no seed.
 
-## Como aplicar
+## Como aplicar num projeto novo
 
-### Opção A — Painel do Supabase (mais rápido para começar)
-1. Crie um projeto em <https://supabase.com>.
-2. Em **SQL Editor**, cole e rode cada arquivo em ordem (0001, 0002, 0003).
-3. Em **Project Settings → API**, copie a `URL`, a `anon key` e a `service_role key`.
-4. Copie `.env.example` para `.env.local` e preencha. O `NEXT_PUBLIC_DEFAULT_ORG_ID`
-   é `00000000-0000-4000-8000-000000000001` (o uuid da org HFC criado pelo seed).
+### Opção A — MCP (o fluxo em uso hoje)
+O servidor MCP `supabase-hfc-dev` está configurado em `.mcp.json` e aplica migrações
+direto (`apply_migration`), consulta o schema (`list_tables`) e roda o linter
+(`get_advisors`). Requer `SUPABASE_ACCESS_TOKEN` no ambiente.
 
-### Opção B — Supabase CLI (recomendado para o dia a dia)
+### Opção B — Supabase CLI
 ```bash
-npm i -g supabase          # ou: npx supabase ...
 supabase login
 supabase link --project-ref <ref-do-projeto>
 supabase db push           # aplica as migrations/ em ordem
 ```
 
+### Depois de aplicar
+1. Copie `.env.example` para `.env.local` e preencha.
+2. `NEXT_PUBLIC_DEFAULT_ORG_ID` = `00000000-0000-4000-8000-000000000001` (org HFC do seed).
+3. `SUPABASE_SERVICE_ROLE_KEY` **não** é acessível via MCP — copie do painel
+   (Project Settings → API Keys → `service_role`).
+4. Regenere os tipos:
+   `npx supabase gen types typescript --project-id <ref> > src/lib/supabase/database.types.ts`
+
 ## Modelo de acesso (Fase 0)
 
 - **admin** — gerencia a organização e os usuários; acesso total à org.
 - **planner** — leitura e escrita dos dados da org (clientes, planejamento, relatórios).
-- **assistant** — **somente leitura** por padrão (princípio de menor exposição a dados sensíveis).
+- **assistant** — **somente leitura** (princípio de menor exposição a dados sensíveis).
 - **client** — **sem acesso** nesta fase; as políticas do Portal do Cliente entram numa fase futura.
 
 Novos usuários viram `app_user` automaticamente **se** o signup enviar `org_id` (e opcionalmente
 `role`, `nome`) em `raw_user_meta_data` — ver `handle_new_user()` em `0002_rls.sql`.
+Signup sem `org_id` **não** cria perfil, e um usuário sem perfil não enxerga nada (testado).
 
-## Ainda não coberto (próximos passos da Fase 0)
+## Storage
 
-- Cliente Supabase no Next.js (SSR) — `@supabase/ssr`, usando `await cookies()`.
-- `proxy.ts` (o antigo middleware) para checagem otimista de sessão.
-- Bucket de **Storage** para os PDFs de relatório + políticas de acesso.
+Bucket `reports` — **privado**, só `application/pdf`, limite de 25 MiB.
+Convenção de caminho: **`{org_id}/{client_id}/{arquivo}.pdf`** — o primeiro segmento
+carrega o tenant, e é assim que as políticas isolam por org. Manter essa convenção ao
+fazer upload, senão o arquivo fica inacessível. Leitura no app: signed URL gerada no servidor.
+
+## Testes
+
+`tests/rls_smoke.sql` — 20 asserções cobrindo isolamento entre orgs, escrita cross-tenant,
+`assistant` como somente-leitura, `planner` sem poder de admin, usuário sem perfil e acesso
+deslogado. Roda em transação e termina em `ROLLBACK` (não deixa resíduo). Todas devem sair `PASS`.
+
+Ao escrever novos casos: `set local request.jwt.claims` **persiste** entre blocos da mesma
+transação. Trocar só o `role` para `anon` sem limpar os claims faz o teste rodar com a
+identidade do usuário anterior — e dá falso resultado.
+
+## Alertas conhecidos do linter (aceitos)
+
+`get_advisors(security)` reporta 4 avisos: `current_org_id()` e `current_user_role()` são
+`SECURITY DEFINER` e chamáveis por `anon` e `authenticated`. É **intencional e necessário**:
+as expressões de RLS são avaliadas com os privilégios do papel que consulta, então revogar
+`EXECUTE` quebraria todo acesso às tabelas org-scoped (para `anon`, transforma "conjunto
+vazio" em erro 42501 — foi exatamente o que o 0006 corrigiu). As funções leem apenas a
+linha do próprio chamador em `app_user` — não expõem nada que ele já não veja, e para
+`anon` retornam `NULL`.
+
+Em `get_advisors(performance)` sobram avisos de `unused_index`: são os índices do 0001/0007
+num banco ainda sem tráfego. Reavaliar quando houver uso real.
+
+## Ainda não coberto (próximas fases)
+
 - Políticas de RLS do **Portal do Cliente** (papel `client`).
+- Telas de login/signup (o `proxy.ts` e o DAL já esperam `/login`).
+- Reconciliação `report.pdf_url` ↔ objetos no bucket `reports`.
