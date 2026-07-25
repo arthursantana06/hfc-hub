@@ -1003,6 +1003,23 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       is_staff: { Args: never; Returns: boolean }
+      update_own_profile: {
+        Args: { p_nome: string }
+        Returns: {
+          created_at: string
+          email: string | null
+          id: string
+          nome: string | null
+          org_id: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "app_user"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       budget_group: "fixo" | "pessoal" | "consultorio"

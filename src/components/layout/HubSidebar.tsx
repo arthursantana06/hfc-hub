@@ -3,6 +3,7 @@
 import { LayoutDashboard, Users, LineChart, Settings, LogOut } from "lucide-react";
 import { SideNavLink } from "./SideNavLink";
 import { logout } from "@/lib/actions/auth";
+import { ROLE_LABEL } from "@/lib/roles";
 import type { AppUser } from "@/lib/dal";
 
 /** Iniciais para o avatar — "Ana Beatriz Souza" → "AS". */
@@ -12,13 +13,6 @@ function initials(nome: string | null) {
   const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
   return (first + last).toUpperCase() || "?";
 }
-
-const ROLE_LABEL: Record<AppUser["role"], string> = {
-  admin: "Administrador",
-  planner: "Planejador",
-  assistant: "Assistente",
-  client: "Cliente",
-};
 
 export function HubSidebar({ user }: { user: AppUser | null }) {
   return (
@@ -51,7 +45,7 @@ export function HubSidebar({ user }: { user: AppUser | null }) {
       </nav>
 
       <div className="p-4 mt-auto mb-4 flex flex-col gap-2">
-        <SideNavLink href="#" icon={Settings} label="Configurações" />
+        <SideNavLink href="/configuracoes" icon={Settings} label="Configurações" />
         <form action={logout}>
           <button
             type="submit"

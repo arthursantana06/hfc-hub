@@ -22,6 +22,7 @@ tenta reaplicar tudo.
 | `20260725145645_0006_restore_anon_helper_grants.sql` | Corrige o 0004: devolve `EXECUTE` das funções auxiliares a `anon`. |
 | `20260725150257_0007_perf_indexes_and_policy_cleanup.sql` | Índices em `org_id` (toda RLS filtra por ele), `(select auth.uid())` e troca de `for all` por ins/upd/del. |
 | `20260725160000_0008_signup_role_hardening.sql` | `handle_new_user()` para de ler o papel do metadata (escalada para `admin` no signup) e fixa `planner`. |
+| `20260725170000_0009_update_own_profile.sql` | RPC `update_own_profile(nome)`: única escrita em `app_user` liberada a não-admin, e só no campo `nome` da própria linha. |
 
 Estado atual: **23 tabelas**, RLS ativa em todas, **93 políticas** em `public` + 4 no bucket
 `reports`, 1 organização (HFC) e 7 categorias de orçamento no seed.
@@ -58,6 +59,10 @@ supabase db push           # aplica as migrations/ em ordem
 Novos usuários viram `app_user` automaticamente **se** o signup enviar `org_id` (e opcionalmente
 `nome`) em `raw_user_meta_data` — ver `handle_new_user()`, redefinido em `0008`.
 Signup sem `org_id` **não** cria perfil, e um usuário sem perfil não enxerga nada (testado).
+
+Escrita em `app_user` é só de admin. Para o usuário corrigir o próprio nome na tela de
+Configurações existe a RPC `update_own_profile()` (`0009`) — ela toca apenas `nome`, apenas
+na linha de `auth.uid()`, então não dá para escalar papel nem trocar de organização por ali.
 
 O **papel não vem do metadata**: todo cadastro nasce `planner` e a promoção é ato de um admin.
 Até o `0008`, `role` era lido de `raw_user_meta_data` — como esse campo é escolhido por quem

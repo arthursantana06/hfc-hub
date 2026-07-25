@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { FormAlert } from "@/components/auth/AuthFields";
+import { FormAlert } from "@/components/ui/Form";
 
 export const metadata: Metadata = {
   title: "Entrar — HFC Hub",

@@ -43,6 +43,34 @@ export const getCurrentUser = cache(async (): Promise<AppUser | null> => {
   return data ?? null;
 });
 
+/** Organização do usuário autenticado (a RLS já restringe à própria org). */
+export const getOrganization = cache(
+  async (): Promise<Pick<Tables<"organization">, "id" | "name" | "plano"> | null> => {
+    await verifySession();
+    const supabase = await createClient();
+
+    const { data } = await supabase
+      .from("organization")
+      .select("id, name, plano")
+      .single();
+
+    return data ?? null;
+  },
+);
+
+/** Membros da organização. Staff enxerga a lista; só admin altera (RLS). */
+export const listOrgUsers = cache(async (): Promise<AppUser[]> => {
+  await verifySession();
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("app_user")
+    .select("id, org_id, nome, email, role")
+    .order("nome");
+
+  return data ?? [];
+});
+
 /** Garante que o usuário tem um dos papéis exigidos; senão, redireciona. */
 export const requireRole = cache(async (roles: UserRole[]) => {
   const user = await getCurrentUser();
