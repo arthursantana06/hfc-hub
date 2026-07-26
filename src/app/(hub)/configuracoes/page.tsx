@@ -9,6 +9,7 @@ import { ProfileForm } from "@/components/settings/ProfileForm";
 import { OrganizationForm } from "@/components/settings/OrganizationForm";
 import { UsersTable } from "@/components/settings/UsersTable";
 import { InvitesPanel } from "@/components/settings/InvitesPanel";
+import { Page } from "@/components/layout/Page";
 import { ROLE_LABEL } from "@/lib/roles";
 
 export const metadata: Metadata = {
@@ -46,13 +47,10 @@ export default async function ConfiguracoesPage() {
   const isAdmin = user?.role === "admin";
 
   return (
-    <main className="flex-1 p-8 overflow-y-auto">
-      <header className="mb-8">
-        <h1 className="font-poppins font-medium text-3xl text-brand-950">
-          Configurações
-        </h1>
-      </header>
-
+    <Page
+      title="Configurações"
+      subtitle="Seu perfil, os dados da consultoria e quem tem acesso."
+    >
       <div className="flex flex-col gap-6 max-w-3xl">
         <Card
           title="Perfil"
@@ -141,6 +139,6 @@ export default async function ConfiguracoesPage() {
           )}
         </Card>
       </div>
-    </main>
+    </Page>
   );
 }

@@ -1,16 +1,15 @@
 import Link from "next/link";
 import { Search, Plus } from "lucide-react";
 import { clients, riskProfileStyles, formatCurrency } from "@/lib/mock-clients";
+import { Page } from "@/components/layout/Page";
 
 export default function ClientHub() {
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-
-      {/* Header Superior */}
-      <header className="flex justify-between items-center p-8 pb-4 shrink-0">
-        <h1 className="font-poppins font-semibold text-3xl text-brand-950">Central de Clientes</h1>
-
-        <div className="flex items-center gap-6">
+    <Page
+      title="Hub de Clientes"
+      subtitle={`${clients.length} clientes na carteira`}
+      actions={
+        <>
           <div className="relative">
             <Search className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -21,17 +20,15 @@ export default function ClientHub() {
           </div>
 
           <button
-            className="bg-brand-600 hover:bg-brand-950 transition-colors text-white font-poppins font-medium px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm"
+            className="bg-brand-600 hover:bg-brand-900 transition-colors text-white font-poppins font-medium px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm cursor-pointer"
           >
-            <Plus className="w-4 h-4"/>
+            <Plus className="w-4 h-4" />
             Novo Cliente
           </button>
-        </div>
-      </header>
-
-      {/* Grid de Clientes */}
-      <main className="flex-1 overflow-y-auto p-8 pt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+        </>
+      }
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {clients.map((client) => (
             <div key={client.id} className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col h-full hover:border-brand-300 transition-colors">
 
@@ -73,9 +70,7 @@ export default function ClientHub() {
 
             </div>
           ))}
-        </div>
-      </main>
-
-    </div>
+      </div>
+    </Page>
   );
 }

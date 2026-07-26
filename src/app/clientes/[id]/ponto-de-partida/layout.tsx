@@ -22,7 +22,7 @@ export default async function PontoDePartidaLayout({
   return (
     <>
       <header className="p-8 pb-0 shrink-0 bg-white border-b border-slate-200 shadow-sm z-0 flex flex-col">
-        <h1 className="font-poppins font-semibold text-3xl text-brand-950">Ponto de Partida</h1>
+        <h1 className="font-poppins font-medium text-2xl text-brand-950">Ponto de Partida</h1>
 
         {/* Abas Horizontais */}
         <div className="mt-6 flex gap-8">

@@ -1,13 +1,13 @@
+import { Logo } from "@/components/layout/Logo";
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen w-full flex">
       {/* Painel da marca — só a partir de lg, para não competir com o formulário no mobile. */}
       <div className="hidden lg:flex lg:w-1/2 bg-brand-900 flex-col justify-between p-12">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-brand-300 flex items-center justify-center shrink-0">
-            <span className="text-brand-900 font-poppins font-semibold">FP</span>
-          </div>
-          <span className="font-poppins font-medium text-white text-lg">HFC Hub</span>
+        <div className="flex items-center gap-3">
+          <Logo tone="light" size="md" className="h-12 w-12" />
+          <span className="font-poppins font-medium text-white text-lg">Hub</span>
         </div>
 
         <div className="max-w-md">
@@ -26,7 +26,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
-        <div className="w-full max-w-sm">{children}</div>
+        <div className="w-full max-w-sm">
+          {/* Abaixo de lg o painel da marca some — a marca vem para cá. */}
+          <Logo size="sm" className="h-12 w-12 mb-6 lg:hidden" />
+          {children}
+        </div>
       </div>
     </div>
   );

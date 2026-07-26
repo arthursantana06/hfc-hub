@@ -16,30 +16,32 @@ import {
   CalendarDays,
   ArrowLeft
 } from "lucide-react";
+import { Page } from "@/components/layout/Page";
 
 export default function Dashboard() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
-  const [currentMonth, setCurrentMonth] = useState("Julho 2026");
+  // Mês fixo enquanto a agenda não vem do banco (Fase 4).
+  const currentMonth = "Julho 2026";
 
   return (
     <>
-      {/* Área Principal */}
-      <main className="flex-1 p-8 overflow-y-auto">
-        <header className="flex justify-between items-center mb-8">
-          <h1 className="font-poppins font-medium text-3xl text-brand-950">Visão Geral</h1>
-          <div className="flex items-center gap-6">
+      <Page
+        title="Visão Geral"
+        subtitle="O retrato da consultoria hoje."
+        actions={
+          <>
             <div className="relative">
               <Search className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input type="text" placeholder="Buscar cliente..." className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent text-slate-800 placeholder-slate-400 w-64 shadow-sm font-inter" />
             </div>
-            <button className="relative p-2 text-slate-400 hover:text-brand-950 transition-colors">
+            <button className="relative p-2 text-slate-400 hover:text-brand-950 transition-colors cursor-pointer" aria-label="Notificações">
               <Bell className="w-6 h-6" />
               <span className="absolute top-1 right-1.5 w-2 h-2 bg-brand-600 rounded-full"></span>
             </button>
-          </div>
-        </header>
-
+          </>
+        }
+      >
         {/* ESTRUTURA DO GRID */}
         <div className="flex flex-col gap-6">
           {/* LINHA 1: KPIs */}
@@ -128,7 +130,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      </main>
+      </Page>
 
       {/* MODAL DO CALENDÁRIO */}
       {isCalendarOpen && (
@@ -167,7 +169,7 @@ export default function Dashboard() {
                     const isToday = day === 10;
                     const isSelected = day === selectedDate;
 
-                    let events = [];
+                    const events = [];
                     if (day === 3) events.push({ time: "09:00", name: "Ana Beatriz" });
                     if (day === 10) {
                       events.push({ time: "10:00", name: "Carlos" });

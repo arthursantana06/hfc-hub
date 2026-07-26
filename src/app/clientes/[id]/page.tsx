@@ -7,7 +7,7 @@ export default function ClientDashboard() {
       {/* Header */}
       <header className="p-8 pb-6 shrink-0 flex justify-between items-end border-b border-slate-200/60 bg-white shadow-sm z-0">
         <div>
-          <h1 className="font-poppins font-semibold text-3xl text-brand-950">Resumo do Planejamento</h1>
+          <h1 className="font-poppins font-medium text-2xl text-brand-950">Resumo do Planejamento</h1>
         </div>
         <div className="text-sm text-slate-500 font-medium">
           Última atualização: 13 de Julho, 2026

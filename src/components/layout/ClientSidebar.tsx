@@ -4,14 +4,23 @@ import Link from "next/link";
 import { ArrowLeft, LayoutDashboard, Compass, Target, Calculator, Download } from "lucide-react";
 import type { Client } from "@/lib/types";
 import { SideNavLink } from "./SideNavLink";
+import { Logo } from "./Logo";
 
 export function ClientSidebar({ client }: { client: Client }) {
   return (
     <aside className="w-64 bg-brand-900 flex flex-col shrink-0 shadow-lg z-10">
-      <div className="p-6 pb-2">
-        <Link href="/clientes" className="flex items-center gap-2 text-sm text-brand-300 hover:text-white mb-8 transition-colors">
+      <Link
+        href="/"
+        className="shrink-0 flex items-center gap-3 px-6 py-5 border-b border-white/10 hover:bg-brand-600/20 transition-colors"
+      >
+        <Logo tone="light" size="sm" className="h-9 w-9" />
+        <span className="font-poppins font-medium text-white text-lg">Hub</span>
+      </Link>
+
+      <div className="p-6 pb-2 shrink-0">
+        <Link href="/clientes" className="flex items-center gap-2 text-sm text-brand-300 hover:text-white mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4"/>
-          Voltar para Hub
+          Voltar para o Hub de Clientes
         </Link>
 
         <div className="flex flex-col items-center text-center">
@@ -29,7 +38,7 @@ export function ClientSidebar({ client }: { client: Client }) {
         <SideNavLink href={`/clientes/${client.id}`} icon={LayoutDashboard} label="Dashboard Resumo" exact />
         <SideNavLink href={`/clientes/${client.id}/ponto-de-partida`} icon={Compass} label="Ponto de Partida" />
         <SideNavLink href={`/clientes/${client.id}/diagnostico`} icon={Target} label="Diagnóstico & Metas" />
-        <SideNavLink href="#" icon={Calculator} label="Simuladores" />
+        <SideNavLink href="/simuladores" icon={Calculator} label="Simuladores" soon />
       </nav>
 
       <div className="p-6 mt-auto">

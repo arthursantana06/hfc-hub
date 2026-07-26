@@ -34,7 +34,7 @@ export default function Diagnostico() {
       {/* Header */}
         <header className="p-8 pb-6 shrink-0 bg-white border-b border-slate-200 shadow-sm z-0 flex flex-col">
           <div className="flex justify-between items-center w-full">
-            <h1 className="font-poppins font-semibold text-3xl text-brand-950">Diagnóstico Mensal</h1>
+            <h1 className="font-poppins font-medium text-2xl text-brand-950">Diagnóstico Mensal</h1>
             <select 
               defaultValue="marco_2026"
               className="border border-slate-300 rounded-lg py-2 px-4 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all bg-white shadow-sm font-medium text-brand-950"
