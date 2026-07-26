@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+/*
+ * O shell do app (hub e páginas de cliente) é de tela cheia com scroll só
+ * dentro de painéis internos (ver Page.tsx). Sem isso, qualquer 1px de
+ * estouro em qualquer tela faz a JANELA inteira rolar — cabeçalho e rodapé
+ * saem do lugar junto — em vez de só o painel de conteúdo.
+ */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 @theme inline {
   --font-inter: var(--font-inter), sans-serif;
   --font-poppins: var(--font-poppins), sans-serif;

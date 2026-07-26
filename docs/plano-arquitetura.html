@@ -342,14 +342,45 @@
     <div class="meta-row">
       <div class="meta"><span class="k">Produto</span><span class="v">HFC Hub</span></div>
       <div class="meta"><span class="k">Documento</span><span class="v">Plano mestre v1</span></div>
-      <div class="meta"><span class="k">Atualizado</span><span class="v">24 jul 2026</span></div>
+      <div class="meta"><span class="k">Atualizado</span><span class="v">26 jul 2026</span></div>
       <div class="meta"><span class="k">Stack</span><span class="v">Next.js 16 · Supabase</span></div>
-      <div class="meta"><span class="k">Fase atual</span><span class="v"><span class="dot" style="background:var(--good)"></span>Fase 0 — Fundações</span></div>
+      <div class="meta"><span class="k">Fase atual</span><span class="v"><span class="dot" style="background:var(--good)"></span>Fase 0 concluída</span></div>
     </div>
   </div>
 </header>
 
 <div class="wrap">
+
+  <!-- PROGRESSO -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">00 · Progresso</span>
+      <h2>O que já está de pé</h2>
+      <p>Fase 0 aplicada e verificada em produção, mais design e navegação já reorganizados — antes de abrir a Fase 1 (Planejamento / Raio-X).</p>
+    </div>
+    <div class="decisions">
+      <div class="decision">
+        <span class="k">Backend &amp; dados</span>
+        <span class="v">Supabase aplicado e verificado</span>
+        <p class="note">23 tabelas, RLS em todas, 93 políticas em <code>public</code> + 4 no bucket de relatórios. 27/27 asserções de RLS passando. <code>org_id</code> multi-tenant desde o dia 1.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Autenticação</span>
+        <span class="v">Login, cadastro e bootstrap do admin</span>
+        <p class="note">Login e logout sólidos, cadastro por convite (só e-mails liberados criam conta) e bootstrap do primeiro admin. O papel <code>assistant</code> foi aposentado.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Configurações</span>
+        <span class="v">Perfil, usuários e convites</span>
+        <p class="note">Edição de perfil, gestão de papéis por administrador e painel de convites. A edição dos dados da organização foi removida — não fazia sentido no momento.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Design &amp; navegação</span>
+        <span class="v">Casca unificada, abas reorganizadas</span>
+        <p class="note">Cabeçalho e rodapé fixos com o scroll contido no lugar certo, marca com selo "HFC Consultoria". Abas redesenhadas em cima do domínio real do banco — Clientes, Agenda, Investimentos, Relatórios, Indicações &amp; Recompensas — todas clicáveis, com conteúdo "Em breve" onde ainda não há dado real por trás.</p>
+      </div>
+    </div>
+  </section>
 
   <!-- VISÃO -->
   <section>
@@ -425,7 +456,7 @@
     </div>
     <div class="modules">
       <div class="mod" style="--mc:var(--m-crm)">
-        <div class="mhead"><h3>CRM — Núcleo</h3><span class="pill next">Fase 1</span></div>
+        <div class="mhead"><h3>CRM — Núcleo</h3><span class="pill later">Fase 2</span></div>
         <span class="tag">tronco · logística da consultoria</span>
         <p>Carteira de clientes, agenda, reuniões, tarefas e metas da consultoria. É a porta de entrada e o eixo de tudo.</p>
         <ul>
@@ -855,31 +886,31 @@
     <div class="sec-head">
       <span class="eyebrow">07 · Roadmap</span>
       <h2>Fases de construção</h2>
-      <p>Sequência pragmática: fundações sólidas primeiro, depois o Raio-X (MVP), relatórios, CRM logístico e, por fim, investimentos e Open Finance.</p>
+      <p>Sequência pragmática: fundações sólidas primeiro, depois o Raio-X (MVP), CRM núcleo mínimo, relatórios, CRM logístico e, por fim, investimentos e Open Finance.</p>
     </div>
     <div class="roadmap">
       <div class="phase">
         <div class="pnum">0<small>Fundações</small></div>
         <div class="pbody">
-          <h3>Fundações &amp; identidade <span class="pill now">Em andamento</span></h3>
+          <h3>Fundações &amp; identidade <span class="pill now">Concluída</span></h3>
           <p>Base técnica e visual antes de qualquer feature: projeto Supabase, schema com <code>org_id</code> + RLS, autenticação com papéis, aba de Settings redesenhada e o design system da interface.</p>
           <div class="chips"><span class="chip">Supabase setup</span><span class="chip">Schema + RLS</span><span class="chip">Auth (papéis)</span><span class="chip">Settings</span><span class="chip">Design system</span><span class="chip">Shell/layout</span></div>
         </div>
       </div>
       <div class="phase">
-        <div class="pnum">1<small>CRM</small></div>
+        <div class="pnum">1<small>MVP</small></div>
         <div class="pbody">
-          <h3>CRM núcleo mínimo <span class="pill next">A seguir</span></h3>
-          <p>Trocar os clientes mock por dados reais: CRUD de clientes, atribuição a planejadores, busca e a ficha do cliente conectada ao banco.</p>
-          <div class="chips"><span class="chip">Client CRUD</span><span class="chip">Lista + busca</span><span class="chip">Ficha do cliente</span><span class="chip">Atribuição planner</span></div>
+          <h3>Planejamento / Raio-X real <span class="pill next">A seguir · Marco MVP</span></h3>
+          <p>Aprofundar o “Ponto de Partida”: fluxo de caixa, orçamento (ideal × real), patrimônio, objetivos com prioridade em estrelas e linha do tempo — tudo por cliente, com registro mensal.</p>
+          <div class="chips"><span class="chip">Fluxo de caixa</span><span class="chip">Orçamento</span><span class="chip">Patrimônio</span><span class="chip">Objetivos ★</span><span class="chip">Linha do tempo</span><span class="chip">Registro mensal</span></div>
         </div>
       </div>
       <div class="phase">
-        <div class="pnum">2<small>MVP</small></div>
+        <div class="pnum">2<small>CRM</small></div>
         <div class="pbody">
-          <h3>Planejamento / Raio-X real <span class="pill next">Marco MVP</span></h3>
-          <p>Aprofundar o “Ponto de Partida”: fluxo de caixa, orçamento (ideal × real), patrimônio, objetivos com prioridade em estrelas e linha do tempo — tudo por cliente, com registro mensal.</p>
-          <div class="chips"><span class="chip">Fluxo de caixa</span><span class="chip">Orçamento</span><span class="chip">Patrimônio</span><span class="chip">Objetivos ★</span><span class="chip">Linha do tempo</span><span class="chip">Registro mensal</span></div>
+          <h3>CRM núcleo mínimo <span class="pill later">Planejado</span></h3>
+          <p>Trocar os clientes mock por dados reais: CRUD de clientes, atribuição a planejadores, busca e a ficha do cliente conectada ao banco.</p>
+          <div class="chips"><span class="chip">Client CRUD</span><span class="chip">Lista + busca</span><span class="chip">Ficha do cliente</span><span class="chip">Atribuição planner</span></div>
         </div>
       </div>
       <div class="phase">
@@ -965,7 +996,7 @@
   </section>
 
   <footer>
-    HFC Hub · Plano mestre v1 · 24 jul 2026 — documento vivo de acompanhamento do projeto.
+    HFC Hub · Plano mestre v1 · 26 jul 2026 — documento vivo de acompanhamento do projeto.
   </footer>
 
 </div>

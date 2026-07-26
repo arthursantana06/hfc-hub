@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import {
-  getCurrentUser,
-  getOrganization,
-  listInvites,
-  listOrgUsers,
-} from "@/lib/dal";
+import { getCurrentUser, listInvites, listOrgUsers } from "@/lib/dal";
 import { ProfileForm } from "@/components/settings/ProfileForm";
-import { OrganizationForm } from "@/components/settings/OrganizationForm";
 import { UsersTable } from "@/components/settings/UsersTable";
 import { InvitesPanel } from "@/components/settings/InvitesPanel";
 import { Page } from "@/components/layout/Page";
@@ -37,9 +31,8 @@ function Card({
 }
 
 export default async function ConfiguracoesPage() {
-  const [user, org, users, invites] = await Promise.all([
+  const [user, users, invites] = await Promise.all([
     getCurrentUser(),
-    getOrganization(),
     listOrgUsers(),
     listInvites(), // a RLS devolve vazio para quem não é admin
   ]);
@@ -49,7 +42,7 @@ export default async function ConfiguracoesPage() {
   return (
     <Page
       title="Configurações"
-      subtitle="Seu perfil, os dados da consultoria e quem tem acesso."
+      subtitle="Seu perfil e quem tem acesso."
     >
       <div className="flex flex-col gap-6 max-w-3xl">
         <Card
@@ -73,40 +66,6 @@ export default async function ConfiguracoesPage() {
               </div>
             </dl>
           </div>
-        </Card>
-
-        <Card
-          title="Organização"
-          description={
-            isAdmin
-              ? "Dados da consultoria. Só administradores podem alterar."
-              : "Dados da consultoria. Alteração restrita a administradores."
-          }
-        >
-          {org ? (
-            isAdmin ? (
-              <OrganizationForm name={org.name} plano={org.plano} />
-            ) : (
-              <dl className="grid grid-cols-2 gap-4 max-w-md">
-                <div>
-                  <dt className="font-inter text-xs text-slate-500">Nome</dt>
-                  <dd className="font-inter text-sm text-slate-800 mt-0.5">
-                    {org.name}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-inter text-xs text-slate-500">Plano</dt>
-                  <dd className="font-inter text-sm text-slate-800 mt-0.5">
-                    {org.plano ?? "—"}
-                  </dd>
-                </div>
-              </dl>
-            )
-          ) : (
-            <p className="font-inter text-sm text-slate-500">
-              Organização não encontrada.
-            </p>
-          )}
         </Card>
 
         {isAdmin && (

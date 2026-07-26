@@ -2,7 +2,7 @@ import { Logo } from "@/components/layout/Logo";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen w-full flex">
+    <div className="h-screen w-full flex overflow-y-auto">
       {/* Painel da marca — só a partir de lg, para não competir com o formulário no mobile. */}
       <div className="hidden lg:flex lg:w-1/2 bg-brand-900 flex-col justify-between p-12">
         <div className="flex items-center gap-3">

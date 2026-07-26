@@ -31,30 +31,6 @@ export async function updateProfile(
   return { success: "Perfil atualizado." };
 }
 
-/** Dados da organização — só admin (a RLS org_admin_write também barra). */
-export async function updateOrganization(
-  _state: SettingsFormState,
-  formData: FormData,
-): Promise<SettingsFormState> {
-  const admin = await requireRole(["admin"]);
-
-  const name = String(formData.get("name") ?? "").trim();
-  if (name.length < 2) return { error: "Informe o nome da organização." };
-
-  const planoRaw = String(formData.get("plano") ?? "").trim();
-
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("organization")
-    .update({ name, plano: planoRaw || null })
-    .eq("id", admin.org_id);
-
-  if (error) return { error: "Não foi possível salvar a organização." };
-
-  revalidatePath("/configuracoes");
-  return { success: "Organização atualizada." };
-}
-
 /** Troca o papel de um membro da org — só admin. */
 export async function updateUserRole(
   _state: SettingsFormState,

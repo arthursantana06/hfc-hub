@@ -112,7 +112,7 @@ Abra [http://localhost:3000](http://localhost:3000). O painel de clientes está 
 
 - `src/app/` — rotas e layouts (App Router).
   - `(hub)/` — casca do hub e página inicial.
-  - `clientes/` — Hub de Clientes (lista).
+  - `clientes/` — Clientes (lista/diretório).
   - `clientes/[id]/` — painel individual do cliente.
     - `ponto-de-partida/` — Raio-X: visão geral, fluxo de caixa, patrimônio, objetivos, linha do tempo.
 - `src/components/` — layout (sidebars, navegação) e UI.

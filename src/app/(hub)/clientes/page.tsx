@@ -6,7 +6,7 @@ import { Page } from "@/components/layout/Page";
 export default function ClientHub() {
   return (
     <Page
-      title="Hub de Clientes"
+      title="Clientes"
       subtitle={`${clients.length} clientes na carteira`}
       actions={
         <>

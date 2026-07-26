@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X, Home, TrendingUp, Wallet } from "lucide-react";
+import { Plus, X, Home, TrendingUp, Wallet, ExternalLink } from "lucide-react";
+
+const ANALISE_INVESTIMENTO_URL = "https://rendafixa-seven.vercel.app/";
 
 export default function Patrimonio() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,8 +65,19 @@ export default function Patrimonio() {
               </div>
               <h2 className="font-poppins text-lg text-brand-950 font-medium">Investimentos</h2>
             </div>
-            <div className="font-poppins text-xl font-semibold text-brand-600">
-              R$ 320.000,00
+            <div className="flex items-center gap-4">
+              <div className="font-poppins text-xl font-semibold text-brand-600">
+                R$ 320.000,00
+              </div>
+              <a
+                href={ANALISE_INVESTIMENTO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-brand-600 hover:bg-brand-300/10 hover:border-brand-300 transition-colors font-inter text-xs font-medium shrink-0"
+              >
+                Abrir Análise
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </div>
           </div>
           <div className="border-b border-slate-100 w-full mb-4"></div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, LayoutDashboard, Compass, Target, Calculator, Download } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Compass, Target, Gift, FileText, Calculator } from "lucide-react";
 import type { Client } from "@/lib/types";
 import { SideNavLink } from "./SideNavLink";
 import { Logo } from "./Logo";
@@ -11,16 +11,23 @@ export function ClientSidebar({ client }: { client: Client }) {
     <aside className="w-64 bg-brand-900 flex flex-col shrink-0 shadow-lg z-10">
       <Link
         href="/"
-        className="shrink-0 flex items-center gap-3 px-6 py-5 border-b border-white/10 hover:bg-brand-600/20 transition-colors"
+        className="group shrink-0 flex items-center gap-3 px-6 py-5 border-b border-white/10 hover:bg-brand-600/20 transition-colors"
       >
-        <Logo tone="light" size="sm" className="h-9 w-9" />
-        <span className="font-poppins font-medium text-white text-lg">Hub</span>
+        <div className="flex items-center justify-center h-11 w-11 rounded-xl bg-white/10 ring-1 ring-inset ring-white/10 group-hover:bg-white/15 group-hover:ring-white/20 transition-colors">
+          <Logo tone="light" size="sm" className="h-7 w-7" />
+        </div>
+        <div className="flex flex-col leading-tight">
+          <span className="font-poppins font-medium text-white text-lg">Hub</span>
+          <span className="font-inter text-[10px] uppercase tracking-wider text-brand-300/70">
+            HFC Consultoria
+          </span>
+        </div>
       </Link>
 
       <div className="p-6 pb-2 shrink-0">
         <Link href="/clientes" className="flex items-center gap-2 text-sm text-brand-300 hover:text-white mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4"/>
-          Voltar para o Hub de Clientes
+          Voltar para Clientes
         </Link>
 
         <div className="flex flex-col items-center text-center">
@@ -38,15 +45,15 @@ export function ClientSidebar({ client }: { client: Client }) {
         <SideNavLink href={`/clientes/${client.id}`} icon={LayoutDashboard} label="Dashboard Resumo" exact />
         <SideNavLink href={`/clientes/${client.id}/ponto-de-partida`} icon={Compass} label="Ponto de Partida" />
         <SideNavLink href={`/clientes/${client.id}/diagnostico`} icon={Target} label="Diagnóstico & Metas" />
-        <SideNavLink href="/simuladores" icon={Calculator} label="Simuladores" soon />
+        <SideNavLink href={`/clientes/${client.id}/indicacoes`} icon={Gift} label="Indicações & Recompensas" soon />
+        <SideNavLink href={`/clientes/${client.id}/relatorios`} icon={FileText} label="Relatórios" soon />
+        <SideNavLink
+          href={`/clientes/${client.id}/simuladores`}
+          icon={Calculator}
+          label="Simuladores"
+          soon
+        />
       </nav>
-
-      <div className="p-6 mt-auto">
-        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-medium text-sm">
-          <Download className="w-4 h-4" />
-          Gerar Relatório PDF
-        </button>
-      </div>
     </aside>
   );
 }

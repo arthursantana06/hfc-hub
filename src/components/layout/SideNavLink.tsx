@@ -9,7 +9,7 @@ interface SideNavLinkProps {
   icon: LucideIcon;
   label: string;
   exact?: boolean;
-  /** Item previsto mas ainda não implementado: aparece apagado e não navega. */
+  /** Área ainda em construção: navega normalmente, só ganha um selo "Em breve". */
   soon?: boolean;
 }
 
@@ -25,23 +25,6 @@ export function SideNavLink({
   const pathname = usePathname();
   const isActive = exact ? pathname === href : pathname.startsWith(href);
 
-  // Sem isso, "Investimentos" era um href="#" que parecia clicável e não ia a
-  // lugar nenhum — o usuário clicava e concluía que estava quebrado.
-  if (soon) {
-    return (
-      <span
-        aria-disabled="true"
-        className={`${BASE} border-transparent text-brand-300/40 cursor-not-allowed select-none`}
-      >
-        <Icon className="w-5 h-5" />
-        <span className="font-inter text-sm">{label}</span>
-        <span className="ml-auto font-inter text-[10px] uppercase tracking-wide text-brand-300/40">
-          Em breve
-        </span>
-      </span>
-    );
-  }
-
   return (
     <Link
       href={href}
@@ -56,6 +39,11 @@ export function SideNavLink({
       <span className={`font-inter text-sm ${isActive ? "font-medium" : ""}`}>
         {label}
       </span>
+      {soon && (
+        <span className="ml-auto shrink-0 font-inter text-[10px] uppercase tracking-wide opacity-60">
+          Em breve
+        </span>
+      )}
     </Link>
   );
 }
