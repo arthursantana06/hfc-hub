@@ -71,6 +71,25 @@ export const listOrgUsers = cache(async (): Promise<AppUser[]> => {
   return data ?? [];
 });
 
+/** Subconjunto de `signup_invite` exibido em Configurações. */
+export type SignupInvite = Pick<
+  Tables<"signup_invite">,
+  "id" | "email" | "role" | "usado_em" | "created_at"
+>;
+
+/** Convites de cadastro da organização. A RLS só devolve linhas para admin. */
+export const listInvites = cache(async (): Promise<SignupInvite[]> => {
+  await verifySession();
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("signup_invite")
+    .select("id, email, role, usado_em, created_at")
+    .order("created_at", { ascending: false });
+
+  return data ?? [];
+});
+
 /** Garante que o usuário tem um dos papéis exigidos; senão, redireciona. */
 export const requireRole = cache(async (roles: UserRole[]) => {
   const user = await getCurrentUser();

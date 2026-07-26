@@ -14,8 +14,8 @@ export default function SignupPage() {
           Criar conta
         </h1>
         <p className="font-inter text-sm text-slate-500 mt-2">
-          Novas contas entram como <strong className="font-medium">planejador</strong>;
-          um administrador ajusta o papel depois.
+          Use o e-mail que o administrador liberou. O papel já vem definido no
+          convite.
         </p>
       </div>
 

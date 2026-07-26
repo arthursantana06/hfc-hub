@@ -71,25 +71,34 @@ export async function signup(
   const errors = validate({ nome, email, password });
   if (errors) return { errors, values };
 
-  const orgId = process.env.NEXT_PUBLIC_DEFAULT_ORG_ID;
-  if (!orgId) {
-    return {
-      message:
-        "Organização padrão não configurada (NEXT_PUBLIC_DEFAULT_ORG_ID). Fale com o administrador.",
-      values,
-    };
-  }
-
   const supabase = await createClient();
-  // `org_id` e `nome` alimentam o trigger handle_new_user(), que cria o app_user.
-  // O papel NÃO é enviado: o trigger fixa `planner`; promoção é feita por um admin.
+  // Só `nome` vai no metadata. Organização e papel saem do convite que o admin
+  // liberou — ver handle_new_user() na migração 0010. Sem convite ativo, o
+  // trigger aborta o cadastro.
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { org_id: orgId, nome } },
+    options: { data: { nome } },
   });
 
   if (error) {
+    console.error("[signup]", error.message);
+
+    if (/already registered/i.test(error.message)) {
+      return { message: "Este e-mail já tem conta. Tente entrar.", values };
+    }
+
+    // handle_new_user() aborta com P0001 e o GoTrue repassa a mensagem
+    // ("signup sem convite ativo para ..."); `database error` fica de rede de
+    // segurança caso uma versão futura mascare o texto do trigger.
+    if (/sem convite|database error/i.test(error.message)) {
+      return {
+        message:
+          "Este e-mail não está liberado para criar conta. Peça um convite ao administrador.",
+        values,
+      };
+    }
+
     return {
       message: "Não foi possível criar a conta. Tente novamente.",
       values,

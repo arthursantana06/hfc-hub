@@ -952,6 +952,54 @@ export type Database = {
           },
         ]
       }
+      signup_invite: {
+        Row: {
+          convidado_por: string | null
+          created_at: string
+          email: string
+          id: string
+          org_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          usado_em: string | null
+          usado_por: string | null
+        }
+        Insert: {
+          convidado_por?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          org_id: string
+          role?: Database["public"]["Enums"]["user_role"]
+          usado_em?: string | null
+          usado_por?: string | null
+        }
+        Update: {
+          convidado_por?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          org_id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          usado_em?: string | null
+          usado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signup_invite_convidado_por_fkey"
+            columns: ["convidado_por"]
+            isOneToOne: false
+            referencedRelation: "app_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signup_invite_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organization"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timeline_event: {
         Row: {
           client_id: string

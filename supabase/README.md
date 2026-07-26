@@ -23,6 +23,7 @@ tenta reaplicar tudo.
 | `20260725150257_0007_perf_indexes_and_policy_cleanup.sql` | Índices em `org_id` (toda RLS filtra por ele), `(select auth.uid())` e troca de `for all` por ins/upd/del. |
 | `20260725160000_0008_signup_role_hardening.sql` | `handle_new_user()` para de ler o papel do metadata (escalada para `admin` no signup) e fixa `planner`. |
 | `20260725170000_0009_update_own_profile.sql` | RPC `update_own_profile(nome)`: única escrita em `app_user` liberada a não-admin, e só no campo `nome` da própria linha. |
+| `20260726120000_0010_signup_invite.sql` | Tabela `signup_invite` (admin libera e-mail + papel) e `handle_new_user()` lendo dela. Fecha o signup aberto. |
 
 Estado atual: **23 tabelas**, RLS ativa em todas, **93 políticas** em `public` + 4 no bucket
 `reports`, 1 organização (HFC) e 7 categorias de orçamento no seed.
@@ -56,21 +57,31 @@ supabase db push           # aplica as migrations/ em ordem
 - **assistant** — **somente leitura** (princípio de menor exposição a dados sensíveis).
 - **client** — **sem acesso** nesta fase; as políticas do Portal do Cliente entram numa fase futura.
 
-Novos usuários viram `app_user` automaticamente **se** o signup enviar `org_id` (e opcionalmente
-`nome`) em `raw_user_meta_data` — ver `handle_new_user()`, redefinido em `0008`.
-Signup sem `org_id` **não** cria perfil, e um usuário sem perfil não enxerga nada (testado).
+### Cadastro é por convite (`0010`)
+
+Um admin libera o e-mail em **Configurações → Convites**, já escolhendo o papel. Isso grava
+uma linha em `signup_invite`, e é ela — não o cliente — que define **organização e papel**:
+
+1. A pessoa se cadastra em `/signup` com o e-mail liberado.
+2. `handle_new_user()` procura convite ativo por `lower(email)`.
+3. Sem convite, a função aborta com `P0001` — o insert em `auth.users` é desfeito, então
+   nem usuário órfão sobra. O app traduz o erro para "peça um convite ao administrador".
+4. Com convite, cria o `app_user` com `org_id`/`role` do convite e marca `usado_em`.
+
+`raw_user_meta_data` só é lido para o `nome`. Testado: convite com caixa diferente casa, e
+metadata forjando `role: admin` + outro `org_id` é ignorado.
+
+O **primeiro admin** não tem quem o convide — nasce do script
+[`scripts/bootstrap_admin.sql`](scripts/bootstrap_admin.sql), que cria o convite de admin e
+o usuário do Auth na mão. É o único cadastro manual do sistema.
 
 Escrita em `app_user` é só de admin. Para o usuário corrigir o próprio nome na tela de
 Configurações existe a RPC `update_own_profile()` (`0009`) — ela toca apenas `nome`, apenas
 na linha de `auth.uid()`, então não dá para escalar papel nem trocar de organização por ali.
 
-O **papel não vem do metadata**: todo cadastro nasce `planner` e a promoção é ato de um admin.
-Até o `0008`, `role` era lido de `raw_user_meta_data` — como esse campo é escolhido por quem
-chama `/auth/v1/signup`, qualquer pessoa podia se cadastrar direto como `admin`.
-
-⚠️ **Em aberto:** `org_id` ainda vem do metadata, então um cadastro feito fora do app pode
-entrar em qualquer organização. O fechamento correto é signup por convite; enquanto isso,
-manter *Allow new users to sign up* **desligado** no painel em produção.
+Histórico: até o `0008` o `role` vinha do metadata (qualquer um se cadastrava como `admin`);
+até o `0010`, o `org_id` também (dava para entrar em qualquer organização). Os dois caminhos
+estão fechados — o cliente não escolhe mais nada.
 
 ## Storage
 
@@ -105,6 +116,6 @@ num banco ainda sem tráfego. Reavaliar quando houver uso real.
 ## Ainda não coberto (próximas fases)
 
 - Políticas de RLS do **Portal do Cliente** (papel `client`).
-- Signup **por convite** (hoje `org_id` vem do metadata — ver aviso acima).
 - Recuperação de senha (`/auth/recover`) e reenvio do link de confirmação.
+- E-mail de convite (hoje o admin libera o e-mail e avisa a pessoa por fora).
 - Reconciliação `report.pdf_url` ↔ objetos no bucket `reports`.

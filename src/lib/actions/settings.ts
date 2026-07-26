@@ -3,12 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, requireRole, type UserRole } from "@/lib/dal";
+import { ASSIGNABLE_ROLES } from "@/lib/roles";
 
 export type SettingsFormState =
   | { error?: string; success?: string }
   | undefined;
 
 const ROLES: UserRole[] = ["admin", "planner", "assistant", "client"];
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Nome do próprio perfil. Vai pela RPC update_own_profile (ver migração 0009). */
 export async function updateProfile(
@@ -85,4 +88,61 @@ export async function updateUserRole(
 
   revalidatePath("/configuracoes");
   return { success: "Papel atualizado." };
+}
+
+/** Libera um e-mail para criar conta, já com o papel definido — só admin. */
+export async function createInvite(
+  _state: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
+  const admin = await requireRole(["admin"]);
+
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  const role = String(formData.get("role") ?? "") as UserRole;
+
+  if (!EMAIL_RE.test(email)) return { error: "Informe um e-mail válido." };
+  if (!ASSIGNABLE_ROLES.includes(role)) return { error: "Papel inválido." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("signup_invite").insert({
+    org_id: admin.org_id,
+    email,
+    role,
+    convidado_por: admin.id,
+  });
+
+  if (error) {
+    // Índice único em lower(email): o e-mail já foi liberado antes.
+    if (error.code === "23505") {
+      return { error: "Este e-mail já tem convite." };
+    }
+    return { error: "Não foi possível criar o convite." };
+  }
+
+  revalidatePath("/configuracoes");
+  return { success: `Convite liberado para ${email}.` };
+}
+
+/** Revoga um convite ainda não usado — só admin. */
+export async function deleteInvite(
+  _state: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
+  const admin = await requireRole(["admin"]);
+
+  const id = String(formData.get("id") ?? "");
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("signup_invite")
+    .delete()
+    .eq("id", id)
+    .eq("org_id", admin.org_id);
+
+  if (error) return { error: "Não foi possível remover o convite." };
+
+  revalidatePath("/configuracoes");
+  return { success: "Convite removido." };
 }

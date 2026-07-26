@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
-import { getCurrentUser, getOrganization, listOrgUsers } from "@/lib/dal";
+import {
+  getCurrentUser,
+  getOrganization,
+  listInvites,
+  listOrgUsers,
+} from "@/lib/dal";
 import { ProfileForm } from "@/components/settings/ProfileForm";
 import { OrganizationForm } from "@/components/settings/OrganizationForm";
 import { UsersTable } from "@/components/settings/UsersTable";
+import { InvitesPanel } from "@/components/settings/InvitesPanel";
 import { ROLE_LABEL } from "@/lib/roles";
 
 export const metadata: Metadata = {
@@ -30,10 +36,11 @@ function Card({
 }
 
 export default async function ConfiguracoesPage() {
-  const [user, org, users] = await Promise.all([
+  const [user, org, users, invites] = await Promise.all([
     getCurrentUser(),
     getOrganization(),
     listOrgUsers(),
+    listInvites(), // a RLS devolve vazio para quem não é admin
   ]);
 
   const isAdmin = user?.role === "admin";
@@ -103,6 +110,15 @@ export default async function ConfiguracoesPage() {
             </p>
           )}
         </Card>
+
+        {isAdmin && (
+          <Card
+            title="Convites"
+            description="Só e-mails desta lista conseguem criar conta. O papel é definido aqui, na liberação."
+          >
+            <InvitesPanel invites={invites} />
+          </Card>
+        )}
 
         <Card
           title="Usuários"
