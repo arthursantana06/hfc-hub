@@ -18,8 +18,16 @@ insert into public.organization (id, name) values
   ('00000000-0000-4000-8000-0000000000aa','Org A'),
   ('00000000-0000-4000-8000-0000000000bb','Org B');
 
--- Sem `raw_user_meta_data`, então o trigger on_auth_user_created NÃO cria perfil
--- (é justamente o que o primeiro caso verifica). Os perfis vão na mão abaixo.
+-- A partir do 0010 quem cria o perfil é handle_new_user(), lendo o convite.
+-- Todo auth.users precisa de convite ativo: sem ele a função aborta o insert.
+insert into public.signup_invite (org_id, email, role) values
+  ('00000000-0000-4000-8000-0000000000aa','planner.a@test.local','planner'),
+  ('00000000-0000-4000-8000-0000000000aa','assist.a@test.local','planner'),
+  ('00000000-0000-4000-8000-0000000000bb','planner.b@test.local','planner'),
+  ('00000000-0000-4000-8000-0000000000aa','admin.a@test.local','admin'),
+  ('00000000-0000-4000-8000-0000000000aa','novo@test.local','planner'),
+  ('00000000-0000-4000-8000-0000000000aa','x@test.local','planner');
+
 insert into auth.users (id, instance_id, aud, role, email) values
   ('11111111-1111-4111-8111-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','planner.a@test.local'),
   ('11111111-1111-4111-8111-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','assist.a@test.local'),
@@ -28,11 +36,16 @@ insert into auth.users (id, instance_id, aud, role, email) values
   ('11111111-1111-4111-8111-000000000005','00000000-0000-0000-0000-000000000000','authenticated','authenticated','novo@test.local'),
   ('11111111-1111-4111-8111-000000000006','00000000-0000-0000-0000-000000000000','authenticated','authenticated','x@test.local');
 
-insert into public.app_user (id, org_id, nome, email, role) values
-  ('11111111-1111-4111-8111-000000000001','00000000-0000-4000-8000-0000000000aa','Planner A','planner.a@test.local','planner'),
-  ('11111111-1111-4111-8111-000000000002','00000000-0000-4000-8000-0000000000aa','Assist A','assist.a@test.local','assistant'),
-  ('11111111-1111-4111-8111-000000000003','00000000-0000-4000-8000-0000000000bb','Planner B','planner.b@test.local','planner'),
-  ('11111111-1111-4111-8111-000000000004','00000000-0000-4000-8000-0000000000aa','Admin A','admin.a@test.local','admin');
+-- Nomes legíveis e o papel legado do 002 (aposentado no 0011 — guarda de regressão).
+update public.app_user set nome = 'Planner A' where id = '11111111-1111-4111-8111-000000000001';
+update public.app_user set nome = 'Assist A', role = 'assistant' where id = '11111111-1111-4111-8111-000000000002';
+update public.app_user set nome = 'Planner B' where id = '11111111-1111-4111-8111-000000000003';
+update public.app_user set nome = 'Admin A'   where id = '11111111-1111-4111-8111-000000000004';
+
+-- 005 e 006 ficam com conta no Auth mas SEM perfil — é o estado de quem teve o
+-- app_user removido por um admin, e o que os casos de "sem perfil" exercitam.
+delete from public.app_user
+ where id in ('11111111-1111-4111-8111-000000000005','11111111-1111-4111-8111-000000000006');
 
 insert into public.client (id, org_id, nome) values
   ('22222222-2222-4222-8222-00000000000a','00000000-0000-4000-8000-0000000000aa','Cliente da A'),
@@ -42,9 +55,33 @@ create temp table r (ord serial, teste text, esperado text, obtido text);
 grant all on table r to authenticated, anon;
 grant usage, select on all sequences in schema pg_temp to authenticated, anon;
 
--- Signup sem org_id não deve gerar perfil órfão: só os 4 perfis manuais existem.
+-- O trigger criou perfil para os 6 convidados; 2 foram removidos acima.
+-- Conta só as orgs de fixture: o banco de dev tem usuários reais fora delas.
 insert into r (teste,esperado,obtido)
-select 'trigger nao cria perfil sem org_id','4',count(*)::text from public.app_user;
+select 'trigger cria perfil a partir do convite','4',count(*)::text
+  from public.app_user
+ where org_id in ('00000000-0000-4000-8000-0000000000aa',
+                  '00000000-0000-4000-8000-0000000000bb');
+
+-- Sem convite ativo, o cadastro é abortado — nem usuário no Auth sobra.
+do $t$ begin
+  insert into auth.users (id, instance_id, aud, role, email) values
+    ('11111111-1111-4111-8111-000000000007','00000000-0000-0000-0000-000000000000',
+     'authenticated','authenticated','sem.convite@test.local');
+  insert into r (teste,esperado,obtido) values ('signup sem convite','BLOQUEADO','PASSOU (falha!)');
+exception when others then
+  insert into r (teste,esperado,obtido) values ('signup sem convite','BLOQUEADO','BLOQUEADO');
+end $t$;
+
+-- Convite usado não serve de novo (usado_em preenchido pelo trigger).
+do $t$ begin
+  insert into auth.users (id, instance_id, aud, role, email) values
+    ('11111111-1111-4111-8111-000000000008','00000000-0000-0000-0000-000000000000',
+     'authenticated','authenticated','planner.a@test.local');
+  insert into r (teste,esperado,obtido) values ('convite ja usado','BLOQUEADO','PASSOU (falha!)');
+exception when others then
+  insert into r (teste,esperado,obtido) values ('convite ja usado','BLOQUEADO','BLOQUEADO');
+end $t$;
 
 -- ── Planner da Org A ────────────────────────────────────────────
 set local role authenticated;
@@ -114,22 +151,24 @@ exception when others then
 end $t$;
 reset role;
 
--- ── Assistant da Org A: leitura sim, escrita não ────────────────
+-- ── Assistant: papel aposentado no 0011, não é mais staff ───────
+-- Guarda de regressão: se alguém voltar 'assistant' para is_staff(), quebra aqui.
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"11111111-1111-4111-8111-000000000002","role":"authenticated"}';
 
 insert into r (teste,esperado,obtido)
-select 'assistant A le clientes da A','sim',case when count(*)>0 then 'sim' else 'nao' end from public.client;
+select 'assistant nao le clientes','0',count(*)::text from public.client;
 
 do $t$ begin
   insert into public.client (org_id, nome) values ('00000000-0000-4000-8000-0000000000aa','Assistente escreveu');
-  insert into r (teste,esperado,obtido) values ('assistant A tenta inserir','BLOQUEADO','PASSOU (falha!)');
+  insert into r (teste,esperado,obtido) values ('assistant tenta inserir','BLOQUEADO','PASSOU (falha!)');
 exception when others then
-  insert into r (teste,esperado,obtido) values ('assistant A tenta inserir','BLOQUEADO','BLOQUEADO');
+  insert into r (teste,esperado,obtido) values ('assistant tenta inserir','BLOQUEADO','BLOQUEADO');
 end $t$;
 
+-- O próprio perfil ele continua vendo: app_user_select_self não olha papel.
 insert into r (teste,esperado,obtido)
-select 'assistant A le o proprio perfil','sim',
+select 'assistant le o proprio perfil','sim',
   case when exists (select 1 from public.app_user where id='11111111-1111-4111-8111-000000000002')
        then 'sim' else 'nao' end;
 reset role;

@@ -50,8 +50,10 @@ Fornecer um ecossistema completo onde a consultoria possa:
 - **Escopo:** interno à consultoria agora, mas com `org_id` em todas as tabelas desde o dia 1 —
   pronto para virar **SaaS multi-consultoria** sem re-migração.
 - **Backend:** **Supabase** (Postgres + Auth + Storage), com **Row-Level Security** por organização.
-- **Acesso / papéis:** internos — **Admin · Planejador · Assistente**. O **portal do cliente** entra
-  em fase posterior (o papel `client` já é reservado no modelo).
+- **Acesso / papéis:** dois papéis internos — **Admin · Planejador**. O cadastro é **por convite**:
+  o admin libera o e-mail em Configurações já escolhendo o papel, e ninguém de fora cria conta.
+  O **Portal do Cliente** é outra área do produto, com endereço próprio, em fase posterior
+  (o papel `client` já é reservado no modelo).
 - **rendafixa:** integração por **API** (isolada atrás de um adaptador enquanto a API não existe).
 - **Excel:** convive em paralelo; a planilha é o **blueprint do schema** e a migração é feita
   **módulo a módulo**, até cada peça atingir paridade.

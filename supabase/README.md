@@ -24,6 +24,7 @@ tenta reaplicar tudo.
 | `20260725160000_0008_signup_role_hardening.sql` | `handle_new_user()` para de ler o papel do metadata (escalada para `admin` no signup) e fixa `planner`. |
 | `20260725170000_0009_update_own_profile.sql` | RPC `update_own_profile(nome)`: única escrita em `app_user` liberada a não-admin, e só no campo `nome` da própria linha. |
 | `20260726120000_0010_signup_invite.sql` | Tabela `signup_invite` (admin libera e-mail + papel) e `handle_new_user()` lendo dela. Fecha o signup aberto. |
+| `20260726140000_0011_retire_assistant_role.sql` | Aposenta o papel `assistant`: `is_staff()` vira admin+planner e o convite só aceita esses dois. |
 
 Estado atual: **23 tabelas**, RLS ativa em todas, **93 políticas** em `public` + 4 no bucket
 `reports`, 1 organização (HFC) e 7 categorias de orçamento no seed.
@@ -52,10 +53,16 @@ supabase db push           # aplica as migrations/ em ordem
 
 ## Modelo de acesso (Fase 0)
 
-- **admin** — gerencia a organização e os usuários; acesso total à org.
+São **dois** papéis internos — é com eles que a consultoria opera:
+
+- **admin** — gerencia a organização, os convites e os papéis; acesso total à org.
 - **planner** — leitura e escrita dos dados da org (clientes, planejamento, relatórios).
-- **assistant** — **somente leitura** (princípio de menor exposição a dados sensíveis).
-- **client** — **sem acesso** nesta fase; as políticas do Portal do Cliente entram numa fase futura.
+
+- **client** — papel do **Portal do Cliente**, outra área do produto, com endereço e políticas
+  próprias numa fase futura. Reservado no enum, sem acesso a nada daqui.
+- **assistant** — **aposentado** no `0011`. O valor segue no enum porque Postgres não remove
+  valor de enum e recriar o tipo derrubaria políticas e funções que o referenciam; o que vale
+  é que nenhum caminho atribui esse papel e quem o tivesse não é mais staff.
 
 ### Cadastro é por convite (`0010`)
 
@@ -92,13 +99,18 @@ fazer upload, senão o arquivo fica inacessível. Leitura no app: signed URL ger
 
 ## Testes
 
-`tests/rls_smoke.sql` — 20 asserções cobrindo isolamento entre orgs, escrita cross-tenant,
-`assistant` como somente-leitura, `planner` sem poder de admin, usuário sem perfil e acesso
-deslogado. Roda em transação e termina em `ROLLBACK` (não deixa resíduo). Todas devem sair `PASS`.
+`tests/rls_smoke.sql` — **29 asserções** cobrindo isolamento entre orgs, escrita cross-tenant,
+cadastro sem convite, convite já usado, `assistant` sem acesso (regressão do `0011`), `planner`
+sem poder de admin, usuário sem perfil e acesso deslogado. Roda em transação e termina em
+`ROLLBACK` (não deixa resíduo). Todas devem sair `PASS`.
 
-Ao escrever novos casos: `set local request.jwt.claims` **persiste** entre blocos da mesma
-transação. Trocar só o `role` para `anon` sem limpar os claims faz o teste rodar com a
-identidade do usuário anterior — e dá falso resultado.
+Duas armadilhas ao escrever novos casos:
+
+- `set local request.jwt.claims` **persiste** entre blocos da mesma transação. Trocar só o
+  `role` para `anon` sem limpar os claims faz o teste rodar com a identidade do usuário
+  anterior — e dá falso resultado.
+- Contagens globais (`count(*) from app_user`) pegam também os usuários reais do dev.
+  Filtre pelas orgs de fixture.
 
 ## Alertas conhecidos do linter (aceitos)
 

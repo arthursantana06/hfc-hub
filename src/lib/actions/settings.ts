@@ -9,8 +9,6 @@ export type SettingsFormState =
   | { error?: string; success?: string }
   | undefined;
 
-const ROLES: UserRole[] = ["admin", "planner", "assistant", "client"];
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Nome do próprio perfil. Vai pela RPC update_own_profile (ver migração 0009). */
@@ -67,7 +65,7 @@ export async function updateUserRole(
   const userId = String(formData.get("userId") ?? "");
   const role = String(formData.get("role") ?? "") as UserRole;
 
-  if (!ROLES.includes(role)) return { error: "Papel inválido." };
+  if (!ASSIGNABLE_ROLES.includes(role)) return { error: "Papel inválido." };
 
   // Sem isso, o último admin pode se rebaixar e deixar a org sem quem administre.
   if (userId === admin.id && role !== "admin") {
