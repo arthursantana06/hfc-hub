@@ -1,119 +1,141 @@
-import { Wallet, Landmark, Target, Flag, CalendarDays } from "lucide-react";
-import { ProgressBar } from "@/components/ui/ProgressBar";
+import Link from "next/link";
+import { ArrowRight, Settings2 } from "lucide-react";
+import { getPlanInput } from "@/lib/planning-dal";
+import { summarizeBaseline } from "@/lib/planning/baseline";
+import { anoDe, idadeEm, nomeDoMes } from "@/lib/planning/period";
+import { formatCurrency } from "@/lib/types";
+import { Card, Linha, SemPlano, Stat } from "@/components/planejamento/primitives";
 
-export default function PontoDePartida() {
+export default async function PontoDePartida({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const plan = await getPlanInput(id);
+
+  if (!plan) return <SemPlano clienteId={id} />;
+
+  const base = summarizeBaseline(plan);
+  const a = plan.assumptions;
+  const idade = idadeEm(plan.nascimento, a.inicio);
+
+  const atalhos = [
+    {
+      href: `/clientes/${id}/ponto-de-partida/fluxo-de-caixa`,
+      titulo: "Fluxo de caixa",
+      desc: `${plan.incomes.length} receitas, ${plan.expenses.length} linhas de custo`,
+    },
+    {
+      href: `/clientes/${id}/ponto-de-partida/patrimonio`,
+      titulo: "Patrimônio",
+      desc: `${plan.debts.length} dívidas ativas`,
+    },
+    {
+      href: `/clientes/${id}/ponto-de-partida/objetivos`,
+      titulo: "Objetivos",
+      desc: `${plan.goals.length} objetivos registrados`,
+    },
+    {
+      href: `/clientes/${id}/ponto-de-partida/linha-do-tempo`,
+      titulo: "Linha do tempo",
+      desc: `${plan.changes.length} mudanças previstas`,
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 max-w-6xl">
-
-      {/* Quadrante 1: Fluxo de Caixa */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
-            <Wallet className="w-5 h-5" />
-          </div>
-          <h2 className="font-poppins font-medium text-lg text-brand-950">Fluxo de Caixa Mensal</h2>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center p-3 rounded-lg bg-emerald-50/50 border border-emerald-100">
-            <span className="font-inter text-sm text-slate-600 font-medium">Entradas Totais</span>
-            <span className="font-poppins font-semibold text-emerald-600 text-lg">R$ 15.000</span>
-          </div>
-
-          <div className="flex flex-col gap-3 px-3">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-              <span className="font-inter text-sm text-slate-500">Custo de Vida</span>
-              <span className="font-poppins font-medium text-brand-950">R$ 8.000</span>
-            </div>
-            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-              <span className="font-inter text-sm text-slate-500">Dívidas (Parcelas)</span>
-              <span className="font-poppins font-medium text-orange-600">R$ 2.000</span>
-            </div>
-            <div className="flex justify-between items-center pt-1">
-              <span className="font-inter text-sm text-slate-500">Aportes/Investimentos</span>
-              <span className="font-poppins font-medium text-brand-600">R$ 3.000</span>
-            </div>
-          </div>
-        </div>
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Stat
+          rotulo="Sobras mensais"
+          valor={formatCurrency(base.sobrasMensais, 2)}
+          tom={base.sobrasMensais >= 0 ? "bom" : "ruim"}
+          hint="num mês típico, já rateando os anuais"
+        />
+        <Stat
+          rotulo="Taxa de poupança"
+          valor={
+            base.receitaTotalMensalizada > 0
+              ? `${((base.sobrasMensais / base.receitaTotalMensalizada) * 100).toFixed(1)}%`
+              : "—"
+          }
+          hint="das sobras sobre a receita"
+        />
+        <Stat
+          rotulo="Comprometido com dívidas"
+          valor={
+            base.receitaTotalMensalizada > 0
+              ? `${((base.parcelasMensais / base.receitaTotalMensalizada) * 100).toFixed(1)}%`
+              : "—"
+          }
+          tom={
+            base.parcelasMensais / base.receitaTotalMensalizada > 0.3
+              ? "atencao"
+              : "neutro"
+          }
+          hint={formatCurrency(base.parcelasMensais, 2) + " por mês"}
+        />
+        <Stat
+          rotulo="Idade"
+          valor={`${idade} anos`}
+          hint={`plano iniciado em ${nomeDoMes(a.inicio).toLowerCase()}/${anoDe(a.inicio)}`}
+        />
       </div>
 
-      {/* Quadrante 2: Patrimônio Líquido */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-50 rounded-lg text-brand-600">
-            <Landmark className="w-5 h-5" />
-          </div>
-          <h2 className="font-poppins font-medium text-lg text-brand-950">Patrimônio Líquido</h2>
-        </div>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <Card titulo="Premissas do plano" icone={Settings2}>
+          <Linha
+            nome="Modo de valor"
+            detalhe={
+              a.modoValor === "real"
+                ? "valores em poder de compra de hoje; o retorno é descontado da inflação"
+                : "valores correntes; receitas e despesas crescem com a inflação"
+            }
+            valor={a.modoValor === "real" ? "Valor Real" : "Valor Nominal"}
+          />
+          <Linha
+            nome="Juros — curto prazo"
+            detalhe={`primeiros ${a.mesesCurto} meses`}
+            valor={`${(a.jurosCurto * 100).toFixed(1)}% a.a.`}
+          />
+          <Linha
+            nome="Juros — longo prazo"
+            detalhe="até a aposentadoria"
+            valor={`${(a.jurosLongo * 100).toFixed(1)}% a.a.`}
+          />
+          <Linha
+            nome="Juros — aposentadoria"
+            valor={`${(a.jurosAposentadoria * 100).toFixed(1)}% a.a.`}
+          />
+          <Linha nome="Inflação" valor={`${(a.inflacao * 100).toFixed(1)}% a.a.`} />
+          <Linha
+            nome="Aposentadoria"
+            detalhe={`renda do INSS de ${formatCurrency(plan.retirement.rendaInss, 2)}`}
+            valor={`aos ${plan.retirement.idadeAlvo}`}
+          />
+          <Linha nome="Horizonte" valor={`até os ${a.idadeLimite} anos`} />
+        </Card>
 
-        <div className="mb-8">
-          <span className="font-inter text-sm text-slate-500 block mb-1">Total Consolidado</span>
-          <span className="font-poppins text-3xl font-bold text-brand-950">R$ 1.245.000</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mt-auto">
-          <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-            <span className="font-inter text-xs text-slate-500 block mb-1">Total de Ativos</span>
-            <span className="font-poppins font-semibold text-brand-950">R$ 1.450.000</span>
+        <Card titulo="Onde continuar" icone={ArrowRight}>
+          <div className="flex flex-col gap-2">
+            {atalhos.map((t) => (
+              <Link
+                key={t.href}
+                href={t.href}
+                className="group flex items-center justify-between gap-4 px-4 py-3 rounded-lg border border-slate-200 hover:border-brand-300 hover:bg-brand-300/5 transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="font-inter text-sm font-medium text-brand-950">
+                    {t.titulo}
+                  </p>
+                  <p className="font-inter text-xs text-slate-500 mt-0.5">{t.desc}</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-brand-600 transition-colors shrink-0" />
+              </Link>
+            ))}
           </div>
-          <div className="p-4 rounded-lg bg-red-50/30 border border-red-100/50">
-            <span className="font-inter text-xs text-slate-500 block mb-1">Total de Passivos</span>
-            <span className="font-poppins font-semibold text-red-600">R$ 205.000</span>
-          </div>
-        </div>
+        </Card>
       </div>
-
-      {/* Quadrante 3: Objetivos Principais */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-            <Target className="w-5 h-5" />
-          </div>
-          <h2 className="font-poppins font-medium text-lg text-brand-950">Objetivos Principais</h2>
-        </div>
-
-        <div className="flex flex-col gap-6 mt-2">
-          <div>
-            <div className="flex justify-between items-end mb-2">
-              <span className="font-poppins font-medium text-sm text-brand-950">Independência Financeira</span>
-              <span className="font-inter text-xs font-semibold text-brand-600">45%</span>
-            </div>
-            <ProgressBar value={45} colorClassName="bg-brand-600" />
-            <span className="font-inter text-[10px] text-slate-400 mt-1.5 block">R$ 900.000 de R$ 2.000.000</span>
-          </div>
-
-          <div>
-            <div className="flex justify-between items-end mb-2">
-              <span className="font-poppins font-medium text-sm text-brand-950">Troca de Veículo</span>
-              <span className="font-inter text-xs font-semibold text-brand-300">80%</span>
-            </div>
-            <ProgressBar value={80} colorClassName="bg-brand-300" />
-            <span className="font-inter text-[10px] text-slate-400 mt-1.5 block">R$ 80.000 de R$ 100.000</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Quadrante 4: Linha do Tempo */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
-            <CalendarDays className="w-5 h-5" />
-          </div>
-          <h2 className="font-poppins font-medium text-lg text-brand-950">Próximo Marco</h2>
-        </div>
-
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-          <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 mb-4">
-            <Flag className="w-5 h-5" />
-          </div>
-          <h3 className="font-poppins font-medium text-brand-950 mb-2">Quitação do Financiamento Imobiliário</h3>
-          <p className="font-inter text-sm text-slate-500">Novembro de 2026</p>
-          <div className="mt-4 px-4 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-600 shadow-sm">
-            Faltam 4 meses
-          </div>
-        </div>
-      </div>
-
     </div>
   );
 }

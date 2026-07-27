@@ -6,7 +6,7 @@ export default function IndicacoesCliente() {
     <>
       <header className="p-8 pb-6 shrink-0 border-b border-slate-200/60 bg-white shadow-sm">
         <h1 className="font-poppins font-medium text-2xl text-brand-950">
-          Indicações & Recompensas
+          Rewards
         </h1>
       </header>
 

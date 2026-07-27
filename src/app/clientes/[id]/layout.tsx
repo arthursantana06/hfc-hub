@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getClientById } from "@/lib/mock-clients";
+import { getClient } from "@/lib/planning-dal";
 import { ClientSidebar } from "@/components/layout/ClientSidebar";
 
 export default async function ClientLayout({
@@ -10,7 +10,7 @@ export default async function ClientLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const client = getClientById(id);
+  const client = await getClient(id);
 
   if (!client) {
     notFound();

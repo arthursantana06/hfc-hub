@@ -103,22 +103,71 @@ diretamente da planilha e da operação do CRM:
 
 ```bash
 npm install
+cp .env.example .env.local     # e preencha as chaves do Supabase
 npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000). O painel de clientes está em `/clientes`.
+Abra [http://localhost:3000](http://localhost:3000). O acesso é por convite:
+o primeiro admin é criado conforme `supabase/README.md`.
+
+### Verificação
+
+```bash
+npm run verificar    # tipos + lint + testes
+npm test             # só os testes
+npm run paridade     # regenera docs/paridade-referencia.md (precisa do fixture local)
+```
+
+## ▲ Publicação na Vercel
+
+1. **Importe o repositório** na Vercel. O preset Next.js já resolve build e
+   saída; não há `vercel.json` porque não há nada de fora do padrão.
+2. **Cadastre as variáveis** de `.env.example` em *Settings → Environment
+   Variables*, nos três ambientes (Production, Preview, Development):
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_DEFAULT_ORG_ID`
+3. **Libere a URL no Supabase**, em *Authentication → URL Configuration*:
+   a URL de produção em `Site URL`, e `https://*.vercel.app/**` em
+   `Redirect URLs` para os previews funcionarem. Sem isso o link de
+   confirmação de e-mail volta para `localhost`.
+4. **Aplique as migrações** ao projeto Supabase de produção, na ordem de
+   `supabase/migrations/`, antes do primeiro acesso.
+
+Notas do ambiente:
+
+- O runtime é **Node.js**, não Edge — `src/proxy.ts` usa o cliente SSR do
+  Supabase, que precisa de Node.
+- `serverActions.bodySizeLimit` está em 3 MB por causa do upload de foto de
+  perfil (o padrão de 1 MB rejeitava imagens de 1,5 MB antes da validação).
+- O relatório mensal é **HTML preparado para impressão**, não um PDF montado no
+  servidor: um Chromium headless em função serverless custaria dezenas de
+  megabytes por geração para produzir o que o navegador já produz.
+- O servidor roda em UTC. Nenhum cálculo depende disso — o motor recebe o mês
+  do plano, nunca do relógio.
 
 ## 📁 Estrutura de pastas (principais)
 
 - `src/app/` — rotas e layouts (App Router).
-  - `(hub)/` — casca do hub e página inicial.
-  - `clientes/` — Clientes (lista/diretório).
+  - `(hub)/` — casca do hub, visão geral e lista de clientes.
   - `clientes/[id]/` — painel individual do cliente.
-    - `ponto-de-partida/` — Raio-X: visão geral, fluxo de caixa, patrimônio, objetivos, linha do tempo.
-- `src/components/` — layout (sidebars, navegação) e UI.
-- `src/lib/` — tipos e dados mock (temporários, a serem substituídos pelo Supabase).
-- `docs/` — plano mestre e arquitetura.
-- `past/` — planilha e relatório de referência (base do modelo de dados).
+    - `ponto-de-partida/` — Raio-X: cadastro, fluxo de caixa, patrimônio,
+      objetivos e mudanças.
+    - `diagnostico/` — projeções e aposentadoria.
+    - `relatorios/` — fechamento mensal e o documento de 5 páginas.
+- `src/lib/planning/` — **o motor**: funções puras, sem I/O. É onde vive a
+  tradução da planilha em código.
+- `src/lib/forms/` — esquema dos formulários, compartilhado entre tela e
+  Server Action.
+- `src/lib/planning-dal.ts` — leitura; `src/lib/actions/` — escrita.
+- `docs/` — plano mestre, plano de tradução da planilha e relatório de paridade.
+- `past/` — planilha e relatório de referência. **Não versionado**: contém dados
+  reais de cliente.
+
+> ⚠️ **Este repositório é público.** Nada derivado de `past/` pode ser
+> commitado. O `.gitignore` cobre o fixture do cliente de referência, o SQL de
+> carga e o relatório de paridade; os testes versionados usam o cliente
+> fictício `src/lib/planning/__fixtures__/exemplo.json`.
 
 ---
 

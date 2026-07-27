@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
-import { getCurrentUser, listInvites, listOrgUsers } from "@/lib/dal";
+import {
+  getCurrentUser,
+  listInvites,
+  listOrgUsers,
+  signedAvatarUrl,
+} from "@/lib/dal";
 import { ProfileForm } from "@/components/settings/ProfileForm";
+import { AvatarForm } from "@/components/settings/AvatarForm";
 import { UsersTable } from "@/components/settings/UsersTable";
 import { InvitesPanel } from "@/components/settings/InvitesPanel";
 import { Page } from "@/components/layout/Page";
@@ -37,6 +43,7 @@ export default async function ConfiguracoesPage() {
     listInvites(), // a RLS devolve vazio para quem não é admin
   ]);
 
+  const avatarUrl = await signedAvatarUrl(user?.avatar_path ?? null);
   const isAdmin = user?.role === "admin";
 
   return (
@@ -50,6 +57,7 @@ export default async function ConfiguracoesPage() {
           description="Seus dados nesta organização. O e-mail e o papel são geridos por um administrador."
         >
           <div className="flex flex-col gap-6">
+            <AvatarForm url={avatarUrl} nome={user?.nome ?? null} />
             <ProfileForm nome={user?.nome ?? null} />
             <dl className="grid grid-cols-2 gap-4 max-w-md pt-2 border-t border-slate-100">
               <div>

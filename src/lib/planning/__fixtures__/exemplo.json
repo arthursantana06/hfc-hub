@@ -1,0 +1,72 @@
+{
+  "_sobre": [
+    "Cliente FICTÍCIO, para os testes versionados do motor.",
+    "Nenhum dado aqui pertence a pessoa real — o repositório é público.",
+    "A paridade célula a célula contra a planilha de referência vive em",
+    "`parity.test.ts`, que é local e não vai para o git junto com o .json real.",
+    "Este exemplo cobre o que importa estruturalmente: receita mensal e anual,",
+    "custo fixo e extra, dívida com fim, objetivo datado, objetivo recorrente e",
+    "mudanças de receita e despesa."
+  ],
+  "cliente": {
+    "nome": "Cliente Exemplo",
+    "nascimento": "1985-06-15",
+    "profissao": "Profissional liberal",
+    "risco": "moderado",
+    "plano_status": "ativo"
+  },
+  "premissas": {
+    "inicio": "2026-01-01",
+    "dia_referencia": 1,
+    "dia_pagamento": 5,
+    "dia_fatura": 10,
+    "modo_valor": "real",
+    "juros_curto": 0.1,
+    "juros_longo": 0.08,
+    "inflacao": 0.04,
+    "juros_aposentadoria": 0.04,
+    "idade_limite": 95,
+    "meses_curto": 24
+  },
+  "patrimonio_inicial": 100000,
+  "aposentadoria": {
+    "idade_alvo": 65,
+    "renda_inss": 5000,
+    "renda_desejada": 15000
+  },
+
+  "receitas": [
+    { "fonte": "Salário", "valor": 20000, "frequencia": "mensal" },
+    { "fonte": "13º", "valor": 20000, "frequencia": "anual", "mes_ocorrencia": 12, "derivado": "decimo_terceiro" }
+  ],
+
+  "despesas": [
+    { "categoria": "Aluguel", "valor": 4000, "frequencia": "mensal", "bucket": "fixo" },
+    { "categoria": "Restaurantes", "valor": 1500, "frequencia": "mensal", "bucket": "extra" },
+    { "categoria": "IPVA", "valor": 3600, "frequencia": "anual", "mes_ocorrencia": 1, "bucket": "fixo" }
+  ],
+
+  "dividas": [
+    { "descricao": "Financiamento do carro", "parcela": 1200, "inicio": "2026-01-01", "fim": "2027-12-01" }
+  ],
+
+  "previdencia": [{ "nome": "INSS", "valor": 800 }],
+  "seguros": [{ "nome": "Seguro de vida", "valor": 200 }],
+
+  "objetivos_curto": [
+    { "titulo": "Reserva de emergência", "alvo": 60000, "data_alvo": "2026-12-01" }
+  ],
+
+  "objetivos_longo": [
+    { "titulo": "Troca de carro", "alvo": 80000, "periodicidade_anos": 5 }
+  ],
+
+  "mudancas": [
+    { "titulo": "Promoção", "valor": 3000, "categoria": "receita", "inicio": "2027-01-01", "fim": null },
+    { "titulo": "Escola do filho", "valor": -2500, "categoria": "despesa", "inicio": "2028-02-01", "fim": "2040-12-01" }
+  ],
+
+  "ativos": [{ "nome": "Investimentos", "valor": 100000 }],
+  "passivos": [],
+  "investimentos": [{ "classe": "renda_fixa", "nome": "CDB liquidez diária", "valor": 100000 }]
+}

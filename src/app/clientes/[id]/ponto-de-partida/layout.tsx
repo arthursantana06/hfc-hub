@@ -3,10 +3,11 @@ import { TabLink } from "@/components/layout/TabLink";
 function getTabs(id: string) {
   return [
     { href: `/clientes/${id}/ponto-de-partida`, label: "Visão Geral" },
+    { href: `/clientes/${id}/ponto-de-partida/cadastro`, label: "Cadastro" },
     { href: `/clientes/${id}/ponto-de-partida/fluxo-de-caixa`, label: "Fluxo de Caixa" },
     { href: `/clientes/${id}/ponto-de-partida/patrimonio`, label: "Patrimônio" },
     { href: `/clientes/${id}/ponto-de-partida/objetivos`, label: "Objetivos" },
-    { href: `/clientes/${id}/ponto-de-partida/linha-do-tempo`, label: "Linha do Tempo" },
+    { href: `/clientes/${id}/ponto-de-partida/linha-do-tempo`, label: "Mudanças" },
   ];
 }
 

@@ -1,117 +1,173 @@
-import { CheckCircle2, Circle, TrendingUp, PieChart } from "lucide-react";
-import { ProgressBar } from "@/components/ui/ProgressBar";
+import Link from "next/link";
+import { AlertTriangle, ArrowRight, PieChart, Target } from "lucide-react";
+import { getClient, getPlanInput, getProjection } from "@/lib/planning-dal";
+import { summarizeBaseline } from "@/lib/planning/baseline";
+import { anoDe, nomeDoMes, rotuloCurto } from "@/lib/planning/period";
+import { formatCurrency } from "@/lib/types";
+import { Card, Linha, SemPlano, Stat } from "@/components/planejamento/primitives";
+import { GraficoPatrimonio } from "@/components/planejamento/GraficoPatrimonio";
 
-export default function ClientDashboard() {
+export default async function ResumoDoCliente({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const [client, plan, proj] = await Promise.all([
+    getClient(id),
+    getPlanInput(id),
+    getProjection(id),
+  ]);
+
   return (
     <>
-      {/* Header */}
-      <header className="p-8 pb-6 shrink-0 flex justify-between items-end border-b border-slate-200/60 bg-white shadow-sm z-0">
-        <div>
-          <h1 className="font-poppins font-medium text-2xl text-brand-950">Resumo do Planejamento</h1>
-        </div>
-        <div className="text-sm text-slate-500 font-medium">
-          Última atualização: 13 de Julho, 2026
-        </div>
+      <header className="p-8 pb-6 shrink-0 flex justify-between items-end gap-6 border-b border-slate-200/60 bg-white shadow-sm z-0">
+        <h1 className="font-poppins font-medium text-2xl text-brand-950">
+          Resumo do Planejamento
+        </h1>
+        {plan && (
+          <p className="font-inter text-sm text-slate-500">
+            Plano iniciado em {nomeDoMes(plan.assumptions.inicio).toLowerCase()}/
+            {anoDe(plan.assumptions.inicio)}
+          </p>
+        )}
       </header>
 
-      {/* Conteúdo */}
       <div className="flex-1 overflow-y-auto p-8">
-
-        {/* Linha 1: KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-            <h3 className="font-inter text-sm text-slate-500 mb-3">Patrimônio Líquido</h3>
-            <div className="font-poppins text-2xl text-brand-950 font-bold">R$ 1.245.000</div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-            <h3 className="font-inter text-sm text-slate-500 mb-3">Liquidez Imediata</h3>
-            <div className="font-poppins text-2xl text-brand-950 font-bold">R$ 150.000</div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-            <h3 className="font-inter text-sm text-slate-500 mb-3">Capacidade de Poupança</h3>
-            <div className="font-poppins text-2xl text-brand-950 font-bold">R$ 4.500 <span className="text-sm font-medium text-slate-400">/ mês</span></div>
-          </div>
-        </div>
-
-        {/* Linha 2: Painéis */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-
-          {/* Painel Esquerdo: Alocação Atual */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="p-2 bg-blue-50 rounded-lg text-brand-600">
-                <PieChart className="w-5 h-5" />
-              </div>
-              <h2 className="font-poppins font-medium text-lg text-brand-950">Alocação Atual</h2>
-            </div>
-
-            <div className="flex flex-col gap-6">
-              <div>
-                <div className="flex justify-between text-sm font-medium mb-2.5">
-                  <span className="text-brand-950">Renda Fixa</span>
-                  <span className="text-slate-500">60%</span>
-                </div>
-                <ProgressBar value={60} colorClassName="bg-brand-950" />
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm font-medium mb-2.5">
-                  <span className="text-brand-950">Renda Variável</span>
-                  <span className="text-slate-500">30%</span>
-                </div>
-                <ProgressBar value={30} colorClassName="bg-brand-600" />
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm font-medium mb-2.5">
-                  <span className="text-brand-950">Caixa / Liquidez</span>
-                  <span className="text-slate-500">10%</span>
-                </div>
-                <ProgressBar value={10} colorClassName="bg-brand-300" />
-              </div>
-            </div>
-          </div>
-
-          {/* Painel Direito: Próximos Passos */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <h2 className="font-poppins font-medium text-lg text-brand-950">Próximos Passos</h2>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <div className="flex items-start gap-4 p-3 rounded-lg bg-emerald-50/50 border border-emerald-100 transition-colors cursor-pointer">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-brand-950 text-sm">Aguardando envio do IR</h4>
-                  <p className="text-xs text-slate-500 mt-1">Cliente precisa enviar a declaração de 2025.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-colors cursor-pointer">
-                <Circle className="w-5 h-5 text-slate-300 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-brand-950 text-sm">Reunião de alinhamento</h4>
-                  <p className="text-xs text-slate-500 mt-1">Agendar apresentação do diagnóstico inicial.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-colors cursor-pointer">
-                <Circle className="w-5 h-5 text-slate-300 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-brand-950 text-sm">Assinatura do termo</h4>
-                  <p className="text-xs text-slate-500 mt-1">Formalizar o início do planejamento financeiro.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
+        {!plan || !proj ? (
+          <SemPlano clienteId={id} />
+        ) : (
+          <Conteudo id={id} plan={plan} proj={proj} patrimonio={client?.patrimonio ?? 0} />
+        )}
       </div>
     </>
+  );
+}
+
+function Conteudo({
+  id,
+  plan,
+  proj,
+  patrimonio,
+}: {
+  id: string;
+  plan: NonNullable<Awaited<ReturnType<typeof getPlanInput>>>;
+  proj: NonNullable<Awaited<ReturnType<typeof getProjection>>>;
+  patrimonio: number;
+}) {
+  const base = summarizeBaseline(plan);
+  const d = proj.desfecho;
+  const faltaParaDesejada = d.rendaDesejada - d.rendaTotal;
+
+  const doze = proj.curta.slice(0, 12);
+  const proximosEventos = proj.curta
+    .filter((m) => m.observacoes.length > 0)
+    .slice(0, 4);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Stat
+          rotulo="Patrimônio líquido"
+          valor={formatCurrency(patrimonio, 2)}
+          hint="ativos menos passivos"
+        />
+        <Stat
+          rotulo="Capacidade de poupança"
+          valor={`${formatCurrency(base.sobrasMensais, 2)}`}
+          tom={base.sobrasMensais >= 0 ? "bom" : "ruim"}
+          hint="por mês, no mês típico"
+        />
+        <Stat
+          rotulo={`Patrimônio aos ${d.idadeAlvo}`}
+          valor={formatCurrency(d.patrimonioNaAposentadoria, 0)}
+          hint={`projetado para ${d.anoAposentadoria}`}
+        />
+      </div>
+
+      {/* O achado mais acionável do modelo inteiro — não pode ficar numa linha
+          perdida de tabela, como ficava na planilha. */}
+      {d.anoDeRuina !== null && (
+        <div className="bg-white rounded-xl border border-red-200 border-l-4 border-l-red-500 shadow-sm p-6 flex items-start gap-4">
+          <div className="p-2 bg-red-50 rounded-lg text-red-600 shrink-0">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="font-poppins text-lg text-brand-950 font-medium">
+              O patrimônio zera em {d.anoDeRuina}, aos {d.idadeDeRuina} anos
+            </h2>
+            <p className="font-inter text-sm text-slate-600 mt-1 max-w-2xl">
+              Com as premissas atuais, a renda do INSS de{" "}
+              {formatCurrency(d.rendaInss, 2)} não cobre o custo de vida
+              projetado, e a diferença é sacada do patrimônio até acabar.
+              {faltaParaDesejada > 0 && (
+                <>
+                  {" "}
+                  A renda total na aposentadoria fica em{" "}
+                  {formatCurrency(d.rendaTotal, 2)} — {formatCurrency(faltaParaDesejada, 2)}{" "}
+                  abaixo dos {formatCurrency(d.rendaDesejada, 2)} desejados.
+                </>
+              )}
+            </p>
+            <Link
+              href={`/clientes/${id}/diagnostico`}
+              className="inline-flex items-center gap-1.5 mt-3 font-inter text-sm text-brand-600 hover:text-brand-900 transition-colors"
+            >
+              Ver o diagnóstico completo
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card titulo="Patrimônio nos próximos 12 meses" icone={PieChart}>
+          <GraficoPatrimonio
+            altura={160}
+            pontos={doze.map((m) => ({
+              rotulo: rotuloCurto(m.periodo),
+              valor: m.patrimonio,
+              marco: m.observacoes[0],
+            }))}
+          />
+          <div className="mt-4 flex flex-col">
+            <Linha
+              nome="Hoje"
+              valor={plan.patrimonioInicial}
+              detalhe="carteira investida"
+            />
+            <Linha
+              nome={`Em ${rotuloCurto(doze[doze.length - 1].periodo)}`}
+              valor={doze[doze.length - 1].patrimonio}
+              destaque
+            />
+          </div>
+        </Card>
+
+        <Card titulo="Próximos marcos" icone={Target}>
+          {proximosEventos.length === 0 ? (
+            <p className="font-inter text-sm text-slate-500">
+              Nenhum marco nos próximos meses.
+            </p>
+          ) : (
+            proximosEventos.map((m) => (
+              <Linha
+                key={m.periodo}
+                nome={m.observacoes.join(", ")}
+                detalhe={`${nomeDoMes(m.periodo)} de ${anoDe(m.periodo)}`}
+                valor={m.objetivos !== 0 ? m.objetivos : m.sobras}
+              />
+            ))
+          )}
+          <Link
+            href={`/clientes/${id}/ponto-de-partida/linha-do-tempo`}
+            className="inline-flex items-center gap-1.5 mt-4 font-inter text-sm text-brand-600 hover:text-brand-900 transition-colors"
+          >
+            Ver a linha do tempo
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </Card>
+      </div>
+    </div>
   );
 }

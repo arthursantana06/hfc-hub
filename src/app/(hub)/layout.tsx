@@ -1,5 +1,6 @@
 import { HubSidebar } from "@/components/layout/HubSidebar";
-import { getCurrentUser } from "@/lib/dal";
+import { CurrentUserProvider } from "@/components/layout/CurrentUserProvider";
+import { getCurrentUser, signedAvatarUrl } from "@/lib/dal";
 
 export default async function HubLayout({
   children,
@@ -8,11 +9,14 @@ export default async function HubLayout({
 }) {
   // getCurrentUser() passa por verifySession() — sem sessão, redireciona a /login.
   const user = await getCurrentUser();
+  const avatarUrl = await signedAvatarUrl(user?.avatar_path ?? null);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50">
-      <HubSidebar user={user} />
-      {children}
-    </div>
+    <CurrentUserProvider user={user}>
+      <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+        <HubSidebar user={user} avatarUrl={avatarUrl} />
+        {children}
+      </div>
+    </CurrentUserProvider>
   );
 }

@@ -1,180 +1,165 @@
-"use client";
+import { CircleDot, GitBranch } from "lucide-react";
+import { getPlanoAtivo, getProjection, linhasDoCliente, linhasDoPlano } from "@/lib/planning-dal";
+import { anoDe, nomeDoMes } from "@/lib/planning/period";
+import { escreverMoeda } from "@/lib/forms/planejamento";
+import { Card, Stat } from "@/components/planejamento/primitives";
+import { ListaEditavel } from "@/components/planejamento/ListaEditavel";
 
-import { useState } from "react";
-import { Plus, X, CalendarClock, TrendingUp } from "lucide-react";
+const CATEGORIA_LABEL: Record<string, string> = {
+  receita: "Receita",
+  despesa: "Despesa",
+  divida: "Dívida",
+};
 
-export default function LinhaDoTempo() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [frequencia, setFrequencia] = useState("mensal");
+/**
+ * As mudanças do plano — o que altera o fluxo de caixa a partir de uma data.
+ *
+ * A planilha guardava isto em duas tabelas separadas por horizonte, e o fim de
+ * uma dívida era uma linha solta que somava o valor de volta. Aqui as mudanças
+ * são editáveis numa lista só, e as quitações aparecem ao lado como o que são:
+ * consequência das datas da própria dívida.
+ */
+export default async function LinhaDoTempo({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const plano = await getPlanoAtivo(id);
+
+  const [mudancas, dividas, proj] = await Promise.all([
+    plano ? linhasDoPlano("plan_change", plano.id) : [],
+    linhasDoCliente("debt", id),
+    getProjection(id),
+  ]);
+
+  const perpetuas = mudancas.filter((m) => !m.fim).length;
+  const quitacoes = dividas
+    .filter((d) => d.fim)
+    .map((d) => ({
+      id: d.id,
+      titulo: `${d.descricao} quitada`,
+      quando: proximoMes(d.fim!),
+      valor: Number(d.parcela ?? 0),
+    }))
+    .sort((a, b) => a.quando.localeCompare(b.quando));
 
   return (
-    <>
-      <div className="flex justify-end mb-6">
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-brand-600 hover:bg-brand-900 text-white px-4 py-2.5 rounded-lg transition-colors font-medium text-sm shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Evento Futuro
-        </button>
+    <div className="flex flex-col gap-6 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Stat rotulo="Mudanças no plano" valor={String(mudancas.length)} />
+        <Stat
+          rotulo="Sem data de término"
+          valor={String(perpetuas)}
+          tom={perpetuas > 0 ? "atencao" : "neutro"}
+          hint={perpetuas > 0 ? "valem até o fim do horizonte" : undefined}
+        />
+        <Stat
+          rotulo="Dívidas que se encerram"
+          valor={String(quitacoes.length)}
+          hint={`${dividas.length - quitacoes.length} sem data de fim`}
+        />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 max-w-7xl mx-auto">
+      <Card titulo="Mudanças" icone={GitBranch} tom="roxo">
+        <ListaEditavel
+          entidade="mudanca"
+          planId={plano?.id ?? null}
+          clientId={id}
+          vazio="Nenhuma mudança. Sem elas a projeção repete o mês típico para sempre."
+          linhas={mudancas
+            .slice()
+            .sort((a, b) => a.inicio.localeCompare(b.inicio))
+            .map((m) => ({
+              id: m.id,
+              titulo: m.titulo,
+              detalhe: `${CATEGORIA_LABEL[m.categoria]} · ${janela(m.inicio, m.fim)}${
+                m.observacao ? ` · ${m.observacao}` : ""
+              }`,
+              valor: `${Number(m.valor) >= 0 ? "+" : ""}R$ ${escreverMoeda(Number(m.valor))}`,
+              bruto: m,
+            }))}
+        />
+      </Card>
 
-        {/* Cartão 1: Projetos & Custos Futuros */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
-              <CalendarClock className="w-5 h-5" />
-            </div>
-            <h2 className="font-poppins text-lg text-brand-950 font-medium">Projetos & Custos Futuros</h2>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            {/* Mock 1 */}
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Nascimento do Filho</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Início: Fev/2027 • Duração: 18 anos • Mensal</p>
-              </div>
-              <span className="font-inter text-sm font-medium text-red-600">R$ 4.000,00 / mês</span>
-            </div>
-            {/* Mock 2 */}
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Troca de Smartphone</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Início: Out/2026 • Sem fim • A cada 3 anos</p>
-              </div>
-              <span className="font-inter text-sm font-medium text-red-600">R$ 5.000,00</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Cartão 2: Projeções de Renda */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-            <h2 className="font-poppins text-lg text-brand-950 font-medium">Projeções de Renda</h2>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            {/* Mock 1 */}
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Promoção para Diretoria</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Início: Jan/2028 • Permanente</p>
-              </div>
-              <span className="font-inter text-sm font-medium text-emerald-600">+ R$ 12.000,00 / mês</span>
-            </div>
-            {/* Mock 2 */}
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Aposentadoria (Fim do Salário)</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Início: Nov/2045</p>
-              </div>
-              <span className="font-inter text-sm font-medium text-red-600">- R$ 25.000,00 / mês</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* MODAL DE EVENTO FUTURO */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-brand-950/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
-              <h2 className="font-poppins font-semibold text-lg text-brand-950">Novo Evento Futuro</h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-brand-950 transition-colors p-2 rounded-full hover:bg-slate-200"
+      {quitacoes.length > 0 && (
+        <Card titulo="Quitações previstas" icone={CircleDot} tom="verde">
+          <ul className="flex flex-col">
+            {quitacoes.map((q) => (
+              <li
+                key={q.id}
+                className="flex items-baseline justify-between gap-4 py-2.5 border-b border-slate-50 last:border-none"
               >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto flex-1 font-inter">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                <div className="col-span-1 md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Natureza do Evento</label>
-                  <select
-                    defaultValue=""
-                    className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all bg-white shadow-sm"
-                  >
-                    <option value="" disabled>Selecione...</option>
-                    <option value="aumento_despesa">Aumento de Despesa/Novo Gasto</option>
-                    <option value="reducao_despesa">Redução de Despesa</option>
-                    <option value="aumento_renda">Aumento de Renda</option>
-                    <option value="reducao_renda">Redução de Renda</option>
-                  </select>
+                <div className="min-w-0">
+                  <p className="font-inter text-sm font-medium text-slate-700 truncate">
+                    {q.titulo}
+                  </p>
+                  <p className="font-inter text-xs text-slate-500 mt-0.5">
+                    {rotuloMes(q.quando)} — a parcela deixa de sair do caixa
+                  </p>
                 </div>
-
-                <div className="col-span-1 md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Nome do Evento</label>
-                  <input type="text" placeholder="Ex: Faculdade do Filho" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all shadow-sm" />
-                </div>
-
-                <div className="col-span-1 md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Valor Estimado (R$)</label>
-                  <input type="number" placeholder="0.00" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all font-poppins font-medium shadow-sm" />
-                </div>
-
-                <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Início</label>
-                  <input type="month" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all shadow-sm" />
-                </div>
-
-                <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Fim <span className="text-slate-400 font-normal">(Opcional)</span></label>
-                  <input type="month" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all shadow-sm" />
-                </div>
-
-                <div className="col-span-1 md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Periodicidade</label>
-                  <select
-                    value={frequencia}
-                    onChange={(e) => setFrequencia(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all bg-white shadow-sm"
-                  >
-                    <option value="unico">Único</option>
-                    <option value="mensal">Mensal</option>
-                    <option value="anual">Anual</option>
-                    <option value="a_cada_x_anos">A cada X anos</option>
-                  </select>
-                </div>
-
-                {frequencia === "a_cada_x_anos" && (
-                  <div className="col-span-1 md:col-span-2 border-t border-slate-100 pt-4 mt-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Intervalo (em anos)</label>
-                    <input type="number" placeholder="Ex: 3" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all shadow-sm" />
-                  </div>
-                )}
-
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2.5 rounded-lg text-slate-600 font-medium hover:bg-slate-200 transition-colors text-sm"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-900 text-white font-medium transition-colors text-sm shadow-sm"
-              >
-                Salvar Evento
-              </button>
-            </div>
-
-          </div>
-        </div>
+                <span className="font-inter text-sm text-emerald-600 tabular-nums shrink-0">
+                  +R$ {escreverMoeda(q.valor)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="font-inter text-xs text-slate-400 mt-4">
+            Derivado da data de fim de cada dívida, e não de uma mudança escrita
+            à mão. Esquecer de registrar a quitação deixou de ser possível.
+          </p>
+        </Card>
       )}
-    </>
+
+      {proj && proj.curta.some((m) => m.observacoes.length > 0) && (
+        <Card titulo="Marcos nos próximos meses" icone={CircleDot}>
+          <ul className="flex flex-col">
+            {proj.curta
+              .filter((m) => m.observacoes.length > 0)
+              .slice(0, 8)
+              .map((m) => (
+                <li
+                  key={m.periodo}
+                  className="flex items-baseline justify-between gap-4 py-2.5 border-b border-slate-50 last:border-none"
+                >
+                  <div className="min-w-0">
+                    <p className="font-inter text-sm font-medium text-slate-700 truncate">
+                      {m.observacoes.join(", ")}
+                    </p>
+                    <p className="font-inter text-xs text-slate-500 mt-0.5">
+                      {nomeDoMes(m.periodo)} de {anoDe(m.periodo)}
+                    </p>
+                  </div>
+                  <span className="font-inter text-sm text-slate-600 tabular-nums shrink-0">
+                    R$ {escreverMoeda(m.objetivos !== 0 ? m.objetivos : m.sobras)}
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </Card>
+      )}
+    </div>
   );
+}
+
+const MESES = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+];
+
+const rotuloMes = (iso: string) =>
+  `${MESES[Number(iso.slice(5, 7)) - 1]}/${iso.slice(0, 4)}`;
+
+function janela(inicio: string, fim: string | null): string {
+  if (!fim) return `a partir de ${rotuloMes(inicio)}, sem fim`;
+  if (fim === inicio) return rotuloMes(inicio);
+  return `${rotuloMes(inicio)} → ${rotuloMes(fim)}`;
+}
+
+/** A quitação vale no mês seguinte à última parcela. */
+function proximoMes(iso: string): string {
+  const ano = Number(iso.slice(0, 4));
+  const mes = Number(iso.slice(5, 7));
+  const total = ano * 12 + mes; // já é o mês seguinte em base 0
+  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}-01`;
 }

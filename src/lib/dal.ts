@@ -9,7 +9,7 @@ export type UserRole = Enums<"user_role">;
 /** Subconjunto de `app_user` que o DAL expõe. */
 export type AppUser = Pick<
   Tables<"app_user">,
-  "id" | "org_id" | "nome" | "email" | "role"
+  "id" | "org_id" | "nome" | "email" | "role" | "avatar_path"
 >;
 
 /**
@@ -36,7 +36,7 @@ export const getCurrentUser = cache(async (): Promise<AppUser | null> => {
 
   const { data } = await supabase
     .from("app_user")
-    .select("id, org_id, nome, email, role")
+    .select("id, org_id, nome, email, role, avatar_path")
     .eq("id", userId)
     .single();
 
@@ -50,7 +50,7 @@ export const listOrgUsers = cache(async (): Promise<AppUser[]> => {
 
   const { data } = await supabase
     .from("app_user")
-    .select("id, org_id, nome, email, role")
+    .select("id, org_id, nome, email, role, avatar_path")
     .order("nome");
 
   return data ?? [];
@@ -83,3 +83,22 @@ export const requireRole = cache(async (roles: UserRole[]) => {
   }
   return user;
 });
+
+/**
+ * URL temporária para uma foto no bucket privado `avatars`.
+ *
+ * Guardamos o caminho, não a URL: assinatura expira, caminho não. Uma hora
+ * cobre com folga o tempo de vida de uma página.
+ */
+export const signedAvatarUrl = cache(
+  async (path: string | null): Promise<string | null> => {
+    if (!path) return null;
+
+    const supabase = await createClient();
+    const { data } = await supabase.storage
+      .from("avatars")
+      .createSignedUrl(path, 60 * 60);
+
+    return data?.signedUrl ?? null;
+  },
+);

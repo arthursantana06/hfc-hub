@@ -1,231 +1,190 @@
-"use client";
+import { Building2, CreditCard, LineChart, Scale } from "lucide-react";
+import { getPlanoAtivo, linhasDoCliente } from "@/lib/planning-dal";
+import { formatCurrency } from "@/lib/types";
+import { escreverMoeda } from "@/lib/forms/planejamento";
+import { Barra, Card, Stat, pct } from "@/components/planejamento/primitives";
+import { ListaEditavel } from "@/components/planejamento/ListaEditavel";
 
-import { useState } from "react";
-import { Plus, X, Home, TrendingUp, Wallet, ExternalLink } from "lucide-react";
+const CLASSE_LABEL: Record<string, string> = {
+  renda_fixa: "Renda Fixa",
+  renda_variavel: "Renda Variável",
+  previdencia: "Previdência",
+};
 
-const ANALISE_INVESTIMENTO_URL = "https://rendafixa-seven.vercel.app/";
+const CLASSE_TOM: Record<string, string> = {
+  renda_fixa: "bg-brand-600",
+  renda_variavel: "bg-amber-500",
+  previdencia: "bg-violet-500",
+};
 
-export default function Patrimonio() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [categoriaPatrimonio, setCategoriaPatrimonio] = useState("");
+const MESES = [
+  "jan", "fev", "mar", "abr", "mai", "jun",
+  "jul", "ago", "set", "out", "nov", "dez",
+];
+
+export default async function Patrimonio({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  const [plano, ativos, passivos, investimentos, dividas] = await Promise.all([
+    getPlanoAtivo(id),
+    linhasDoCliente("asset", id),
+    linhasDoCliente("liability", id),
+    linhasDoCliente("investment", id),
+    linhasDoCliente("debt", id),
+  ]);
+
+  const somaAtivos = ativos.reduce((a, x) => a + Number(x.valor), 0);
+  const somaPassivos = passivos.reduce((a, x) => a + Number(x.valor), 0);
+  const carteira = investimentos.reduce((a, x) => a + Number(x.valor), 0);
+
+  // Alocação por classe — o percentual é derivado, nunca guardado.
+  const porClasse = new Map<string, number>();
+  for (const i of investimentos) {
+    porClasse.set(i.classe, (porClasse.get(i.classe) ?? 0) + Number(i.valor));
+  }
+
+  const saldoDevedor = dividas.reduce((a, d) => a + mesesRestantes(d) * Number(d.parcela ?? 0), 0);
 
   return (
-    <>
-      <div className="flex justify-end mb-6">
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-brand-600 hover:bg-brand-900 text-white px-4 py-2.5 rounded-lg transition-colors font-medium text-sm shadow-sm"
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Stat rotulo="Patrimônio líquido" valor={formatCurrency(somaAtivos - somaPassivos, 2)} />
+        <Stat rotulo="Ativos" valor={formatCurrency(somaAtivos, 2)} />
+        <Stat rotulo="Passivos" valor={formatCurrency(somaPassivos, 2)} />
+        <Stat
+          rotulo="Carteira investida"
+          valor={formatCurrency(carteira, 2)}
+          hint="ponto de partida da projeção"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <Card titulo="Ativos" icone={Building2} tom="verde" total={somaAtivos}>
+          <ListaEditavel
+            entidade="ativo"
+            planId={plano?.id ?? null}
+            clientId={id}
+            vazio="Nenhum ativo registrado."
+            linhas={ativos.map((a) => ({
+              id: a.id,
+              titulo: a.nome,
+              valor: `R$ ${escreverMoeda(Number(a.valor))}`,
+              bruto: a,
+            }))}
+          />
+        </Card>
+
+        <Card titulo="Passivos" icone={Scale} tom="vermelho" total={somaPassivos}>
+          <ListaEditavel
+            entidade="passivo"
+            planId={plano?.id ?? null}
+            clientId={id}
+            vazio="Nenhum passivo registrado."
+            linhas={passivos.map((p) => ({
+              id: p.id,
+              titulo: p.nome,
+              valor: `R$ ${escreverMoeda(Number(p.valor))}`,
+              bruto: p,
+            }))}
+          />
+        </Card>
+
+        <Card
+          titulo="Carteira de investimentos"
+          icone={LineChart}
+          tom="brand"
+          total={carteira}
         >
-          <Plus className="w-4 h-4" />
-          Novo Patrimônio
-        </button>
+          {carteira > 0 && (
+            <div className="flex flex-col gap-4 mb-5">
+              {[...porClasse].map(([classe, valor]) => (
+                <div key={classe} className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-baseline gap-4">
+                    <span className="font-inter text-sm font-medium text-slate-700">
+                      {CLASSE_LABEL[classe] ?? classe}
+                    </span>
+                    <span className="font-inter text-sm text-slate-600 tabular-nums">
+                      {formatCurrency(valor, 2)}
+                      <span className="text-slate-400 ml-2">{pct(valor / carteira)}</span>
+                    </span>
+                  </div>
+                  <Barra
+                    fracao={valor / carteira}
+                    tom={CLASSE_TOM[classe] ?? "bg-slate-400"}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <ListaEditavel
+            entidade="investimento"
+            planId={plano?.id ?? null}
+            clientId={id}
+            vazio="Nenhum investimento. A projeção parte de zero de patrimônio."
+            linhas={investimentos.map((i) => ({
+              id: i.id,
+              titulo: i.nome ?? CLASSE_LABEL[i.classe] ?? i.classe,
+              detalhe: [CLASSE_LABEL[i.classe], i.instituicao, i.liquidez]
+                .filter(Boolean)
+                .join(" · "),
+              valor: `R$ ${escreverMoeda(Number(i.valor))}`,
+              bruto: i,
+            }))}
+          />
+        </Card>
+
+        <Card
+          titulo="Dívidas a liquidar"
+          icone={CreditCard}
+          tom="ambar"
+          total={saldoDevedor}
+        >
+          <ListaEditavel
+            entidade="divida"
+            planId={plano?.id ?? null}
+            clientId={id}
+            vazio="Sem dívidas ativas."
+            linhas={dividas.map((d) => ({
+              id: d.id,
+              titulo: d.descricao,
+              detalhe: `${escreverMoeda(Number(d.parcela ?? 0))}/mês${
+                d.fim ? ` até ${rotulo(d.fim)}` : ""
+              }`,
+              alerta: d.fim ? undefined : "Sem última parcela — corre para sempre",
+              valor: d.fim
+                ? `R$ ${escreverMoeda(mesesRestantes(d) * Number(d.parcela ?? 0))}`
+                : "—",
+              bruto: d,
+            }))}
+            extra={
+              dividas.length > 0 ? (
+                <p className="font-inter text-xs text-slate-400 mt-4">
+                  Saldo devedor estimado pelo que ainda será pago: parcela × meses
+                  restantes. Não desconta juros embutidos — é o desembolso, não o
+                  valor presente.
+                </p>
+              ) : null
+            }
+          />
+        </Card>
       </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 max-w-7xl mx-auto">
-
-        {/* Cartão 1: Bens Imobilizados */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
-                <Home className="w-5 h-5" />
-              </div>
-              <h2 className="font-poppins text-lg text-brand-950 font-medium">Bens Imobilizados</h2>
-            </div>
-            <div className="font-poppins text-xl font-semibold text-brand-950">
-              R$ 850.000,00
-            </div>
-          </div>
-          <div className="border-b border-slate-100 w-full mb-4"></div>
-
-          <div className="flex flex-col">
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Apartamento (Residência)</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Imóvel Próprio</p>
-              </div>
-              <span className="font-inter text-sm text-slate-600">750.000,00</span>
-            </div>
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Carro SUV</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Veículo</p>
-              </div>
-              <span className="font-inter text-sm text-slate-600">100.000,00</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Cartão 2: Investimentos */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg text-brand-600">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <h2 className="font-poppins text-lg text-brand-950 font-medium">Investimentos</h2>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="font-poppins text-xl font-semibold text-brand-600">
-                R$ 320.000,00
-              </div>
-              <a
-                href={ANALISE_INVESTIMENTO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-brand-600 hover:bg-brand-300/10 hover:border-brand-300 transition-colors font-inter text-xs font-medium shrink-0"
-              >
-                Abrir Análise
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-          </div>
-          <div className="border-b border-slate-100 w-full mb-4"></div>
-
-          <div className="flex flex-col">
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">CDB Banco Inter</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Renda Fixa • Vencimento: 2028</p>
-              </div>
-              <span className="font-inter text-sm text-slate-600">120.000,00</span>
-            </div>
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Carteira de Ações</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Renda Variável • Liquidez: D+2</p>
-              </div>
-              <span className="font-inter text-sm text-slate-600">200.000,00</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Cartão 3: Saldos Bancários */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
-                <Wallet className="w-5 h-5" />
-              </div>
-              <h2 className="font-poppins text-lg text-brand-950 font-medium">Saldos Bancários</h2>
-            </div>
-            <div className="font-poppins text-xl font-semibold text-emerald-600">
-              R$ 25.000,00
-            </div>
-          </div>
-          <div className="border-b border-slate-100 w-full mb-4"></div>
-
-          <div className="flex flex-col">
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Conta Corrente</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Saldo Disponível</p>
-              </div>
-              <span className="font-inter text-sm text-slate-600">5.000,00</span>
-            </div>
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Reserva de Emergência (Poupança)</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Liquidez: Imediata</p>
-              </div>
-              <span className="font-inter text-sm text-slate-600">20.000,00</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* MODAL DE REGISTRO */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-brand-950/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
-              <h2 className="font-poppins font-semibold text-lg text-brand-950">Novo Patrimônio</h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-brand-950 transition-colors p-2 rounded-full hover:bg-slate-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto flex-1 font-inter">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                <div className="col-span-1 md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Categoria</label>
-                  <select
-                    value={categoriaPatrimonio}
-                    onChange={(e) => setCategoriaPatrimonio(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all bg-white shadow-sm"
-                  >
-                    <option value="" disabled>Selecione...</option>
-                    <option value="Bem Imobilizado">Bem Imobilizado</option>
-                    <option value="Investimento">Investimento</option>
-                    <option value="Saldo Bancário">Saldo Bancário</option>
-                    <option value="Outros">Outros</option>
-                  </select>
-                </div>
-
-                <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Descrição</label>
-                  <input type="text" placeholder="Ex: Tesouro Selic, Casa na Praia" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all shadow-sm" />
-                </div>
-
-                <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Valor Atual (R$)</label>
-                  <input type="number" placeholder="0.00" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all font-poppins font-medium shadow-sm" />
-                </div>
-
-                {/* Campos Condicionais (Investimento) */}
-                {categoriaPatrimonio === "Investimento" && (
-                  <>
-                    <div className="col-span-1 border-t border-slate-100 pt-5 mt-1">
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Tipo de Investimento</label>
-                      <select defaultValue="" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all shadow-sm bg-white">
-                        <option value="" disabled>Selecione...</option>
-                        <option value="Renda Fixa">Renda Fixa</option>
-                        <option value="Renda Variável">Renda Variável</option>
-                        <option value="Fundos Imobiliários">Fundos Imobiliários</option>
-                        <option value="Previdência">Previdência</option>
-                        <option value="Criptomoedas">Criptomoedas</option>
-                      </select>
-                    </div>
-                    <div className="col-span-1 border-t border-slate-100 pt-5 mt-1">
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Grau de Liquidez</label>
-                      <select defaultValue="" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all shadow-sm bg-white">
-                        <option value="" disabled>Selecione...</option>
-                        <option value="Imediata (D+0)">Imediata (D+0)</option>
-                        <option value="Curto Prazo (D+1 a D+30)">Curto Prazo (D+1 a D+30)</option>
-                        <option value="Médio/Longo Prazo">Médio/Longo Prazo</option>
-                        <option value="Apenas no Vencimento">Apenas no Vencimento</option>
-                      </select>
-                    </div>
-                  </>
-                )}
-
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2.5 rounded-lg text-slate-600 font-medium hover:bg-slate-200 transition-colors text-sm"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-900 text-white font-medium transition-colors text-sm shadow-sm"
-              >
-                Salvar Patrimônio
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 }
+
+type Divida = { inicio: string | null; fim: string | null };
+
+/** Meses de parcela que ainda faltam, contados a partir do início da dívida. */
+function mesesRestantes(d: Divida): number {
+  if (!d.fim || !d.inicio) return 0;
+  const [ai, mi] = d.inicio.split("-").map(Number);
+  const [af, mf] = d.fim.split("-").map(Number);
+  return Math.max(0, (af * 12 + mf) - (ai * 12 + mi) + 1);
+}
+
+const rotulo = (iso: string) => `${MESES[Number(iso.slice(5, 7)) - 1]}/${iso.slice(0, 4)}`;

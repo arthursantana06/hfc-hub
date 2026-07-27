@@ -1,4 +1,4 @@
-import { Logo } from "./Logo";
+import { PageFooter } from "./PageFooter";
 
 /**
  * Casca padrão das telas do hub: cabeçalho fixo, corpo rolável e rodapé.
@@ -36,17 +36,7 @@ export function Page({
 
       <div className="flex-1 overflow-y-auto px-8 py-8">{children}</div>
 
-      <footer className="shrink-0 flex items-center justify-between px-8 py-3 bg-white border-t border-slate-200">
-        <div className="flex items-center gap-2">
-          <Logo size="sm" className="h-7 w-7 opacity-60" />
-          <span className="font-inter text-xs text-slate-400">
-            HFC Hub · plataforma interna da consultoria
-          </span>
-        </div>
-        <span className="font-inter text-xs text-slate-400">
-          Fase 0 — em construção
-        </span>
-      </footer>
+      <PageFooter />
     </div>
   );
 }

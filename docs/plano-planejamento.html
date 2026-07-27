@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HFC Hub — Plano de Tradução: da Planilha ao Sistema</title>
+<style>
+  :root {
+    --ground: #F6F8F6; --surface: #FFFFFF; --surface-2: #EEF2EE;
+    --ink: #14201B; --ink-soft: #45564E; --ink-faint: #78887F;
+    --line: #DBE3DD; --line-strong: #C6D1CA;
+    --accent: #0B6E5B; --accent-soft: #0F8E75; --accent-wash: #E7F1ED;
+    --gold: #A9791F; --gold-wash: #F5EBD6;
+    --good: #2E7D52; --warn: #B07E1F; --crit: #B24329;
+    --l-in: #2F6DB4; --l-engine: #7A57C0; --l-out: #A9791F; --l-track: #0B6E5B;
+    --font-display: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+    --maxw: 1080px; --readw: 74ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0D1512; --surface: #131E1A; --surface-2: #182823;
+      --ink: #E9EFEB; --ink-soft: #A7B6AD; --ink-faint: #6F7E76;
+      --line: #24322C; --line-strong: #31423A;
+      --accent: #3CBBA0; --accent-soft: #2FA189; --accent-wash: #14231E;
+      --gold: #D2A85C; --gold-wash: #241E12;
+      --good: #4CA877; --warn: #D2A85C; --crit: #D9765C;
+      --l-in: #6BA6E6; --l-engine: #AB8CEB; --l-out: #D2A85C; --l-track: #3CBBA0;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #F6F8F6; --surface: #FFFFFF; --surface-2: #EEF2EE;
+    --ink: #14201B; --ink-soft: #45564E; --ink-faint: #78887F;
+    --line: #DBE3DD; --line-strong: #C6D1CA;
+    --accent: #0B6E5B; --accent-soft: #0F8E75; --accent-wash: #E7F1ED;
+    --gold: #A9791F; --gold-wash: #F5EBD6;
+    --good: #2E7D52; --warn: #B07E1F; --crit: #B24329;
+    --l-in: #2F6DB4; --l-engine: #7A57C0; --l-out: #A9791F; --l-track: #0B6E5B;
+  }
+  :root[data-theme="dark"] {
+    --ground: #0D1512; --surface: #131E1A; --surface-2: #182823;
+    --ink: #E9EFEB; --ink-soft: #A7B6AD; --ink-faint: #6F7E76;
+    --line: #24322C; --line-strong: #31423A;
+    --accent: #3CBBA0; --accent-soft: #2FA189; --accent-wash: #14231E;
+    --gold: #D2A85C; --gold-wash: #241E12;
+    --good: #4CA877; --warn: #D2A85C; --crit: #D9765C;
+    --l-in: #6BA6E6; --l-engine: #AB8CEB; --l-out: #D2A85C; --l-track: #3CBBA0;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  section { padding: 52px 0; border-top: 1px solid var(--line); }
+  h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; }
+  h2 { font-size: clamp(1.5rem, 3vw, 2rem); letter-spacing: -0.01em; line-height: 1.15; }
+  h3 { font-size: 1.15rem; letter-spacing: -0.005em; }
+  h4 { font-size: 0.98rem; }
+  p { margin: 0; }
+  a { color: var(--accent); }
+  code { font-family: var(--font-mono); font-size: 0.86em; background: var(--surface-2); padding: 1px 5px; border-radius: 5px; border: 1px solid var(--line); }
+
+  .eyebrow {
+    font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase;
+    letter-spacing: 0.16em; color: var(--accent); font-weight: 600; display: inline-block;
+  }
+  .lede { color: var(--ink-soft); font-size: 1.05rem; max-width: var(--readw); }
+  .sec-head { margin-bottom: 28px; }
+  .sec-head .eyebrow { margin-bottom: 10px; }
+  .sec-head p { margin-top: 8px; color: var(--ink-soft); max-width: var(--readw); }
+
+  header.hero {
+    padding: 68px 0 46px;
+    background: radial-gradient(120% 90% at 88% -10%, var(--accent-wash) 0%, transparent 55%), var(--ground);
+    border-bottom: 1px solid var(--line);
+  }
+  .brandline { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+  .glyph {
+    width: 38px; height: 38px; border-radius: 9px; background: var(--accent); color: #06231C;
+    display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 1.1rem;
+  }
+  .brandline .bn { font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+  header.hero h1 { font-size: clamp(2.1rem, 5.4vw, 3.2rem); line-height: 1.05; letter-spacing: -0.02em; max-width: 18ch; }
+  header.hero h1 em { font-style: italic; color: var(--accent); }
+  header.hero .lede { margin-top: 20px; font-size: 1.12rem; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 30px; }
+  .meta { display: flex; flex-direction: column; gap: 2px; }
+  .meta .k { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
+  .meta .v { font-weight: 600; font-size: 0.95rem; }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px;
+    border: 1px solid var(--line-strong); color: var(--ink-soft); background: var(--surface);
+  }
+  .pill.now { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, var(--line)); background: color-mix(in srgb, var(--good) 10%, var(--surface)); }
+  .pill.next { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); background: color-mix(in srgb, var(--warn) 10%, var(--surface)); }
+  .pill.crit { color: var(--crit); border-color: color-mix(in srgb, var(--crit) 40%, var(--line)); background: color-mix(in srgb, var(--crit) 10%, var(--surface)); }
+  .pill.later { color: var(--ink-faint); }
+
+  /* mapa das abas */
+  .sheets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .lane { display: flex; flex-direction: column; gap: 10px; }
+  .lane-h { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lc); font-weight: 700; }
+  .lane-h::before { content: ""; width: 10px; height: 10px; border-radius: 3px; background: var(--lc); flex: none; }
+  .sheet { background: var(--surface); border: 1px solid var(--line); border-top: 2.5px solid var(--lc); border-radius: 10px; padding: 12px 13px; }
+  .sheet .sn { font-family: var(--font-mono); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.01em; }
+  .sheet .sd { font-size: 0.83rem; color: var(--ink-soft); margin-top: 5px; line-height: 1.45; }
+  .sheet .sx { font-family: var(--font-mono); font-size: 0.62rem; color: var(--ink-faint); margin-top: 7px; display: block; }
+
+  /* achados */
+  .finds { display: flex; flex-direction: column; gap: 0; }
+  .find { display: grid; grid-template-columns: 34px 1fr; gap: 18px; padding: 20px 0; border-top: 1px dashed var(--line); }
+  .find:first-child { border-top: 0; }
+  .find .fn { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--accent); line-height: 1; }
+  .find h3 { margin-bottom: 7px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .find p { color: var(--ink-soft); font-size: 0.94rem; max-width: var(--readw); }
+  .find p + p { margin-top: 8px; }
+  .find .verdict { margin-top: 10px; font-size: 0.9rem; padding: 10px 13px; border-radius: 9px; background: var(--accent-wash); border-left: 3px solid var(--accent); color: var(--ink-soft); }
+  .find .verdict b { color: var(--ink); font-weight: 600; }
+
+  /* ERD */
+  .erd { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+  .ent { background: var(--surface); border: 1px solid var(--line); border-top: 2.5px solid var(--lc, var(--accent)); border-radius: 10px; padding: 11px 13px; }
+  .ent-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .ent-name { font-family: var(--font-mono); font-weight: 700; font-size: 0.82rem; }
+  .ent-badge { font-family: var(--font-mono); font-size: 0.52rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lc); border: 1px solid color-mix(in srgb, var(--lc) 45%, var(--line)); padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
+  .ent-badge.new { color: var(--crit); border-color: color-mix(in srgb, var(--crit) 45%, var(--line)); }
+  .ent-badge.mod { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); }
+  .ent-f { list-style: none; margin: 0; padding: 0; }
+  .ent-f li { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-family: var(--font-mono); font-size: 0.7rem; color: var(--ink-soft); padding: 3px 0; border-bottom: 1px dotted var(--line); }
+  .ent-f li:last-child { border-bottom: 0; }
+  .ent-f li b { color: var(--ink); font-weight: 700; }
+  .ent-f li.fk b { color: var(--lc); }
+  .ent-f li.add b { color: var(--crit); }
+  .ent-f li .ty { color: var(--ink-faint); font-size: 0.6rem; text-align: right; white-space: nowrap; }
+  .ent-rel { margin-top: 8px; font-family: var(--font-mono); font-size: 0.6rem; color: var(--ink-faint); line-height: 1.45; }
+
+  /* fórmulas */
+  .formula { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+  .formula + .formula { margin-top: 14px; }
+  .formula h4 { margin-bottom: 4px; }
+  .formula .src { font-family: var(--font-mono); font-size: 0.62rem; color: var(--ink-faint); letter-spacing: 0.06em; text-transform: uppercase; }
+  .formula pre {
+    font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.65; margin: 12px 0 0;
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px 14px; overflow-x: auto; color: var(--ink);
+  }
+  .formula .why { margin-top: 10px; font-size: 0.88rem; color: var(--ink-soft); max-width: var(--readw); }
+
+  /* tabela */
+  .tw { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.86rem; }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; background: var(--surface-2); }
+  tr:last-child td { border-bottom: 0; }
+  td code { font-size: 0.8em; }
+  td.num { font-family: var(--font-mono); text-align: right; white-space: nowrap; }
+
+  /* roadmap */
+  .phase { display: grid; grid-template-columns: 100px 1fr; gap: 22px; padding: 22px 0; border-top: 1px dashed var(--line); }
+  .phase:first-child { border-top: 0; }
+  .phase .pnum { font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; color: var(--accent); line-height: 1; }
+  .phase .pnum small { display: block; font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.13em; color: var(--ink-faint); text-transform: uppercase; margin-top: 6px; }
+  .phase h3 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .phase .pbody > p { color: var(--ink-soft); font-size: 0.94rem; margin-bottom: 11px; max-width: var(--readw); }
+  .phase ul { margin: 0 0 11px; padding-left: 1.15em; color: var(--ink-soft); font-size: 0.9rem; }
+  .phase ul li { margin: 4px 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip { font-family: var(--font-mono); font-size: 0.7rem; padding: 3px 9px; border-radius: 7px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft); }
+
+  /* lacunas */
+  .gaps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .gap { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--warn); border-radius: 10px; padding: 15px 17px; }
+  .gap .q { font-weight: 600; margin-bottom: 5px; font-size: 0.95rem; }
+  .gap .a { font-size: 0.88rem; color: var(--ink-soft); }
+  .gap.open { border-left-color: var(--crit); }
+
+  footer { padding: 40px 0 60px; color: var(--ink-faint); font-size: 0.85rem; font-family: var(--font-mono); border-top: 1px solid var(--line); }
+
+  @media (max-width: 900px) { .erd { grid-template-columns: 1fr 1fr; } .sheets { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 720px) {
+    .erd, .sheets, .gaps { grid-template-columns: 1fr; }
+    .phase { grid-template-columns: 60px 1fr; gap: 14px; }
+    .phase .pnum { font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="brandline">
+      <div class="glyph">H</div>
+      <span class="bn">HFC Consultoria · Hub</span>
+    </div>
+    <h1>Da planilha ao sistema: o <em>plano de tradução</em></h1>
+    <p class="lede">
+      A planilha de acompanhamento tem 13 abas, ~1.900 células preenchidas e um motor de
+      projeção que vai do mês corrente até os 101 anos do cliente. Este documento mapeia
+      cada aba para uma entidade do sistema, explicita cada fórmula que precisa virar
+      código, e ordena o trabalho em cinco fases. É o detalhamento da fase
+      <b>Planejamento / Raio-X</b> do plano mestre.
+    </p>
+    <div class="meta-row">
+      <div class="meta"><span class="k">Fonte</span><span class="v">Planilha de acompanhamento</span></div>
+      <div class="meta"><span class="k">Saída-alvo</span><span class="v">Relatório mensal, 5 páginas</span></div>
+      <div class="meta"><span class="k">Motor</span><span class="v">TypeScript no servidor</span></div>
+      <div class="meta"><span class="k">Fidelidade</span><span class="v">Corrigir + paridade auditada</span></div>
+      <div class="meta"><span class="k">Data</span><span class="v">27/07/2026</span></div>
+    </div>
+    <p class="lede" style="margin-top:26px; font-size:0.95rem">
+      <b>Sobre os números.</b> Este repositório é público, então o documento não
+      nomeia o cliente de referência. Os valores citados vêm da planilha real e
+      servem de exemplo do modelo; o arquivo de origem, o fixture de teste e o
+      relatório de paridade ficam fora do git.
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<section id="progresso">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">00 · Progresso</span>
+      <h2>P1 e P2 concluídas <span class="pill now">27/07/2026</span></h2>
+      <p>
+        Schema aplicado, motor escrito e testado, cliente de referência carregado,
+        <code>mock-clients.ts</code> apagado. As telas de cliente e o dashboard da
+        consultoria já leem do banco.
+      </p>
+    </div>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>Entrega</th><th>Onde</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>Migrações 0013–0016 + RLS</td><td><code>supabase/migrations/</code></td><td>aplicadas</td></tr>
+          <tr><td>Motor de projeção</td><td><code>src/lib/planning/</code></td><td>5 módulos, funções puras</td></tr>
+          <tr><td>Paridade contra a planilha</td><td><code>docs/paridade-referencia.md</code></td><td><b>46 de 48 células exatas</b>, 2 divergências auditadas</td></tr>
+          <tr><td>Testes</td><td><code>npm test</code></td><td>82 passando</td></tr>
+          <tr><td>Carga do cliente de referência</td><td><code>scripts/seed_referencia.py</code></td><td>no banco: 6 receitas, 17 custos, 5 dívidas, 8 objetivos, 25 mudanças</td></tr>
+          <tr><td>Fim dos dados falsos</td><td><code>src/lib/mock-clients.ts</code></td><td>apagado</td></tr>
+          <tr><td>Telas contra o banco</td><td>Visão Geral, Clientes, Resumo, Ponto de Partida (4 abas), Diagnóstico</td><td>reescritas</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sec-head" style="margin-top:36px">
+      <h3>Duas decisões tomadas durante a execução</h3>
+    </div>
+
+    <div class="finds">
+      <div class="find">
+        <div class="fn">A</div>
+        <div>
+          <h3>Um único motor mensal, em vez de três <span class="pill">simplificação</span></h3>
+          <p>
+            A planilha mantinha três abas com fórmulas diferentes para curto, longo
+            e aposentadoria — e foi exatamente na costura entre elas que nasceu o
+            <code>$F$8</code> congelado do Achado 3. O motor faz uma passagem mensal
+            só, do início do plano aos 101 anos (621 meses no caso de referência), e as três
+            projeções viraram recortes da mesma série. O que muda ao longo do tempo é
+            a taxa (12% → 10% → 4%) e, na aposentadoria, a origem da renda.
+          </p>
+          <div class="verdict">
+            <b>Efeito:</b> a divergência entre horizontes deixou de ter onde nascer.
+            Um teste afirma que o ano agregado bate com a soma dos seus meses —
+            propriedade que a planilha não tinha como garantir.
+          </div>
+        </div>
+      </div>
+
+      <div class="find">
+        <div class="fn">B</div>
+        <div>
+          <h3>O número que muda a conversa <span class="pill crit">achado novo</span></h3>
+          <p>
+            Corrigido o congelamento da despesa (Achado 3), o patrimônio do cliente de referência
+            não zera aos 91 — zera aos <b>75</b>, em 2052. A diferença de dezesseis
+            anos vem inteira de comparar retorno nominal contra despesa congelada.
+          </p>
+          <p>
+            A renda projetada na aposentadoria é de R$ 20.113/mês contra os
+            R$ 30.000 desejados. Os dois números agora aparecem em destaque no
+            Diagnóstico e no Resumo, e a Visão Geral lista quais clientes da carteira
+            estão nessa situação — pergunta que a planilha não conseguia responder,
+            porque cada cliente era um arquivo separado.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="anatomia">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">01 · Anatomia</span>
+      <h2>O que a planilha realmente é</h2>
+      <p>
+        As 13 abas não têm o mesmo peso. Quatro são <b>entrada</b> — onde o planejador digita.
+        Três são <b>motor</b> — não contêm informação, só recalculam. Duas são <b>saída</b> —
+        existem para virar PDF. O resto é apoio. Essa separação é o que dita o modelo de dados:
+        só a entrada vira tabela; o motor vira código; a saída vira template.
+      </p>
+    </div>
+
+    <div class="sheets">
+      <div class="lane" style="--lc: var(--l-in)">
+        <div class="lane-h">Entrada</div>
+        <div class="sheet">
+          <span class="sn">CADASTRO</span>
+          <p class="sd">Identidade e calendário do plano: nome, nascimento, início do acompanhamento, dia de referência, dia de pagamento, dia da fatura. E o interruptor <b>Valor Nominal / Valor Real</b>, que decide se a projeção desconta inflação.</p>
+          <span class="sx">→ client · financial_plan</span>
+        </div>
+        <div class="sheet">
+          <span class="sn">PLANILHA MENSAL</span>
+          <p class="sd">O raio-x. Receitas com frequência, custos em 6 grupos e ~35 subcategorias, parcelas, ativos, passivos, previdência, seguro. Mais o bloco ORÇAMENTO, que reclassifica os mesmos custos em 4 baldes com % do total.</p>
+          <span class="sx">→ plan_income · plan_expense · debt · asset · liability</span>
+        </div>
+        <div class="sheet">
+          <span class="sn">OBJETIVOS</span>
+          <p class="sd">Objetivos de curto prazo (com data) e de longo prazo (com periodicidade). E as duas tabelas de <b>mudanças</b> — os eventos que alteram receita, despesa ou dívida a partir de uma data. É a aba mais importante do arquivo.</p>
+          <span class="sx">→ goal · plan_change · retirement_plan</span>
+        </div>
+        <div class="sheet">
+          <span class="sn">ORÇAMENTO</span>
+          <p class="sd">O realizado do mês: faturas por cartão cruzadas com categoria de gasto, receitas efetivas, parcelas mês a mês.</p>
+          <span class="sx">→ monthly_record · card_statement</span>
+        </div>
+        <div class="sheet">
+          <span class="sn">INVESTIMENTOS</span>
+          <p class="sd">Carteira por classe (renda fixa / variável) com valor e percentual.</p>
+          <span class="sx">→ investment</span>
+        </div>
+      </div>
+
+      <div class="lane" style="--lc: var(--l-engine)">
+        <div class="lane-h">Motor</div>
+        <div class="sheet">
+          <span class="sn">objetivos planilha</span>
+          <p class="sd">A ponte. Expande as duas tabelas de mudanças em deltas mês a mês (curto) e ano a ano (longo) de RECEITA / DESPESA / DÍVIDA / OBJETIVO. Não contém informação própria: é um <code>SUMIFS</code> gigante.</p>
+          <span class="sx">→ desaparece · vira função pura</span>
+        </div>
+        <div class="sheet">
+          <span class="sn">PROJEÇÃO CURTA</span>
+          <p class="sd">36 meses. Linha de base + deltas do mês, com o patrimônio investido capitalizando mês a mês a 12% a.a.</p>
+          <span class="sx">→ projection(horizonte='curta')</span>
+        </div>
+        <div class="sheet">
+          <span class="sn">PROJEÇÃO LONGA</span>
+          <p class="sd">Anual, do 4º ano até a aposentadoria. Mesmas colunas, capitalização a 10% a.a.</p>
+          <span class="sx">→ projection(horizonte='longa')</span>
+        </div>
+        <div class="sheet">
+          <span class="sn">APOSENTADORIA</span>
+          <p class="sd">Da idade-alvo aos 101 anos. Renda do INSS contra os gastos projetados, com o patrimônio rendendo 4% real e cobrindo o déficit até acabar.</p>
+          <span class="sx">→ projection(horizonte='aposentadoria')</span>
+        </div>
+      </div>
+
+      <div class="lane" style="--lc: var(--l-out)">
+        <div class="lane-h">Saída</div>
+        <div class="sheet">
+          <span class="sn">Planilha1</span>
+          <p class="sd">O gerador do relatório mensal de 5 páginas: placar realizado × meta com estrelas, orçamento do mês, quatro gráficos de acompanhamento, checklist de objetivos, metas e direcionamentos do mês seguinte.</p>
+          <span class="sx">→ report · report_directive · template PDF</span>
+        </div>
+        <div class="sheet">
+          <span class="sn">DOCUMENTO</span>
+          <p class="sd">O documento de planejamento em 8 seções, entregue uma vez no início: controle mensal, sonhos e objetivos, projeção, patrimônio, aposentadoria, investimentos, metas.</p>
+          <span class="sx">→ template PDF · mesmos dados</span>
+        </div>
+      </div>
+
+      <div class="lane" style="--lc: var(--l-track)">
+        <div class="lane-h">Referência</div>
+        <div class="sheet">
+          <span class="sn">PROJEÇÃO ORIGINAL</span>
+          <p class="sd">Cópia congelada da projeção no dia em que o plano foi fechado. É contra ela que o realizado é comparado todo mês — são as <b>metas</b>.</p>
+          <span class="sx">→ projection(congelada=true)</span>
+        </div>
+        <div class="sheet">
+          <span class="sn">Base</span>
+          <p class="sd">Nomes de meses, níveis de estrela, e um modelo de precificação de consultório (capacidade em horas, taxa de cancelamento, preço ideal). Este último é específico deste cliente.</p>
+          <span class="sx">→ fora de escopo por ora</span>
+        </div>
+        <div class="sheet">
+          <span class="sn">Planilha1 · Base</span>
+          <p class="sd">Três células (<code>A1</code>, <code>C1</code>, <code>H13</code>) definem qual mês o relatório está gerando. No sistema isso é um parâmetro da rota, não um dado.</p>
+          <span class="sx">→ parâmetro</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="achados">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">02 · Achados</span>
+      <h2>Sete coisas que mudam o desenho</h2>
+      <p>
+        Ler as fórmulas — não só os valores — revelou decisões de modelagem que não estão
+        documentadas em lugar nenhum, e alguns defeitos que vão gerar divergência quando o
+        sistema começar a devolver os números certos.
+      </p>
+    </div>
+
+    <div class="finds">
+      <div class="find">
+        <div class="fn">1</div>
+        <div>
+          <h3>O fim de uma dívida não é uma data — é um evento <span class="pill">estrutural</span></h3>
+          <p>
+            A parcela do Jeep (R$ 2.750,52) vive em <code>PLANILHA MENSAL!I9</code> como um valor
+            mensal perpétuo. Ela não tem data de término. O que a encerra é uma linha na tabela
+            de mudanças de longo prazo: <code>Carro Jeep · +2.750,52 · início 04/2028 · Dívida</code>
+            — um delta positivo que a cancela dali em diante.
+          </p>
+          <p>
+            Isso significa que a planilha não sabe quando uma dívida acaba. Ela sabe que, a partir
+            de certo mês, alguém somou um número de volta. Se o planejador esquecer de criar a
+            linha de mudança, a dívida corre para sempre.
+          </p>
+          <div class="verdict">
+            <b>Decisão:</b> <code>debt</code> ganha <code>inicio</code> e <code>fim</code> reais, e o
+            motor deriva o delta sozinho. A tabela de mudanças fica só para o que é genuinamente
+            um evento (<i>"deixar de pagar aluguel"</i>, <i>"redução de trabalho"</i>).
+            Ganho colateral: a tela passa a poder mostrar <i>"faltam 19 parcelas"</i>.
+          </div>
+        </div>
+      </div>
+
+      <div class="find">
+        <div class="fn">2</div>
+        <div>
+          <h3>As estrelas do relatório são digitadas à mão <span class="pill crit">sem regra</span></h3>
+          <p>
+            <code>Planilha1!K17</code> a <code>K26</code> contêm o texto <code>★★★★</code> — não há
+            fórmula. E os valores não seguem padrão nenhum: receitas em 100,2% da meta valem 4
+            estrelas; despesas em 115% da meta (ou seja, gastou 15% <i>a mais</i> que o planejado)
+            valem 5; sobras em 59,6% da meta valem 4.
+          </p>
+          <div class="verdict">
+            <b>Precisa de você:</b> ou definimos uma régua explícita por métrica (faixas de % →
+            estrelas, com o sinal invertido para despesas e dívidas), ou o campo continua sendo
+            julgamento do planejador e vira um seletor na tela de fechamento do mês. Recomendo a
+            régua explícita com possibilidade de sobrescrever — sem regra, dois planejadores dão
+            notas diferentes para o mesmo mês.
+          </div>
+        </div>
+      </div>
+
+      <div class="find">
+        <div class="fn">3</div>
+        <div>
+          <h3>A projeção longa congela a despesa do primeiro ano <span class="pill next">defeito</span></h3>
+          <p>
+            Em <code>PROJEÇÃO LONGA</code>, a coluna GASTOS de todo ano usa <code>=$F$8 + Δ</code> —
+            referência absoluta ao total de 2028. Os custos anuais que caem em meses específicos,
+            os reajustes, tudo fica preso ao primeiro ano projetado. Na prática o cliente gasta
+            R$ 172.639 por ano de 2028 até 2077, salvo mudança explícita.
+          </p>
+          <p>
+            No modo <b>Valor Real</b> isso é quase defensável (gastos constantes em poder de compra).
+            No modo <b>Valor Nominal</b>, que é o que está ligado neste plano, é uma subestimação
+            grande: o patrimônio projetado cresce nominalmente mas a despesa não.
+          </p>
+          <div class="verdict">
+            <b>Decisão:</b> o motor recalcula a despesa-base de cada ano a partir da linha de base
+            + mudanças acumuladas, e aplica inflação no modo nominal. Vai divergir da planilha —
+            entra no relatório de paridade com a diferença ano a ano.
+          </div>
+        </div>
+      </div>
+
+      <div class="find">
+        <div class="fn">4</div>
+        <div>
+          <h3>A janela da PROJEÇÃO ORIGINAL está errada <span class="pill next">defeito</span></h3>
+          <p>
+            O corte que decide até onde as metas são exibidas é
+            <code>AND(MONTH(data) &lt;= 6; YEAR(data) &lt;= 2026)</code>. Comparar <i>mês</i> e
+            <i>ano</i> separadamente não define um intervalo: jul/2026 é escondido (mês 7 &gt; 6),
+            mas jan/2027 passaria no teste do mês e só é barrado pelo do ano — e jan/2028 volta
+            a aparecer se o ano de referência mudar. É um <code>&lt;=</code> aplicado a um par
+            que não é ordenável.
+          </p>
+          <div class="verdict">
+            <b>Decisão:</b> comparação por data (<code>ref_mes &lt;= mes_corrente</code>). Simples,
+            e resolve a classe inteira do problema.
+          </div>
+        </div>
+      </div>
+
+      <div class="find">
+        <div class="fn">5</div>
+        <div>
+          <h3>Há remendos manuais dentro das fórmulas <span class="pill next">deriva</span></h3>
+          <p>
+            <code>PROJEÇÃO CURTA!K11</code> termina com <code>… − 2000</code>, escrito à mão dentro
+            da fórmula de capitalização. <code>Base!K12</code> e <code>K15</code> estão em
+            <code>#REF!</code> desde alguma exclusão de linha. <code>Planilha1!L64</code> também.
+            <code>OBJETIVOS!E25</code> soma <code>G9:G25</code> — uma faixa que inclui a própria
+            célula de total, o que só não estoura porque está uma linha abaixo.
+          </p>
+          <div class="verdict">
+            <b>Consequência:</b> a planilha de origem não é uma referência confiável célula a
+            célula. O relatório de paridade vai listar essas diferenças como <i>esperadas</i>,
+            não como regressões. É exatamente o tipo de erosão que motiva sair da planilha.
+          </div>
+        </div>
+      </div>
+
+      <div class="find">
+        <div class="fn">6</div>
+        <div>
+          <h3>Receitas anuais são guardadas divididas por 12 <span class="pill">convenção</span></h3>
+          <p>
+            Férias e 13º aparecem na linha de base já divididos (<code>13º = (salários)/12</code>,
+            <code>Férias = 13º/3</code>), e a projeção os reconstitui multiplicando por 12 no mês
+            de ocorrência: <code>SUMIF(mês; …)*12</code>. O mesmo vale para custos anuais como IPVA
+            (<code>898,84 × 5/12</code> — cinco parcelas diluídas em doze meses).
+          </p>
+          <div class="verdict">
+            <b>Decisão:</b> guardar o valor <i>cheio</i> mais a frequência e o mês de ocorrência.
+            O rateio mensal passa a ser uma projeção do dado, não o dado. Assim <i>"quanto entra
+            de 13º"</i> tem uma resposta direta na base.
+          </div>
+        </div>
+      </div>
+
+      <div class="find">
+        <div class="fn">7</div>
+        <div>
+          <h3>Duas taxonomias de gasto convivem, e é proposital <span class="pill">convenção</span></h3>
+          <p>
+            Os custos são classificados por <b>natureza</b> (Casa, Saúde, Transporte, Lazer, Filhos
+            e Pets, Outros) na linha de base, e reclassificados por <b>controlabilidade</b> (Custos
+            Fixos, Gastos extras, Parcelas, Adicionais do mês) no bloco ORÇAMENTO. A ponte entre as
+            duas é feita por marcadores na coluna C: <code>1..12</code> para fixo, <code>a..l</code>
+            para extra.
+          </p>
+          <p>
+            Uma terceira taxonomia aparece na aba ORÇAMENTO para as faturas de cartão: Alimentação,
+            Transporte, Compras, Saúde, Vestuário, Lazer, Outros — a categorização que o banco
+            devolve, não a do plano.
+          </p>
+          <div class="verdict">
+            <b>Decisão:</b> manter as três, porque cada uma responde a uma pergunta diferente.
+            Natureza é atributo da categoria; controlabilidade é atributo da linha de custo
+            (<code>bucket</code>); categoria de fatura é atributo do extrato.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="modelo">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">03 · Modelo de dados</span>
+      <h2>Entidades novas, alteradas e reaproveitadas</h2>
+      <p>
+        O schema da Fase 0 já tem 23 tabelas, e boa parte serve. O que falta é a separação entre
+        <b>linha de base</b> (o plano, recorrente) e <b>realizado</b> (o mês que passou) — hoje
+        <code>monthly_record</code> tenta ser as duas coisas — e a tabela de <b>mudanças</b>, que
+        não existe e é o que aciona a projeção inteira.
+      </p>
+    </div>
+
+    <div class="erd">
+      <div class="lane" style="--lc: var(--l-in)">
+        <div class="lane-h">Plano · linha de base</div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">financial_plan</span><span class="ent-badge new">nova</span></div>
+          <ul class="ent-f">
+            <li class="fk"><b>client_id</b><span class="ty">uuid</span></li>
+            <li><b>inicio</b><span class="ty">date</span></li>
+            <li><b>dia_referencia</b><span class="ty">int</span></li>
+            <li><b>dia_pagamento</b><span class="ty">int</span></li>
+            <li><b>dia_fatura</b><span class="ty">int</span></li>
+            <li><b>modo_valor</b><span class="ty">nominal|real</span></li>
+            <li><b>juros_curto</b><span class="ty">numeric ·12%</span></li>
+            <li><b>juros_longo</b><span class="ty">numeric ·10%</span></li>
+            <li><b>inflacao</b><span class="ty">numeric ·5%</span></li>
+            <li><b>juros_aposent</b><span class="ty">numeric ·4%</span></li>
+            <li><b>idade_limite</b><span class="ty">int ·101</span></li>
+          </ul>
+          <p class="ent-rel">CADASTRO + as premissas hoje soltas em<br/>PROJEÇÃO CURTA!K5:K6 e LONGA!K5:K6</p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">plan_income</span><span class="ent-badge new">nova</span></div>
+          <ul class="ent-f">
+            <li class="fk"><b>plan_id</b><span class="ty">uuid</span></li>
+            <li><b>fonte</b><span class="ty">text</span></li>
+            <li><b>valor</b><span class="ty">numeric</span></li>
+            <li><b>frequencia</b><span class="ty">mensal|anual</span></li>
+            <li><b>mes_ocorrencia</b><span class="ty">int?</span></li>
+            <li><b>derivado</b><span class="ty">13o|ferias|null</span></li>
+          </ul>
+          <p class="ent-rel">PLANILHA MENSAL D8:G14<br/><code>income_entry</code> passa a ser só realizado</p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">plan_expense</span><span class="ent-badge new">nova</span></div>
+          <ul class="ent-f">
+            <li class="fk"><b>plan_id</b><span class="ty">uuid</span></li>
+            <li class="fk"><b>categoria_id</b><span class="ty">uuid</span></li>
+            <li><b>valor</b><span class="ty">numeric</span></li>
+            <li><b>frequencia</b><span class="ty">mensal|anual</span></li>
+            <li><b>mes_ocorrencia</b><span class="ty">int?</span></li>
+            <li><b>bucket</b><span class="ty">fixo|extra</span></li>
+          </ul>
+          <p class="ent-rel">PLANILHA MENSAL D20:G60<br/><code>bucket</code> = marcadores da coluna C</p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">budget_category</span><span class="ent-badge mod">alterada</span></div>
+          <ul class="ent-f">
+            <li class="add"><b>grupo</b><span class="ty">enum ·6 valores</span></li>
+            <li class="add"><b>ordem</b><span class="ty">int</span></li>
+            <li class="add"><b>is_padrao</b><span class="ty">bool</span></li>
+          </ul>
+          <p class="ent-rel">enum <code>budget_group</code> (fixo|pessoal|consultorio)<br/>→ <code>expense_group</code>: casa · saude · transporte<br/>lazer · filhos_pets · outros</p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">debt</span><span class="ent-badge mod">alterada</span></div>
+          <ul class="ent-f">
+            <li class="add"><b>plan_id</b><span class="ty">uuid</span></li>
+            <li class="add"><b>inicio</b><span class="ty">date</span></li>
+            <li class="add"><b>fim</b><span class="ty">date?</span></li>
+            <li class="add"><b>parcelas_total</b><span class="ty">int?</span></li>
+          </ul>
+          <p class="ent-rel">ver Achado 1 — fim real em vez de<br/>evento de mudança</p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">plan_pension</span><span class="ent-badge new">nova</span></div>
+          <ul class="ent-f">
+            <li class="fk"><b>plan_id</b><span class="ty">uuid</span></li>
+            <li><b>nome</b><span class="ty">text ·INSS</span></li>
+            <li><b>valor</b><span class="ty">numeric</span></li>
+          </ul>
+          <p class="ent-rel">coluna própria na projeção — por isso<br/>não é uma despesa comum</p>
+        </div>
+      </div>
+
+      <div class="lane" style="--lc: var(--l-engine)">
+        <div class="lane-h">Objetivos e mudanças</div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">plan_change</span><span class="ent-badge new">nova · chave</span></div>
+          <ul class="ent-f">
+            <li class="fk"><b>plan_id</b><span class="ty">uuid</span></li>
+            <li><b>titulo</b><span class="ty">text</span></li>
+            <li><b>valor</b><span class="ty">numeric</span></li>
+            <li><b>categoria</b><span class="ty">receita|despesa|divida</span></li>
+            <li><b>horizonte</b><span class="ty">curto|longo</span></li>
+            <li><b>inicio</b><span class="ty">date</span></li>
+            <li><b>fim</b><span class="ty">date?</span></li>
+            <li><b>parcelas</b><span class="ty">int?</span></li>
+            <li><b>observacao</b><span class="ty">text?</span></li>
+          </ul>
+          <p class="ent-rel">substitui Tabela11 + Tabela13 + a aba<br/>inteira <code>objetivos planilha</code><br/><b>É o que aciona a projeção.</b></p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">goal</span><span class="ent-badge mod">alterada</span></div>
+          <ul class="ent-f">
+            <li><b>titulo</b><span class="ty">text</span></li>
+            <li><b>prazo</b><span class="ty">curto|longo</span></li>
+            <li class="add"><b>valor</b><span class="ty">numeric</span></li>
+            <li class="add"><b>data_alvo</b><span class="ty">date?</span></li>
+            <li class="add"><b>periodicidade_anos</b><span class="ty">int?</span></li>
+            <li class="add"><b>concluido</b><span class="ty">bool</span></li>
+            <li><b>prioridade</b><span class="ty">int 1–5</span></li>
+          </ul>
+          <p class="ent-rel">curto usa <code>data_alvo</code>; longo usa<br/><code>periodicidade_anos</code> ("3 anos")</p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">retirement_plan</span><span class="ent-badge mod">alterada</span></div>
+          <ul class="ent-f">
+            <li><b>idade_alvo</b><span class="ty">int ·60</span></li>
+            <li><b>renda_desejada</b><span class="ty">numeric</span></li>
+            <li class="add"><b>renda_inss</b><span class="ty">numeric</span></li>
+          </ul>
+          <p class="ent-rel">OBJETIVOS I8:L9 + APOSENTADORIA Q10<br/><code>idade_atual</code> some: deriva de <code>nascimento</code></p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">asset · liability</span><span class="ent-badge mod">alterada</span></div>
+          <ul class="ent-f">
+            <li class="add"><b>ordem</b><span class="ty">int</span></li>
+          </ul>
+          <p class="ent-rel">PLANILHA MENSAL K8:L21 — servem<br/>como estão, só faltava ordenação</p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">investment</span><span class="ent-badge mod">alterada</span></div>
+          <ul class="ent-f">
+            <li><b>classe</b><span class="ty">enum</span></li>
+            <li class="add"><b>nome</b><span class="ty">text</span></li>
+            <li class="add"><b>instituicao</b><span class="ty">text?</span></li>
+            <li class="add"><b>liquidez</b><span class="ty">text?</span></li>
+          </ul>
+          <p class="ent-rel">o % de alocação é derivado, não guardado</p>
+        </div>
+      </div>
+
+      <div class="lane" style="--lc: var(--l-out)">
+        <div class="lane-h">Projeção e acompanhamento</div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">projection</span><span class="ent-badge mod">alterada</span></div>
+          <ul class="ent-f">
+            <li><b>horizonte</b><span class="ty">curta|longa|aposent</span></li>
+            <li><b>serie</b><span class="ty">jsonb</span></li>
+            <li class="add"><b>congelada</b><span class="ty">bool</span></li>
+            <li class="add"><b>rotulo</b><span class="ty">text?</span></li>
+            <li class="add"><b>gerado_em</b><span class="ty">timestamptz</span></li>
+            <li class="add"><b>premissas_hash</b><span class="ty">text</span></li>
+          </ul>
+          <p class="ent-rel"><code>congelada=true</code> ⇒ PROJEÇÃO ORIGINAL<br/><code>premissas_hash</code> avisa quando a série<br/>está velha em relação à entrada</p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">monthly_record</span><span class="ent-badge mod">alterada</span></div>
+          <ul class="ent-f">
+            <li><b>ref_mes</b><span class="ty">date</span></li>
+            <li><b>sobras_calc</b><span class="ty">numeric</span></li>
+            <li class="add"><b>fechado_em</b><span class="ty">timestamptz?</span></li>
+            <li class="add"><b>observacao</b><span class="ty">text?</span></li>
+          </ul>
+          <p class="ent-rel">passa a ser <b>só realizado</b> — a linha de<br/>base migra para <code>plan_*</code></p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">card_statement</span><span class="ent-badge new">nova</span></div>
+          <ul class="ent-f">
+            <li class="fk"><b>record_id</b><span class="ty">uuid</span></li>
+            <li><b>cartao</b><span class="ty">text</span></li>
+            <li><b>categoria</b><span class="ty">enum fatura</span></li>
+            <li><b>valor</b><span class="ty">numeric</span></li>
+          </ul>
+          <p class="ent-rel">ORÇAMENTO E38:J48 — a matriz<br/>cartão × categoria de fatura</p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">report</span><span class="ent-badge mod">alterada</span></div>
+          <ul class="ent-f">
+            <li><b>periodo</b><span class="ty">text</span></li>
+            <li><b>pdf_url</b><span class="ty">text?</span></li>
+            <li class="add"><b>ref_mes</b><span class="ty">date</span></li>
+            <li class="add"><b>placar</b><span class="ty">jsonb</span></li>
+          </ul>
+          <p class="ent-rel"><code>placar</code> = realizado, meta, %, estrelas<br/>por métrica — congelado no fechamento</p>
+        </div>
+
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">report_directive</span><span class="ent-badge new">nova</span></div>
+          <ul class="ent-f">
+            <li class="fk"><b>report_id</b><span class="ty">uuid</span></li>
+            <li><b>texto</b><span class="ty">text</span></li>
+            <li><b>ordem</b><span class="ty">int</span></li>
+          </ul>
+          <p class="ent-rel">"Direcionamentos" da página 5<br/>escritos pelo planejador</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="motor">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">04 · Motor</span>
+      <h2>As fórmulas que viram código</h2>
+      <p>
+        Tudo abaixo vive em <code>src/lib/planning/</code> como funções puras: recebem a linha de
+        base, as mudanças e as premissas; devolvem a série. Sem I/O, sem Supabase, testáveis com
+        Vitest linha a linha contra a planilha de origem.
+      </p>
+    </div>
+
+    <div class="formula">
+      <span class="src">expandChanges() ← aba "objetivos planilha"</span>
+      <h4>Deltas do mês</h4>
+      <pre>Δ(mês, categoria) = Σ  change.valor
+                    onde change.categoria = categoria
+                      e  change.inicio &lt;= mês &lt;= change.fim
+
+Δobjetivo(mês)      = − Σ goal.valor  onde goal.data_alvo ∈ mês</pre>
+      <p class="why">
+        Uma aba inteira de 242 linhas colapsa em duas linhas de <code>filter().reduce()</code>.
+        O sinal do objetivo é invertido porque um objetivo <i>consome</i> patrimônio.
+      </p>
+    </div>
+
+    <div class="formula">
+      <span class="src">projectShort() ← PROJEÇÃO CURTA · 36 meses</span>
+      <h4>Projeção mensal</h4>
+      <pre>receitas(t)  =  base.receitaMesComum
+              +  Δreceita(t)
+              +  Σ receitasAnuais cujo mes_ocorrencia = mês(t)
+
+despesas(t)  = −base.despesaMesComum
+              +  Δdespesa(t)
+              −  Σ despesasAnuais cujo mes_ocorrencia = mês(t)
+              −  base.seguro
+
+dividas(t)   = −Σ debt.parcela ativas em t     ← Achado 1
+              +  Δdivida(t)
+
+previdencia(t) = −base.previdencia
+
+sobras(t)    = receitas + despesas + dividas + previdencia
+
+patrimonio(t) = patrimonio(t−1) × fator + sobras(t) + Δobjetivo(t)
+
+  fator = modo === 'real'
+        ? ((1 + juros_curto) / (1 + inflacao)) ^ (1/12)
+        :  (1 + juros_curto)                   ^ (1/12)</pre>
+      <p class="why">
+        <code>base.receitaMesComum</code> exclui as receitas anuais (<code>E17 = E15 − SUMIF("Anual")</code>),
+        que voltam cheias no mês de ocorrência. É o rateio do Achado 6 desfeito.
+      </p>
+    </div>
+
+    <div class="formula">
+      <span class="src">projectLong() ← PROJEÇÃO LONGA · anual até a aposentadoria</span>
+      <h4>Projeção anual</h4>
+      <pre>ano 1        = Σ dos 12 meses correspondentes da projeção curta
+
+ano n &gt; 1    receitas  = receitas(n−1) × infl? + Δreceita(ano)
+             despesas  = despesas(n−1) × infl? + Δdespesa(ano)   ← Achado 3
+             dividas   = Σ debt ativas no ano + Δdivida(ano)
+
+patrimonio(n) = patrimonio(n−1) × fator + sobras(n) + Δobjetivo(n)
+
+  fator = modo === 'real' ? (1+juros_longo)/(1+inflacao) : (1+juros_longo)
+  infl? = modo === 'real' ? 1 : (1 + inflacao)</pre>
+      <p class="why">
+        Aqui o expoente é <code>1</code>, não <code>1/12</code> — o passo é anual. E é aqui que
+        divergimos de propósito da planilha: ela usa <code>$F$8</code> fixo para a despesa de todo
+        ano; nós recompomos ano a ano.
+      </p>
+    </div>
+
+    <div class="formula">
+      <span class="src">projectRetirement() ← APOSENTADORIA · da idade-alvo aos 101</span>
+      <h4>Aposentadoria</h4>
+      <pre>renda(ano)      = renda_inss × 12
+gastos(ano)     = despesas(ano) + dividas(ano)   ← da projeção longa
+sobras(ano)     = renda + gastos                 (gastos é negativo)
+
+patrimonio(ano) = patrimonio(ano−1) × (1 + juros_aposent)
+                + sobras(ano) + Δobjetivo(ano)
+
+— saídas do relatório —
+patrimonio_na_aposentadoria = patrimonio(idade_alvo)
+renda_privada  = patrimonio_na_aposentadoria × ((1+juros_aposent)^(1/12) − 1)
+renda_total    = renda_inss + renda_privada
+ano_de_ruina   = primeiro ano com patrimonio &lt; 0</pre>
+      <p class="why">
+        O modelo não simula resgates: o patrimônio simplesmente absorve o déficit anual até zerar.
+        No caso de referência isso acontece em <b>2068, aos 91 anos</b> — e esse é o número mais acionável
+        do plano inteiro. <b>Merece destaque próprio na tela</b>, não uma linha perdida numa tabela.
+      </p>
+    </div>
+
+    <div class="formula">
+      <span class="src">buildScorecard() ← Planilha1 F17:K26</span>
+      <h4>Placar do mês</h4>
+      <pre>para cada métrica ∈ {receitas, despesas, sobras, investimentos}:
+  realizado = projeção corrente[ref_mes][métrica]
+  meta      = projeção congelada[ref_mes][métrica]
+  atingido  = realizado / meta
+  estrelas  = régua(métrica, atingido)          ← Achado 2: a definir</pre>
+      <p class="why">
+        Note que o "realizado" da planilha não é o realizado de verdade — é a projeção
+        <i>atual</i> (que já incorpora o que aconteceu) contra a projeção <i>original</i>.
+        É comparação de plano contra plano, não de plano contra extrato. Vale manter, mas
+        o nome na tela deveria dizer isso.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="paridade">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">05 · Paridade</span>
+      <h2>Como sabemos que está certo</h2>
+      <p>
+        A planilha de origem vira <i>fixture</i> de teste. Cada divergência precisa ter uma
+        causa nomeada — ou é bug nosso.
+      </p>
+    </div>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>Verificação</th><th>Origem na planilha</th><th>Tolerância</th><th>Divergência esperada</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Linha de base — receitas, custos, parcelas</td><td><code>PLANILHA MENSAL</code> E15, E61, I17</td><td class="num">R$ 0,01</td><td>nenhuma</td></tr>
+          <tr><td>Bloco ORÇAMENTO — 4 baldes e %</td><td><code>PLANILHA MENSAL</code> E68:J93</td><td class="num">R$ 0,01</td><td>nenhuma</td></tr>
+          <tr><td>Projeção curta — 36 meses × 8 colunas</td><td><code>PROJEÇÃO CURTA</code> D8:L43</td><td class="num">R$ 0,01</td><td>jun/26: remendo <code>−2000</code> (Achado 5)</td></tr>
+          <tr><td>Projeção longa — receitas e dívidas</td><td><code>PROJEÇÃO LONGA</code> E8:G43</td><td class="num">R$ 0,01</td><td>nenhuma</td></tr>
+          <tr><td>Projeção longa — despesas e patrimônio</td><td><code>PROJEÇÃO LONGA</code> F8:F43, K8:K43</td><td>—</td><td><b>sim</b>, crescente: despesa recomposta (Achado 3)</td></tr>
+          <tr><td>Aposentadoria — patrimônio e renda</td><td><code>APOSENTADORIA</code> N8:Q12</td><td>—</td><td>segue a divergência da projeção longa</td></tr>
+          <tr><td>Metas — janela de exibição</td><td><code>PROJEÇÃO ORIGINAL</code> E23:L35</td><td>—</td><td><b>sim</b>: corte por data (Achado 4)</td></tr>
+          <tr><td>Placar e estrelas</td><td><code>Planilha1</code> F17:K26</td><td class="num">0,1 p.p.</td><td>estrelas: sem régua na origem (Achado 2)</td></tr>
+          <tr><td>Relatório — 5 páginas</td><td>PDF de Junho</td><td>visual</td><td>layout novo, mesmos números</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="fases">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">06 · Roteiro</span>
+      <h2>Cinco fases</h2>
+      <p>
+        Cada fase termina com algo verificável na tela — nada de duas semanas de migração sem
+        nada para ver. A carga do cliente de referência entra cedo, na P2, justamente para servir de teste
+        das telas que vêm depois.
+      </p>
+    </div>
+
+    <div class="phase">
+      <div class="pnum">P1<small>Fundação</small></div>
+      <div class="pbody">
+        <h3>Schema e dados reais <span class="pill now">concluída</span></h3>
+        <p>
+          Migrações 0013–0016 e a saída definitiva do <code>mock-clients.ts</code>. É a fase sem
+          brilho e sem a qual nada mais anda.
+        </p>
+        <ul>
+          <li><code>0013</code> — <code>financial_plan</code>, <code>plan_income</code>, <code>plan_expense</code>, <code>plan_pension</code></li>
+          <li><code>0014</code> — <code>plan_change</code>, <code>goal</code> estendida, <code>debt</code> com início/fim</li>
+          <li><code>0015</code> — enum <code>expense_group</code>, categorias padrão semeadas, <code>card_statement</code></li>
+          <li><code>0016</code> — <code>projection</code> com congelamento, <code>report</code> com placar, <code>report_directive</code></li>
+          <li>RLS para cada tabela nova, no mesmo padrão das existentes; <code>rls_smoke.sql</code> estendido</li>
+          <li><code>src/lib/dal.ts</code> passa a servir clientes de verdade; <code>mock-clients.ts</code> é apagado</li>
+        </ul>
+        <div class="chips">
+          <span class="chip">4 migrações</span><span class="chip">~10 tabelas</span><span class="chip">RLS + smoke</span><span class="chip">fim do mock</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="pnum">P2<small>Motor</small></div>
+      <div class="pbody">
+        <h3>Cálculo e carga do cliente de referência <span class="pill now">concluída</span></h3>
+        <p>
+          As funções puras e o cliente de referência dentro do banco. No fim desta fase o sistema
+          já <i>sabe</i> tudo o que a planilha sabe — só não mostra ainda.
+        </p>
+        <ul>
+          <li><code>src/lib/planning/</code>: <code>expandChanges</code>, <code>projectShort</code>, <code>projectLong</code>, <code>projectRetirement</code>, <code>buildScorecard</code></li>
+          <li>Vitest com a planilha de origem como <i>fixture</i>, uma asserção por célula</li>
+          <li>Script de carga: <code>scripts/seed_referencia.py</code> lendo o <code>.xlsx</code> de <code>past/</code></li>
+          <li>Relatório de paridade em <code>docs/paridade-referencia.md</code>, gerado pelo teste</li>
+        </ul>
+        <div class="chips">
+          <span class="chip">5 funções puras</span><span class="chip">~200 asserções</span><span class="chip">seed idempotente</span><span class="chip">relatório de paridade</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="pnum">P3<small>Entrada</small></div>
+      <div class="pbody">
+        <h3>Telas do raio-x <span class="pill next">parcial · leitura pronta, edição pendente</span></h3>
+        <p>
+          Onde o planejador digita. A rota <code>ponto-de-partida</code> já existe como casca —
+          ganha conteúdo real.
+        </p>
+        <ul>
+          <li><b>Fluxo de caixa</b> — receitas e custos da linha de base, com frequência e balde; totais e % ao vivo</li>
+          <li><b>Patrimônio</b> — ativos, passivos, parcelas, investimentos</li>
+          <li><b>Objetivos</b> — curto e longo prazo, com o cálculo de recorrência visível</li>
+          <li><b>Mudanças</b> — tela nova; a mais importante e a que não tem equivalente óbvio na planilha</li>
+          <li><b>Premissas</b> — juros, inflação, modo nominal/real, idade de aposentadoria</li>
+          <li>Foto de perfil do cliente (a do usuário já está pronta)</li>
+        </ul>
+        <div class="chips"><span class="chip">5 telas</span><span class="chip">server actions</span><span class="chip">recálculo ao salvar</span></div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="pnum">P4<small>Saída</small></div>
+      <div class="pbody">
+        <h3>Projeções e aposentadoria <span class="pill now">concluída</span></h3>
+        <p>
+          A leitura. Aqui o cliente vê pela primeira vez algo que a planilha nunca soube mostrar
+          bem: o gráfico do patrimônio cruzando o zero.
+        </p>
+        <ul>
+          <li>Projeção curta — tabela de 36 meses + gráfico de receitas, despesas, sobras e patrimônio</li>
+          <li>Projeção longa — anual até a aposentadoria</li>
+          <li>Aposentadoria — patrimônio na idade-alvo, renda INSS + privada, <b>ano em que o dinheiro acaba</b></li>
+          <li>Diagnóstico & Metas — congelar a projeção original como meta do plano</li>
+        </ul>
+        <div class="chips"><span class="chip">4 telas</span><span class="chip">gráficos</span><span class="chip">congelar metas</span></div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="pnum">P5<small>Ciclo</small></div>
+      <div class="pbody">
+        <h3>Fechamento mensal e relatório</h3>
+        <p>
+          O ciclo que se repete todo mês, e a razão de o produto existir: gerar em minutos o que
+          hoje leva uma tarde.
+        </p>
+        <ul>
+          <li>Fechamento do mês — realizado, faturas por cartão, observações</li>
+          <li>Placar automático contra as metas congeladas, com a régua de estrelas</li>
+          <li>Direcionamentos do mês seguinte</li>
+          <li>Geração do PDF de 5 páginas, gravado no bucket <code>reports</code></li>
+          <li>Documento de planejamento (8 seções), a partir dos mesmos dados</li>
+        </ul>
+        <div class="chips"><span class="chip">fechamento</span><span class="chip">PDF</span><span class="chip">bucket reports</span><span class="chip">paridade visual</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="lacunas">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">07 · Lacunas</span>
+      <h2>O que ainda precisa de decisão</h2>
+      <p>
+        Nada aqui bloqueia a P1. Tudo aqui bloqueia alguma coisa da P4 ou da P5.
+      </p>
+    </div>
+
+    <div class="gaps">
+      <div class="gap open">
+        <p class="q">Régua das estrelas</p>
+        <p class="a">
+          Não existe na planilha (Achado 2). Precisa de faixas por métrica, com sinal invertido
+          para despesas e dívidas. <b>Bloqueia o placar da P5.</b>
+        </p>
+      </div>
+      <div class="gap open">
+        <p class="q">Objetivo de longo prazo: a fórmula de recorrência</p>
+        <p class="a">
+          <code>valor × (100 − idade) / anos</code> assume que o cliente repete a compra até os 100
+          e ignora juros. É intencional ou herança? Muda o total exibido em Sonhos e Objetivos.
+        </p>
+      </div>
+      <div class="gap">
+        <p class="q">Versionamento do plano</p>
+        <p class="a">
+          Quando o planejador refaz o raio-x no ano seguinte, é um <code>financial_plan</code> novo
+          ou o mesmo editado? Proponho novo, com o anterior arquivado — preserva o histórico de
+          metas. Decidir antes da P3.
+        </p>
+      </div>
+      <div class="gap">
+        <p class="q">Modelo de consultório</p>
+        <p class="a">
+          Fora de escopo por ora, conforme decidido. O dado do cliente fica preservado no
+          <code>.xlsx</code> em <code>past/</code> até existir um segundo cliente que precise dele.
+        </p>
+      </div>
+      <div class="gap">
+        <p class="q">Portal do cliente</p>
+        <p class="a">
+          O papel <code>client</code> existe no enum e <code>client.portal_user_id</code> está
+          previsto, mas nenhuma rota é servida a ele. Definir na fase de permissões.
+        </p>
+      </div>
+      <div class="gap">
+        <p class="q">Permissões e usabilidade para planejadores</p>
+        <p class="a">
+          Refinar quem vê e edita o quê quando houver mais de um planejador na org. Registrado
+          para o futuro próximo, fora deste plano.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    HFC Hub · plano de tradução da planilha · 27/07/2026<br/>
+    Complementa <a href="./plano-arquitetura.html">plano-arquitetura.html</a> — detalha a fase Planejamento / Raio-X.
+  </div>
+</footer>
+
+</body>
+</html>

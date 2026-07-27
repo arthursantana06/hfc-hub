@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { ArrowLeft, LayoutDashboard, Compass, Target, Gift, FileText, Calculator } from "lucide-react";
-import type { Client } from "@/lib/types";
+import { PLAN_STATUS_LABEL, type Client } from "@/lib/types";
+import { Avatar } from "@/components/ui/Avatar";
 import { SideNavLink } from "./SideNavLink";
 import { Logo } from "./Logo";
 
@@ -31,12 +32,15 @@ export function ClientSidebar({ client }: { client: Client }) {
         </Link>
 
         <div className="flex flex-col items-center text-center">
-          <div className="w-20 h-20 rounded-full bg-slate-100 text-brand-950 flex items-center justify-center font-poppins font-semibold text-3xl mb-4 shadow-sm border-2 border-brand-300">
-            {client.initials}
-          </div>
-          <h2 className="font-poppins text-xl font-medium text-white mb-2">{client.name}</h2>
+          <Avatar
+            src={client.avatarUrl}
+            nome={client.nome}
+            size={80}
+            className="mb-4 shadow-sm ring-2 ring-brand-300"
+          />
+          <h2 className="font-poppins text-xl font-medium text-white mb-2">{client.nome}</h2>
           <span className="bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-medium border border-emerald-500/30">
-            {client.planStatus}
+            {PLAN_STATUS_LABEL[client.planoStatus]}
           </span>
         </div>
       </div>
@@ -45,7 +49,7 @@ export function ClientSidebar({ client }: { client: Client }) {
         <SideNavLink href={`/clientes/${client.id}`} icon={LayoutDashboard} label="Dashboard Resumo" exact />
         <SideNavLink href={`/clientes/${client.id}/ponto-de-partida`} icon={Compass} label="Ponto de Partida" />
         <SideNavLink href={`/clientes/${client.id}/diagnostico`} icon={Target} label="Diagnóstico & Metas" />
-        <SideNavLink href={`/clientes/${client.id}/indicacoes`} icon={Gift} label="Indicações & Recompensas" soon />
+        <SideNavLink href={`/clientes/${client.id}/indicacoes`} icon={Gift} label="Rewards" soon />
         <SideNavLink href={`/clientes/${client.id}/relatorios`} icon={FileText} label="Relatórios" soon />
         <SideNavLink
           href={`/clientes/${client.id}/simuladores`}

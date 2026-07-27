@@ -12,9 +12,71 @@ body {
   overflow: hidden;
 }
 
+/*
+ * Impressão do relatório mensal.
+ *
+ * O shell acima (`overflow: hidden` + colunas de altura fixa) é ótimo na tela e
+ * fatal no papel: imprimiria só o primeiro visor e cortaria o resto. Aqui tudo
+ * volta a fluir, a barra lateral e os cabeçalhos do app somem, e cada folha do
+ * documento vira uma página A4.
+ */
+@media print {
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+    background: #fff;
+  }
+
+  /* A casca do app inteira: sidebar, cabeçalhos de tela, rodapé de usuário. */
+  aside,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Desfaz as travas de altura do shell para o conteúdo poder paginar. */
+  body * {
+    overflow: visible !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}
+
+/*
+ * Roda de palavras-chave do painel de login (BrandOrbit). Fica em CSS puro —
+ * é só uma rotação contínua, não precisa de JS nem de componente client.
+ * `transform-box: view-box` faz o transform-origin ser lido em coordenadas do
+ * viewBox do SVG; sem isso o grupo gira em torno da própria bounding box.
+ */
+@keyframes brand-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.brand-orbit-ring {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation: brand-orbit 42s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-orbit-ring {
+    animation: none;
+  }
+}
+
 @theme inline {
   --font-inter: var(--font-inter), sans-serif;
   --font-poppins: var(--font-poppins), sans-serif;
+  --font-outfit: var(--font-outfit), sans-serif;
 
   /* Brand palette — single source of truth, replaces inline bg-[#hex] utilities */
   --color-brand-950: #032c40;

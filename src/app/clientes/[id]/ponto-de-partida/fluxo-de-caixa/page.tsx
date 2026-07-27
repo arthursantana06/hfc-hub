@@ -1,253 +1,240 @@
-"use client";
+import Link from "next/link";
+import { Wallet, ShoppingCart, CreditCard, Scale } from "lucide-react";
+import {
+  getPlanInput,
+  getPlanoAtivo,
+  linhasDoCliente,
+  linhasDoPlano,
+  listCategorias,
+} from "@/lib/planning-dal";
+import { summarizeBaseline } from "@/lib/planning/baseline";
+import { formatCurrency } from "@/lib/types";
+import { escreverMoeda } from "@/lib/forms/planejamento";
+import {
+  Barra,
+  Card,
+  Stat,
+  pct,
+} from "@/components/planejamento/primitives";
+import { ListaEditavel } from "@/components/planejamento/ListaEditavel";
 
-import { useState } from "react";
-import { Plus, X, Wallet, ShoppingCart, CreditCard, PiggyBank } from "lucide-react";
+const MESES = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+];
 
-export default function FluxoDeCaixa() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tipoRecorrencia, setTipoRecorrencia] = useState("");
+const GRUPOS: Record<string, string> = {
+  casa: "Casa",
+  saude: "Saúde",
+  transporte: "Transporte",
+  lazer: "Lazer",
+  filhos_pets: "Filhos e Pets",
+  outros: "Outros",
+};
+
+export default async function FluxoDeCaixa({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const plano = await getPlanoAtivo(id);
+
+  if (!plano) return <PrecisaPlano clienteId={id} />;
+
+  const [plan, receitas, despesas, dividas, categorias] = await Promise.all([
+    getPlanInput(id),
+    linhasDoPlano("plan_income", plano.id),
+    linhasDoPlano("plan_expense", plano.id),
+    linhasDoCliente("debt", id),
+    listCategorias(),
+  ]);
+
+  const base = plan ? summarizeBaseline(plan) : null;
+  const nomeCategoria = new Map(categorias.map((c) => [c.valor, c]));
+
+  const freq = (f: string, m: number | null) =>
+    f === "anual" ? `Anual · ${m ? MESES[m - 1] : "sem mês"}` : "Mensal";
+
+  const tomBalde: Record<string, string> = {
+    fixo: "bg-brand-600",
+    extra: "bg-amber-500",
+    parcela: "bg-red-500",
+    adicional: "bg-violet-500",
+  };
 
   return (
-    <>
-      <div className="flex justify-end mb-6">
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-brand-600 hover:bg-brand-900 text-white px-4 py-2.5 rounded-lg transition-colors font-medium text-sm shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Registro
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 max-w-7xl mx-auto">
-
-        {/* Cartão: Receitas */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
-                <Wallet className="w-5 h-5" />
-              </div>
-              <h2 className="font-poppins text-lg text-brand-950 font-medium">Receitas</h2>
-            </div>
-            <div className="font-poppins text-xl font-semibold text-emerald-600">
-              R$ 15.000,00
-            </div>
-          </div>
-          <div className="border-b border-slate-100 w-full mb-4"></div>
-
-          <div className="flex flex-col">
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Salário CLT</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Renda Fixa • Fixo Mensal</p>
-              </div>
-              <span className="font-inter text-sm text-slate-600">15.000,00</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Cartão: Custo de Vida */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-50 rounded-lg text-red-600">
-                <ShoppingCart className="w-5 h-5" />
-              </div>
-              <h2 className="font-poppins text-lg text-brand-950 font-medium">Custo de Vida</h2>
-            </div>
-            <div className="font-poppins text-xl font-semibold text-red-600">
-              R$ 8.000,00
-            </div>
-          </div>
-          <div className="border-b border-slate-100 w-full mb-4"></div>
-
-          <div className="flex flex-col">
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Aluguel + Condomínio</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Moradia • Fixo Mensal</p>
-              </div>
-              <span className="font-inter text-sm text-slate-600">4.500,00</span>
-            </div>
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Supermercado</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Alimentação • Variável Mensal</p>
-              </div>
-              <span className="font-inter text-sm text-slate-600">3.500,00</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Cartão: Dívidas */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
-                <CreditCard className="w-5 h-5" />
-              </div>
-              <h2 className="font-poppins text-lg text-brand-950 font-medium">Dívidas</h2>
-            </div>
-            <div className="font-poppins text-xl font-semibold text-orange-600">
-              R$ 2.000,00
-            </div>
-          </div>
-          <div className="border-b border-slate-100 w-full mb-4"></div>
-
-          <div className="flex flex-col">
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Financiamento Veículo</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Transporte • 12/36 Parcelas</p>
-              </div>
-              <span className="font-inter text-sm text-slate-600">2.000,00</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Cartão: Investimentos */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg text-brand-600">
-                <PiggyBank className="w-5 h-5" />
-              </div>
-              <h2 className="font-poppins text-lg text-brand-950 font-medium">Investimentos</h2>
-            </div>
-            <div className="font-poppins text-xl font-semibold text-brand-600">
-              R$ 3.000,00
-            </div>
-          </div>
-          <div className="border-b border-slate-100 w-full mb-4"></div>
-
-          <div className="flex flex-col">
-            <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-none">
-              <div>
-                <h4 className="font-inter font-medium text-sm text-slate-700">Aporte Previdência PGBL</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Aposentadoria • Fixo Mensal</p>
-              </div>
-              <span className="font-inter text-sm text-slate-600">3.000,00</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* MODAL DE REGISTRO */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-brand-950/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
-              <h2 className="font-poppins font-semibold text-lg text-brand-950">Novo Lançamento no Fluxo de Caixa</h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-brand-950 transition-colors p-2 rounded-full hover:bg-slate-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto flex-1 font-inter">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                <div className="col-span-1 md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Tipo de Lançamento</label>
-                  <select className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all bg-white shadow-sm">
-                    <option value="receita">Receita</option>
-                    <option value="custo">Custo de Vida</option>
-                    <option value="divida">Dívida</option>
-                    <option value="investimento">Investimento</option>
-                  </select>
-                </div>
-
-                <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Descrição</label>
-                  <input type="text" placeholder="Ex: Conta de Luz" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all shadow-sm" />
-                </div>
-
-                <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Subcategoria</label>
-                  <select className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all bg-white shadow-sm">
-                    <option value="">Selecione...</option>
-                    <option value="moradia">Moradia</option>
-                    <option value="alimentacao">Alimentação</option>
-                    <option value="transporte">Transporte</option>
-                    <option value="lazer">Lazer</option>
-                  </select>
-                </div>
-
-                <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Valor (R$)</label>
-                  <input type="number" placeholder="0.00" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all font-poppins font-medium shadow-sm" />
-                </div>
-
-                <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Recorrência</label>
-                  <select
-                    value={tipoRecorrencia}
-                    onChange={(e) => setTipoRecorrencia(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all bg-white shadow-sm"
-                  >
-                    <option value="" disabled>Selecione...</option>
-                    <option value="Fixo Mensal">Fixo Mensal</option>
-                    <option value="Tempo Determinado">Tempo Determinado</option>
-                    <option value="Periódico">Periódico</option>
-                    <option value="Único">Único</option>
-                  </select>
-                </div>
-
-                {/* Campos Condicionais */}
-                {tipoRecorrencia === "Tempo Determinado" && (
-                  <>
-                    <div className="col-span-1 border-t border-slate-100 pt-5 mt-1">
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Mês/Ano Início</label>
-                      <input type="month" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all shadow-sm" />
-                    </div>
-                    <div className="col-span-1 border-t border-slate-100 pt-5 mt-1">
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Total de Parcelas</label>
-                      <input type="number" placeholder="Ex: 36" className="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all shadow-sm" />
-                    </div>
-                  </>
-                )}
-
-                {tipoRecorrencia === 'Periódico' && (
-                  <div className="col-span-1 md:col-span-2 border-t border-slate-100 pt-4 mt-1">
-                    <div className="flex flex-col gap-1 w-full max-w-sm">
-                      <label className="font-inter text-sm text-slate-700">Frequência</label>
-                      <select defaultValue="" className="border border-slate-200 rounded-lg py-2 px-3 font-inter text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white transition-shadow">
-                        <option value="" disabled>Selecione o intervalo...</option>
-                        <option value="bimestral">Bimestral (a cada 2 meses)</option>
-                        <option value="trimestral">Trimestral (a cada 3 meses)</option>
-                        <option value="semestral">Semestral (a cada 6 meses)</option>
-                        <option value="anual">Anual (1x ao ano)</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2.5 rounded-lg text-slate-600 font-medium hover:bg-slate-200 transition-colors text-sm"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-900 text-white font-medium transition-colors text-sm shadow-sm"
-              >
-                Salvar Registro
-              </button>
-            </div>
-
-          </div>
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto">
+      {base && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Stat
+            rotulo="Receita mensalizada"
+            valor={formatCurrency(base.receitaTotalMensalizada, 2)}
+            hint={`${formatCurrency(base.receitaMensal, 2)} num mês sem anuais`}
+          />
+          <Stat
+            rotulo="Custo mensalizado"
+            valor={formatCurrency(base.despesaTotalMensalizada, 2)}
+            hint={`${formatCurrency(base.despesaMensal, 2)} num mês sem anuais`}
+          />
+          <Stat
+            rotulo="Parcelas"
+            valor={formatCurrency(base.parcelasMensais, 2)}
+            hint={`${dividas.length} ${dividas.length === 1 ? "dívida" : "dívidas"}`}
+          />
+          <Stat
+            rotulo="Sobras mensais"
+            valor={formatCurrency(base.sobrasMensais, 2)}
+            tom={base.sobrasMensais >= 0 ? "bom" : "ruim"}
+            hint={
+              base.sobrasMensais >= 0
+                ? "o que sobra para investir"
+                : "o mês típico fecha no vermelho"
+            }
+          />
         </div>
       )}
-    </>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <Card
+          titulo="Receitas"
+          icone={Wallet}
+          tom="verde"
+          total={base?.receitaTotalMensalizada}
+        >
+          <ListaEditavel
+            entidade="receita"
+            planId={plano.id}
+            clientId={id}
+            vazio="Nenhuma receita. O plano começa por aqui."
+            linhas={receitas.map((r) => ({
+              id: r.id,
+              titulo: r.fonte,
+              detalhe: freq(r.frequencia, r.mes_ocorrencia),
+              // Anual aparece rateado, para somar com as mensais na mesma coluna.
+              valor: `R$ ${escreverMoeda(
+                r.frequencia === "anual" ? Number(r.valor) / 12 : Number(r.valor),
+              )}`,
+              bruto: r,
+            }))}
+            extra={
+              receitas.some((r) => r.frequencia === "anual") ? (
+                <p className="font-inter text-xs text-slate-400 mt-3">
+                  Receitas anuais aparecem rateadas por 12. Elas entram cheias no
+                  mês de ocorrência.
+                </p>
+              ) : null
+            }
+          />
+        </Card>
+
+        <Card
+          titulo="Custo de vida"
+          icone={ShoppingCart}
+          tom="vermelho"
+          total={base?.despesaTotalMensalizada}
+        >
+          <ListaEditavel
+            entidade="despesa"
+            planId={plano.id}
+            clientId={id}
+            opcoesRef={{ categoria: categorias }}
+            vazio="Nenhum custo registrado."
+            linhas={despesas.map((e) => {
+              const cat = nomeCategoria.get(e.categoria_id);
+              return {
+                id: e.id,
+                titulo: e.descricao || cat?.rotulo || "—",
+                detalhe: `${GRUPOS[cat?.grupo ?? "outros"]} · ${freq(e.frequencia, e.mes_ocorrencia)} · ${
+                  e.bucket === "fixo" ? "fixo" : "extra"
+                }`,
+                valor: `R$ ${escreverMoeda(
+                  e.frequencia === "anual" ? Number(e.valor) / 12 : Number(e.valor),
+                )}`,
+                bruto: e,
+              };
+            })}
+          />
+        </Card>
+
+        <Card
+          titulo="Parcelas e dívidas"
+          icone={CreditCard}
+          tom="ambar"
+          total={base?.parcelasMensais}
+        >
+          <ListaEditavel
+            entidade="divida"
+            planId={plano.id}
+            clientId={id}
+            vazio="Sem dívidas ativas."
+            linhas={dividas.map((d) => ({
+              id: d.id,
+              titulo: d.descricao,
+              detalhe: d.fim
+                ? `Até ${MESES[Number(d.fim.slice(5, 7)) - 1]}/${d.fim.slice(0, 4)}`
+                : undefined,
+              alerta: d.fim
+                ? undefined
+                : "Sem última parcela — a projeção a trata como perpétua",
+              valor: `R$ ${escreverMoeda(Number(d.parcela ?? 0))}`,
+              bruto: d,
+            }))}
+          />
+        </Card>
+
+        {base && (
+          <Card
+            titulo="Orçamento por controlabilidade"
+            icone={Scale}
+            tom="roxo"
+            total={base.orcamentoTotal}
+          >
+            <div className="flex flex-col gap-4">
+              {base.orcamento
+                .filter((b) => b.total > 0)
+                .map((b) => (
+                  <div key={b.bucket} className="flex flex-col gap-1.5">
+                    <div className="flex justify-between items-baseline gap-4">
+                      <span className="font-inter text-sm font-medium text-slate-700">
+                        {b.rotulo}
+                      </span>
+                      <span className="font-inter text-sm text-slate-600 tabular-nums">
+                        {formatCurrency(b.total, 2)}
+                        <span className="text-slate-400 ml-2">{pct(b.percentual)}</span>
+                      </span>
+                    </div>
+                    <Barra fracao={b.percentual} tom={tomBalde[b.bucket]} />
+                  </div>
+                ))}
+            </div>
+            <p className="font-inter text-xs text-slate-400 mt-4">
+              Derivado das listas ao lado: cada custo carrega se é fixo ou extra,
+              e as parcelas vêm das dívidas. Anuais entram rateados.
+            </p>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PrecisaPlano({ clienteId }: { clienteId: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <p className="font-poppins text-lg text-brand-950">
+        Este cliente ainda não tem um plano
+      </p>
+      <p className="font-inter text-sm text-slate-500 mt-1 max-w-md">
+        Receitas e custos precisam de um plano para existir. Ele leva meio minuto
+        para criar — data de início, modo de valor e as taxas.
+      </p>
+      <Link
+        href={`/clientes/${clienteId}/ponto-de-partida/cadastro`}
+        className="mt-6 bg-brand-600 hover:bg-brand-900 transition-colors text-white font-poppins font-medium px-4 py-2 rounded-lg text-sm"
+      >
+        Criar o plano
+      </Link>
+    </div>
   );
 }

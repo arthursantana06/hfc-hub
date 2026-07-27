@@ -46,3 +46,15 @@ next-env.d.ts
 
 # Cache local da CLI do Supabase
 supabase/.temp/
+
+# Dados reais de cliente derivados de /past. O repositório é PÚBLICO — estes
+# arquivos publicariam renda, dívidas e patrimônio de uma pessoa identificável.
+# Ficam locais; a cobertura de testes versionada usa o cliente fictício
+# `__fixtures__/exemplo.json`.
+/src/lib/planning/__fixtures__/referencia.json
+/src/lib/planning/__fixtures__/referencia.ts
+/src/lib/planning/parity.test.ts
+/scripts/seed_referencia.sql
+/scripts/seed_referencia.py
+/docs/paridade-referencia.md
+__pycache__/

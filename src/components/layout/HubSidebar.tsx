@@ -15,17 +15,16 @@ import { SideNavLink } from "./SideNavLink";
 import { Logo } from "./Logo";
 import { logout } from "@/lib/actions/auth";
 import { ROLE_LABEL } from "@/lib/roles";
+import { Avatar } from "@/components/ui/Avatar";
 import type { AppUser } from "@/lib/dal";
 
-/** Iniciais para o avatar — "Ana Beatriz Souza" → "AS". */
-function initials(nome: string | null) {
-  const parts = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  const first = parts[0]?.[0] ?? "";
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
-  return (first + last).toUpperCase() || "?";
-}
-
-export function HubSidebar({ user }: { user: AppUser | null }) {
+export function HubSidebar({
+  user,
+  avatarUrl,
+}: {
+  user: AppUser | null;
+  avatarUrl: string | null;
+}) {
   return (
     <aside className="w-64 bg-brand-900 flex flex-col shrink-0">
       {/* Marca — leva ao Dashboard, como se espera de um logo de topo. */}
@@ -50,7 +49,7 @@ export function HubSidebar({ user }: { user: AppUser | null }) {
         <SideNavLink href="/agenda" icon={CalendarDays} label="Agenda" soon />
         <SideNavLink href="/investimentos" icon={LineChart} label="Investimentos" soon />
         <SideNavLink href="/relatorios" icon={FileText} label="Relatórios" soon />
-        <SideNavLink href="/indicacoes" icon={Gift} label="Indicações & Recompensas" soon />
+        <SideNavLink href="/indicacoes" icon={Gift} label="Rewards" soon />
       </nav>
 
       <div className="shrink-0 px-4 pb-4 flex flex-col gap-2">
@@ -58,11 +57,7 @@ export function HubSidebar({ user }: { user: AppUser | null }) {
 
         {/* Identidade e saída juntas: é onde o usuário procura por "sair". */}
         <div className="mt-2 pt-4 border-t border-white/10 flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-full bg-brand-300 shrink-0 flex items-center justify-center">
-            <span className="text-brand-900 font-poppins font-semibold text-sm">
-              {initials(user?.nome ?? null)}
-            </span>
-          </div>
+          <Avatar src={avatarUrl} nome={user?.nome ?? null} size={40} />
 
           <div className="min-w-0 flex-1">
             <p
