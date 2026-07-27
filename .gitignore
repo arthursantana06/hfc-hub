@@ -51,10 +51,15 @@ supabase/.temp/
 # arquivos publicariam renda, dívidas e patrimônio de uma pessoa identificável.
 # Ficam locais; a cobertura de testes versionada usa o cliente fictício
 # `__fixtures__/exemplo.json`.
+#
+# `gerar-paridade.ts` entra aqui não por conter dado, mas por IMPORTAR o
+# fixture: versionado, ele quebrava o build num clone limpo — que foi
+# exatamente o que aconteceu no primeiro deploy.
 /src/lib/planning/__fixtures__/referencia.json
 /src/lib/planning/__fixtures__/referencia.ts
 /src/lib/planning/parity.test.ts
 /scripts/seed_referencia.sql
 /scripts/seed_referencia.py
+/scripts/gerar-paridade.ts
 /docs/paridade-referencia.md
 __pycache__/

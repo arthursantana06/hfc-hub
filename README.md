@@ -115,8 +115,20 @@ o primeiro admin é criado conforme `supabase/README.md`.
 ```bash
 npm run verificar    # tipos + lint + testes
 npm test             # só os testes
-npm run paridade     # regenera docs/paridade-referencia.md (precisa do fixture local)
+npm run paridade     # só com o fixture local — ver a nota de privacidade abaixo
 ```
+
+> **Antes de publicar, verifique contra a árvore versionada, não contra a sua
+> cópia local.** Arquivos em `.gitignore` existem na sua máquina e não no build
+> da Vercel: um `import` para um deles passa no `tsc` local e quebra o deploy.
+> Para reproduzir o que a Vercel vê:
+>
+> ```bash
+> git ls-files -c -o --exclude-standard | while read f; do
+>   mkdir -p /tmp/arvore/$(dirname "$f"); cp "$f" /tmp/arvore/"$f"
+> done
+> cd /tmp/arvore && npm ci && npm run build
+> ```
 
 ## ▲ Publicação na Vercel
 
