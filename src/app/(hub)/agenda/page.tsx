@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 export default async function AgendaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ pessoa?: string; cliente?: string }>;
+  searchParams: Promise<{ colaborador?: string; cliente?: string }>;
 }) {
-  const [{ pessoa, cliente }, reunioes, clientes, pessoas, usuario] =
+  const [{ colaborador, cliente }, reunioes, clientes, pessoas, usuario] =
     await Promise.all([
       searchParams,
       listMeetings(),
@@ -26,7 +26,7 @@ export default async function AgendaPage({
 
   const filtradas = reunioes.filter(
     (r) =>
-      (!pessoa || r.participantes.some((p) => p.id === pessoa)) &&
+      (!colaborador || r.participantes.some((p) => p.id === colaborador)) &&
       (!cliente || r.clienteId === cliente),
   );
 

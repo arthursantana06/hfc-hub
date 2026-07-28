@@ -4,13 +4,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Select } from "@/components/ui/Select";
 import type { Pessoa } from "@/lib/agenda-dal";
 
-const TAG_TIPO: Record<"admin" | "planner" | "cliente", string> = {
+const TAG_TIPO: Record<"admin" | "planner", string> = {
   admin: "Admin",
   planner: "Planejador",
-  cliente: "Cliente",
 };
 
-/** Filtros por pessoa (qualquer participante) e por cliente — vividos na URL. */
+/**
+ * Filtros por colaborador (staff — admin/planejador) e por cliente, vividos
+ * na URL. Clientes já têm o próprio filtro; misturá-los aqui de novo seria
+ * redundante e confundia "quem participou" com "de quem é a reunião".
+ */
 export function FiltroAgenda({
   pessoas,
   clientes,
@@ -20,6 +23,8 @@ export function FiltroAgenda({
 }) {
   const router = useRouter();
   const params = useSearchParams();
+
+  const colaboradores = pessoas.filter((p) => p.tipo === "staff");
 
   function definir(chave: string, valor: string) {
     const próximos = new URLSearchParams(params);
@@ -31,17 +36,17 @@ export function FiltroAgenda({
   return (
     <div className="flex items-center gap-2">
       <Select
-        aria-label="Filtrar por pessoa"
-        value={params.get("pessoa") ?? ""}
-        onChange={(v) => definir("pessoa", v)}
-        placeholder="Todas as pessoas"
+        aria-label="Filtrar por colaborador"
+        value={params.get("colaborador") ?? ""}
+        onChange={(v) => definir("colaborador", v)}
+        placeholder="Todos os colaboradores"
         className="w-56"
         opcoes={[
-          { valor: "", rotulo: "Todas as pessoas" },
-          ...pessoas.map((p) => ({
+          { valor: "", rotulo: "Todos os colaboradores" },
+          ...colaboradores.map((p) => ({
             valor: p.id,
             rotulo: p.nome,
-            descricao: TAG_TIPO[p.tipo === "staff" ? (p.role ?? "planner") : "cliente"],
+            descricao: TAG_TIPO[p.role ?? "planner"],
           })),
         ]}
       />
