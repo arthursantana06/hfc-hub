@@ -23,6 +23,12 @@ export default async function PontoDePartidaLayout({
   return (
     <>
       <header className="p-8 pb-0 shrink-0 bg-white border-b border-slate-200 shadow-sm z-0 flex flex-col">
+        {/* Mesmo wordmark simplificado da tela de login, em tom claro — só a
+            marca, sem o painel inteiro. Valor estético, não informativo. */}
+        <span className="font-outfit font-medium text-sm tracking-tight lowercase text-slate-400 mb-2">
+          hfc <span className="text-brand-600">hub</span>
+        </span>
+
         <h1 className="font-poppins font-medium text-2xl text-brand-950">Ponto de Partida</h1>
 
         {/* Abas Horizontais */}
