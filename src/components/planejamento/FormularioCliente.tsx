@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Loader2, ShieldQuestion, TrendingUp, Waves, Wind } from "lucide-react";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { Select } from "@/components/ui/Select";
 import { salvarCliente, type Estado } from "@/lib/actions/planejamento";
 
@@ -27,6 +28,11 @@ export function FormularioCliente({ cliente }: { cliente?: DadosCliente }) {
     salvarCliente,
     undefined,
   );
+
+  // Nenhuma das duas datas está no futuro. `max` só alimenta o calendário —
+  // não vai para o HTML —, então a data do servidor não desencontra a do
+  // cliente na hidratação.
+  const hoje = new Date().toISOString().slice(0, 10);
 
   return (
     <form action={acao} className="flex flex-col gap-4">
@@ -56,11 +62,11 @@ export function FormularioCliente({ cliente }: { cliente?: DadosCliente }) {
           label="Data de nascimento"
           ajuda="Define a idade e o ano de aposentadoria. Sem ela não há projeção."
         >
-          <input
+          <DatePicker
             name="nascimento"
-            type="date"
             defaultValue={cliente?.nascimento ?? ""}
-            className={base}
+            min="1900-01-01"
+            max={hoje}
           />
         </Campo>
 
@@ -105,11 +111,11 @@ export function FormularioCliente({ cliente }: { cliente?: DadosCliente }) {
           label="Data de adesão"
           ajuda="Quando o cliente entrou na consultoria — não se confunde com o início do plano."
         >
-          <input
+          <DatePicker
             name="adesao"
-            type="date"
             defaultValue={cliente?.adesao ?? ""}
-            className={base}
+            min="2000-01-01"
+            max={hoje}
           />
         </Campo>
 

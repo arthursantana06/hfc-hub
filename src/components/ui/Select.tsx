@@ -305,6 +305,10 @@ export function Select({
           ref={listaRef}
           id={idLista}
           role="listbox"
+          // Marca o portal como painel do produto: quem também fecha no clique
+          // de fora (o DatePicker, por exemplo) precisa reconhecer este `ul`
+          // como "dentro", já que ele mora no `body` e não na árvore do DOM.
+          data-painel="select"
           aria-labelledby={aria["aria-labelledby"] ?? idBotao}
           style={{
             position: "fixed",
