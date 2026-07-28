@@ -32,30 +32,62 @@ export async function salvarReuniao(
   const quando = new Date(`${data}T${hora}:00-03:00`);
   if (Number.isNaN(quando.getTime())) return { erro: "Data ou horário inválidos." };
 
+  // Cada valor de "pessoas" chega como "staff:<id>" ou "cliente:<id>" — o
+  // prefixo diz em qual coluna gravar, já que um `uuid` sozinho não diz de
+  // qual tabela veio.
+  const pessoas = form
+    .getAll("pessoas")
+    .map((v) => String(v).split(":"))
+    .filter((par): par is [string, string] => par.length === 2 && (par[0] === "staff" || par[0] === "cliente"))
+    .map(([tipo, id]) => ({ tipo, id }));
+
   const dados = {
     quando: quando.toISOString(),
     client_id: String(form.get("cliente_id") ?? "").trim() || null,
-    planner_id: String(form.get("planner_id") ?? "").trim() || null,
     notas: String(form.get("notas") ?? "").trim() || null,
   };
 
   const supabase = await createClient();
   const id = String(form.get("__id") ?? "");
+  let meetingId = id;
 
   if (id) {
     const { error } = await supabase.from("meeting").update(dados).eq("id", id);
     if (error) return { erro: mensagem(error.message) };
-    revalidatePath("/agenda");
-    return { ok: "Reunião atualizada." };
+
+    // Substitui o conjunto inteiro em vez de tentar diferenciar quem entrou
+    // e quem saiu — mais simples e, numa lista de no máximo algumas dezenas
+    // de pessoas, o custo é irrelevante.
+    const { error: erroLimpeza } = await supabase
+      .from("meeting_participante")
+      .delete()
+      .eq("meeting_id", id);
+    if (erroLimpeza) return { erro: mensagem(erroLimpeza.message) };
+  } else {
+    const { data: nova, error } = await supabase
+      .from("meeting")
+      .insert({ ...dados, org_id: a.user.org_id })
+      .select("id")
+      .single();
+    if (error || !nova) return { erro: mensagem(error?.message ?? "") };
+    meetingId = nova.id;
   }
 
-  const { error } = await supabase
-    .from("meeting")
-    .insert({ ...dados, org_id: a.user.org_id });
-  if (error) return { erro: mensagem(error.message) };
+  if (pessoas.length > 0) {
+    const linhas = pessoas.map((p) => ({
+      org_id: a.user.org_id,
+      meeting_id: meetingId,
+      app_user_id: p.tipo === "staff" ? p.id : null,
+      client_id: p.tipo === "cliente" ? p.id : null,
+    }));
+    const { error: erroParticipantes } = await supabase
+      .from("meeting_participante")
+      .insert(linhas);
+    if (erroParticipantes) return { erro: mensagem(erroParticipantes.message) };
+  }
 
   revalidatePath("/agenda");
-  return { ok: "Reunião agendada." };
+  return { ok: id ? "Reunião atualizada." : "Reunião agendada." };
 }
 
 export async function removerReuniao(form: FormData): Promise<Estado> {

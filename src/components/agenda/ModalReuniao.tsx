@@ -4,8 +4,9 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { Loader2, Trash2, X } from "lucide-react";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Select } from "@/components/ui/Select";
+import { SeletorPessoas } from "@/components/ui/SeletorPessoas";
 import { salvarReuniao, removerReuniao, type Estado } from "@/lib/actions/agenda";
-import type { Meeting } from "@/lib/agenda-dal";
+import type { Meeting, Pessoa } from "@/lib/agenda-dal";
 
 const base =
   "w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-800 " +
@@ -31,7 +32,7 @@ export function ModalReuniao({
   reuniao,
   dataInicial,
   clientes,
-  planejadores,
+  pessoas,
   usuarioAtualId,
   onFechar,
 }: {
@@ -40,7 +41,8 @@ export function ModalReuniao({
   /** Data (`YYYY-MM-DD`) sugerida ao criar — o dia clicado no calendário. */
   dataInicial?: string;
   clientes: { id: string; nome: string }[];
-  planejadores: { id: string; nome: string }[];
+  /** Admins, planejadores e clientes — quem pode participar de uma reunião. */
+  pessoas: Pessoa[];
   usuarioAtualId: string;
   onFechar: () => void;
 }) {
@@ -135,11 +137,17 @@ export function ModalReuniao({
               />
             </Campo>
 
-            <Campo label="Planejador" span2>
-              <Select
-                name="planner_id"
-                defaultValue={reuniao?.plannerId ?? usuarioAtualId}
-                opcoes={planejadores.map((p) => ({ valor: p.id, rotulo: p.nome }))}
+            <Campo label="Pessoas" span2 ajuda="Admins, planejadores ou clientes presentes na reunião.">
+              <SeletorPessoas
+                name="pessoas"
+                aria-label="Pessoas"
+                pessoas={pessoas}
+                defaultValue={
+                  reuniao
+                    ? reuniao.participantes.map((p) => `${p.tipo}:${p.id}`)
+                    : [`staff:${usuarioAtualId}`]
+                }
+                placeholder="Selecionar pessoas…"
               />
             </Campo>
 

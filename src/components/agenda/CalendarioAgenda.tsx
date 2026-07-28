@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { gradeDoMes, hojeISO, MESES_PT, somarMeses } from "@/lib/calendario";
 import { ModalReuniao } from "./ModalReuniao";
-import type { Meeting } from "@/lib/agenda-dal";
+import type { Meeting, Pessoa } from "@/lib/agenda-dal";
 
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -31,12 +31,12 @@ type Selecao = { tipo: "editar"; reuniao: Meeting } | { tipo: "nova"; data: stri
 export function CalendarioAgenda({
   reunioes,
   clientes,
-  planejadores,
+  pessoas,
   usuarioAtualId,
 }: {
   reunioes: Meeting[];
   clientes: { id: string; nome: string }[];
-  planejadores: { id: string; nome: string }[];
+  pessoas: Pessoa[];
   usuarioAtualId: string;
 }) {
   // `useState` congela o dia de hoje no primeiro render — mesma razão do
@@ -171,7 +171,7 @@ export function CalendarioAgenda({
           reuniao={selecao.tipo === "editar" ? selecao.reuniao : null}
           dataInicial={selecao.tipo === "nova" ? selecao.data : undefined}
           clientes={clientes}
-          planejadores={planejadores}
+          pessoas={pessoas}
           usuarioAtualId={usuarioAtualId}
           onFechar={() => setSelecao(null)}
         />

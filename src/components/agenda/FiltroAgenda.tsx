@@ -2,13 +2,20 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Select } from "@/components/ui/Select";
+import type { Pessoa } from "@/lib/agenda-dal";
 
-/** Filtros por planejador e por cliente, vividos na URL — como a busca de clientes. */
+const TAG_TIPO: Record<"admin" | "planner" | "cliente", string> = {
+  admin: "Admin",
+  planner: "Planejador",
+  cliente: "Cliente",
+};
+
+/** Filtros por pessoa (qualquer participante) e por cliente — vividos na URL. */
 export function FiltroAgenda({
-  planejadores,
+  pessoas,
   clientes,
 }: {
-  planejadores: { id: string; nome: string }[];
+  pessoas: Pessoa[];
   clientes: { id: string; nome: string }[];
 }) {
   const router = useRouter();
@@ -24,14 +31,18 @@ export function FiltroAgenda({
   return (
     <div className="flex items-center gap-2">
       <Select
-        aria-label="Filtrar por planejador"
-        value={params.get("planejador") ?? ""}
-        onChange={(v) => definir("planejador", v)}
-        placeholder="Todos os planejadores"
-        className="w-52"
+        aria-label="Filtrar por pessoa"
+        value={params.get("pessoa") ?? ""}
+        onChange={(v) => definir("pessoa", v)}
+        placeholder="Todas as pessoas"
+        className="w-56"
         opcoes={[
-          { valor: "", rotulo: "Todos os planejadores" },
-          ...planejadores.map((p) => ({ valor: p.id, rotulo: p.nome })),
+          { valor: "", rotulo: "Todas as pessoas" },
+          ...pessoas.map((p) => ({
+            valor: p.id,
+            rotulo: p.nome,
+            descricao: TAG_TIPO[p.tipo === "staff" ? (p.role ?? "planner") : "cliente"],
+          })),
         ]}
       />
 

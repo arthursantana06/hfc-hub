@@ -709,7 +709,6 @@ export type Database = {
           id: string
           notas: string | null
           org_id: string
-          planner_id: string | null
           quando: string
         }
         Insert: {
@@ -719,7 +718,6 @@ export type Database = {
           id?: string
           notas?: string | null
           org_id: string
-          planner_id?: string | null
           quando: string
         }
         Update: {
@@ -729,7 +727,6 @@ export type Database = {
           id?: string
           notas?: string | null
           org_id?: string
-          planner_id?: string | null
           quando?: string
         }
         Relationships: [
@@ -747,11 +744,57 @@ export type Database = {
             referencedRelation: "organization"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      meeting_participante: {
+        Row: {
+          app_user_id: string | null
+          client_id: string | null
+          id: string
+          meeting_id: string
+          org_id: string
+        }
+        Insert: {
+          app_user_id?: string | null
+          client_id?: string | null
+          id?: string
+          meeting_id: string
+          org_id: string
+        }
+        Update: {
+          app_user_id?: string | null
+          client_id?: string | null
+          id?: string
+          meeting_id?: string
+          org_id?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "meeting_planner_id_fkey"
-            columns: ["planner_id"]
+            foreignKeyName: "meeting_participante_app_user_id_fkey"
+            columns: ["app_user_id"]
             isOneToOne: false
             referencedRelation: "app_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_participante_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_participante_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meeting"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_participante_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organization"
             referencedColumns: ["id"]
           },
         ]
