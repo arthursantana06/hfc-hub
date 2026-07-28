@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Guia do Planejador — HFC Hub</title>
+<style>
+/* ─────────────────────────────────────────────────────────────
+   Guia do Planejador — folha de impressão A4.
+   Paleta da marca: brand-950 #032c40 · brand-900 #034260
+                    brand-600 #026694 · brand-300 #82bdd4
+   ───────────────────────────────────────────────────────────── */
+
+@page { size: A4; margin: 18mm 16mm 16mm 16mm; }
+@page :first { margin: 0; }
+
+:root{
+  --b950:#032c40; --b900:#034260; --b600:#026694; --b300:#82bdd4;
+  --ink:#1b2733; --soft:#55636f; --faint:#8592a0;
+  --line:#e2e8ed; --line2:#cfd8e0; --wash:#f4f7f9;
+  --amber:#a86a10; --amber-bg:#fdf6e9; --amber-line:#e8cf9f;
+  --red:#a8342a; --red-bg:#fdf0ee; --red-line:#e6bab3;
+  --green:#1c6b4d; --green-bg:#eef7f2;
+  --sans:"Inter","Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  --disp:"Poppins","Segoe UI Semibold","Segoe UI",system-ui,sans-serif;
+  --mono:"Cascadia Mono","Consolas",ui-monospace,monospace;
+}
+
+*{box-sizing:border-box}
+html{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+body{
+  margin:0; font-family:var(--sans); color:var(--ink);
+  font-size:9.9pt; line-height:1.58; background:#fff;
+  font-variant-numeric:tabular-nums lining-nums;
+}
+p{margin:0 0 .62em}
+strong{font-weight:600; color:var(--b950)}
+em{font-style:normal; color:var(--b600); font-weight:500}
+code{font-family:var(--mono); font-size:.88em; background:var(--wash);
+     border:1px solid var(--line); border-radius:3px; padding:.05em .32em; color:var(--b900)}
+a{color:var(--b600); text-decoration:none}
+
+/* ── Capa ─────────────────────────────────────────────────── */
+.cover{
+  height:297mm; width:100%; background:var(--b950); color:#fff;
+  padding:34mm 22mm 20mm; display:flex; flex-direction:column;
+  break-after:page; position:relative; overflow:hidden;
+}
+.cover::after{
+  content:""; position:absolute; right:-84mm; top:-62mm; z-index:1;
+  width:186mm; height:186mm; border-radius:50%;
+  border:1px solid rgba(130,189,212,.22);
+  box-shadow:0 0 0 22mm rgba(130,189,212,.05);
+}
+.cover-brand{display:flex; align-items:center; gap:10px; position:relative; z-index:2}
+.cover-mark{
+  width:34px; height:34px; border-radius:9px; background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.18); display:flex; align-items:center;
+  justify-content:center; font-family:var(--disp); font-weight:600;
+  font-size:13pt; color:var(--b300); letter-spacing:-.02em;
+}
+.cover-org{font-size:7.6pt; letter-spacing:.20em; text-transform:uppercase; color:var(--b300)}
+.cover-mid{margin-top:auto; position:relative; z-index:2}
+.cover-kicker{
+  font-size:8pt; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--b300); margin-bottom:9mm;
+}
+.cover h1{
+  font-family:var(--disp); font-size:40pt; line-height:1.02; font-weight:600;
+  letter-spacing:-.028em; margin:0 0 7mm; color:#fff;
+}
+.cover-rule{width:46mm; height:2.5px; background:var(--b300); margin-bottom:7mm}
+.cover-sub{font-size:11.5pt; line-height:1.5; color:#cfe2ea; max-width:112mm; font-weight:300}
+.cover-foot{
+  margin-top:26mm; display:flex; gap:14mm; position:relative; z-index:2;
+  border-top:1px solid rgba(255,255,255,.14); padding-top:6mm;
+}
+.cover-foot div{font-size:8.4pt; color:#a9c6d4; white-space:nowrap}
+.cover-foot b{display:block; font-weight:500; color:#fff; font-size:9.4pt; margin-top:2px}
+
+/* ── Estrutura ────────────────────────────────────────────── */
+.part{
+  break-before:page; margin:0 0 9mm; padding-bottom:4mm;
+  border-bottom:2.5px solid var(--b950);
+}
+.part-eyebrow{font-size:7.6pt; letter-spacing:.20em; text-transform:uppercase; color:var(--b600); font-weight:600}
+.part h1{font-family:var(--disp); font-size:21pt; font-weight:600; letter-spacing:-.022em; margin:2mm 0 1.5mm; color:var(--b950)}
+.part p{font-size:9.6pt; color:var(--soft); margin:0; max-width:150mm}
+
+h2{
+  font-family:var(--disp); font-size:13pt; font-weight:600; letter-spacing:-.015em;
+  color:var(--b950); margin:8mm 0 3mm; padding-bottom:1.6mm;
+  border-bottom:1px solid var(--line2); break-after:avoid;
+}
+h2 .num{color:var(--b300); font-weight:600; margin-right:.5em}
+h3{
+  font-family:var(--disp); font-size:10.4pt; font-weight:600; color:var(--b900);
+  margin:5.5mm 0 1.8mm; break-after:avoid;
+}
+h4{font-size:9.4pt; font-weight:600; color:var(--b950); margin:4mm 0 1.2mm; break-after:avoid}
+.lead{font-size:10.4pt; color:var(--soft); margin-bottom:4mm; max-width:150mm}
+
+/* ── Sumário ──────────────────────────────────────────────── */
+.toc{break-after:page}
+.toc-part{
+  font-size:7.6pt; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--b600); font-weight:600; margin:7mm 0 2.5mm;
+  border-bottom:1px solid var(--line); padding-bottom:1.5mm;
+}
+.toc-part:first-of-type{margin-top:4mm}
+.toc ol{list-style:none; margin:0; padding:0}
+.toc li{display:flex; gap:4mm; padding:1.5mm 0; border-bottom:1px dotted var(--line); font-size:9.6pt}
+.toc li b{color:var(--b300); font-weight:600; min-width:7mm; font-family:var(--disp)}
+.toc li span{color:var(--ink)}
+.toc li i{font-style:normal; margin-left:auto; color:var(--faint); font-size:8.6pt; text-align:right; max-width:78mm}
+
+/* ── Blocos ───────────────────────────────────────────────── */
+.step{
+  break-inside:avoid; margin:0 0 5mm; padding:4mm 5mm; background:var(--wash);
+  border:1px solid var(--line); border-left:3px solid var(--b600); border-radius:0 5px 5px 0;
+}
+.step-head{display:flex; align-items:baseline; gap:3mm; margin-bottom:2mm}
+.step-n{
+  font-family:var(--disp); font-size:8pt; font-weight:600; color:#fff;
+  background:var(--b600); border-radius:3px; padding:.5mm 2mm; letter-spacing:.02em;
+}
+.step-t{font-family:var(--disp); font-size:10.4pt; font-weight:600; color:var(--b950)}
+.step-where{
+  margin-left:auto; font-family:var(--mono); font-size:7.6pt; color:var(--b600);
+  background:#fff; border:1px solid var(--line2); border-radius:3px; padding:.4mm 2mm;
+}
+.step p:last-child{margin-bottom:0}
+
+.trap, .note, .xls{
+  break-inside:avoid; margin:3.5mm 0; padding:3.2mm 4mm 3.2mm 4.5mm;
+  border-radius:0 4px 4px 0; font-size:9.3pt;
+}
+.trap{background:var(--amber-bg); border:1px solid var(--amber-line); border-left:3px solid var(--amber)}
+.trap-t{font-family:var(--disp); font-weight:600; font-size:9.4pt; color:var(--amber); margin-bottom:1.2mm; display:flex; gap:2mm; align-items:baseline}
+.trap-t::before{content:"▲"; font-size:7.5pt}
+.trap.grave{background:var(--red-bg); border-color:var(--red-line); border-left-color:var(--red)}
+.trap.grave .trap-t{color:var(--red)}
+.trap p:last-child{margin-bottom:0}
+
+.note{background:var(--green-bg); border:1px solid #c9e3d6; border-left:3px solid var(--green)}
+.note-t{font-family:var(--disp); font-weight:600; font-size:9.3pt; color:var(--green); margin-bottom:1mm}
+.note p:last-child{margin-bottom:0}
+
+.xls{background:#fff; border:1px solid var(--line2); border-left:3px solid var(--b300)}
+.xls-t{
+  font-family:var(--mono); font-size:7.4pt; letter-spacing:.10em; text-transform:uppercase;
+  color:var(--b600); margin-bottom:1.4mm; font-weight:600;
+}
+.xls p:last-child{margin-bottom:0}
+.xls .cell{font-family:var(--mono); font-size:8.4pt; color:var(--b900); background:var(--wash);
+           border:1px solid var(--line); border-radius:2px; padding:0 .3em}
+
+/* ── Tabelas ──────────────────────────────────────────────── */
+table{width:100%; border-collapse:collapse; margin:3mm 0 4mm; font-size:9pt; break-inside:avoid}
+thead th{
+  text-align:left; font-family:var(--disp); font-weight:600; font-size:8.2pt;
+  letter-spacing:.03em; color:#fff; background:var(--b900);
+  padding:1.8mm 2.6mm; border:none;
+}
+thead th:first-child{border-radius:3px 0 0 0}
+thead th:last-child{border-radius:0 3px 0 0}
+tbody td{padding:1.7mm 2.6mm; border-bottom:1px solid var(--line); vertical-align:top}
+tbody tr:nth-child(even) td{background:#fafcfd}
+tbody td:first-child{font-weight:500; color:var(--b950); white-space:nowrap}
+table.wrapfirst tbody td:first-child{white-space:normal}
+.yes{color:var(--green); font-weight:600}
+.no{color:var(--faint)}
+
+/* ── Listas ───────────────────────────────────────────────── */
+ul,ol{margin:0 0 3mm; padding-left:5.5mm}
+li{margin-bottom:1.1mm}
+ul.check{list-style:none; padding-left:0}
+ul.check li{padding-left:7mm; position:relative; margin-bottom:1.8mm; break-inside:avoid}
+ul.check li::before{
+  content:""; position:absolute; left:0; top:1.1mm; width:3.6mm; height:3.6mm;
+  border:1.2px solid var(--b600); border-radius:2px;
+}
+ol.flow{list-style:none; padding-left:0; counter-reset:f}
+ol.flow li{
+  counter-increment:f; padding-left:9mm; position:relative; margin-bottom:1.6mm; break-inside:avoid;
+}
+ol.flow li::before{
+  content:counter(f); position:absolute; left:0; top:.3mm; width:5.2mm; height:5.2mm;
+  background:var(--b950); color:#fff; border-radius:50%; font-family:var(--disp);
+  font-size:7.4pt; font-weight:600; display:flex; align-items:center; justify-content:center;
+}
+
+.formula{
+  font-family:var(--mono); font-size:8.6pt; background:var(--b950); color:#cfe2ea;
+  padding:3mm 4mm; border-radius:4px; margin:3mm 0; break-inside:avoid; line-height:1.6;
+}
+.formula b{color:var(--b300); font-weight:600}
+
+.stars{font-size:10pt; letter-spacing:.5px; color:var(--amber); white-space:nowrap}
+.stars i{color:var(--line2); font-style:normal}
+
+.two{display:grid; grid-template-columns:1fr 1fr; gap:5mm; break-inside:avoid}
+
+.closing{
+  break-inside:avoid; margin-top:7mm; padding:4mm 5mm; background:var(--b950);
+  color:#cfe2ea; border-radius:5px; font-size:9.2pt;
+}
+.closing b{color:#fff}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ CAPA ══════════════════════════ -->
+<section class="cover">
+  <div class="cover-brand">
+    <div class="cover-mark">H</div>
+    <div>
+      <div class="cover-org">HFC Consultoria</div>
+      <div style="font-size:9.6pt;font-family:var(--disp);font-weight:500">Hub</div>
+    </div>
+  </div>
+
+  <div class="cover-mid">
+    <div class="cover-kicker">Planejamento Familiar · Manual de operação</div>
+    <h1>Guia do<br>Planejador</h1>
+    <div class="cover-rule"></div>
+    <p class="cover-sub">
+      Como construir, diagnosticar e acompanhar um plano financeiro familiar no
+      HFC Hub — e o que cada passo era, antes, na planilha.
+    </p>
+  </div>
+
+  <div class="cover-foot">
+    <div>Versão<b>1.0</b></div>
+    <div>Emissão<b>27 de julho de 2026</b></div>
+    <div>Aplica-se a<b>Módulo de Planejamento</b></div>
+    <div>Público<b>Planejadores e administradores</b></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ SUMÁRIO ══════════════════════ -->
+<section class="toc">
+  <div class="part" style="break-before:auto">
+    <div class="part-eyebrow">Conteúdo</div>
+    <h1>Sumário</h1>
+    <p>As Partes I e II são o manual de operação. A Parte III é a leitura de
+    contexto: de onde cada tela veio e por que mudou.</p>
+  </div>
+
+  <div class="toc-part">Parte I · Antes de começar</div>
+  <ol>
+    <li><b>1</b><span>O modelo mental</span><i>três camadas, uma só editável</i></li>
+    <li><b>2</b><span>A ordem obrigatória</span><i>dez passos com dependência real</i></li>
+  </ol>
+
+  <div class="toc-part">Parte II · Como usar a ferramenta</div>
+  <ol>
+    <li><b>3</b><span>Cadastro do cliente</span><i>a data de nascimento é inegociável</i></li>
+    <li><b>4</b><span>Premissas do plano</span><i>modo de valor, taxas, horizonte</i></li>
+    <li><b>5</b><span>Aposentadoria</span><i>idade-alvo, INSS, renda desejada</i></li>
+    <li><b>6</b><span>Fluxo de caixa</span><i>receitas, custos, dívidas, orçamento</i></li>
+    <li><b>7</b><span>Patrimônio</span><i>só a carteira alimenta a projeção</i></li>
+    <li><b>8</b><span>Objetivos</span><i>curto prazo e recorrentes</i></li>
+    <li><b>9</b><span>Mudanças</span><i>o que altera o fluxo a partir de uma data</i></li>
+    <li><b>10</b><span>Ler o diagnóstico</span><i>quatro leituras, em ordem</i></li>
+    <li><b>11</b><span>Congelar as metas</span><i>a foto contra a qual se mede</i></li>
+    <li><b>12</b><span>O ciclo mensal</span><i>abrir, lançar, publicar, imprimir</i></li>
+    <li><b>13</b><span>O placar</span><i>como a nota é calculada</i></li>
+    <li><b>14</b><span>Checklist antes de congelar</span><i>onze verificações</i></li>
+  </ol>
+
+  <div class="toc-part">Parte III · Da planilha ao Hub</div>
+  <ol>
+    <li><b>15</b><span>Mapa de equivalência</span><i>cada aba, cada tela</i></li>
+    <li><b>16</b><span>Os sete achados</span><i>o que a planilha errava e por quê</i></li>
+    <li><b>17</b><span>O que mudou na prática</span><i>o dia a dia do planejador</i></li>
+    <li><b>18</b><span>Glossário</span><i>vocabulário do sistema</i></li>
+  </ol>
+</section>
+
+<!-- ══════════════════════ PARTE I ══════════════════════════ -->
+<div class="part">
+  <div class="part-eyebrow">Parte I</div>
+  <h1>Antes de começar</h1>
+  <p>Duas ideias que economizam horas: o que é editável e o que é consequência,
+  e em que ordem as coisas precisam acontecer.</p>
+</div>
+
+<h2><span class="num">1</span>O modelo mental</h2>
+
+<p class="lead">O sistema tem três camadas, e elas não se misturam.</p>
+
+<table class="wrapfirst">
+  <thead><tr><th style="width:34mm">Camada</th><th>O que é</th><th style="width:38mm">Onde fica</th></tr></thead>
+  <tbody>
+    <tr><td>Ponto de Partida</td><td>O retrato financeiro do cliente: quem ele é, quanto entra, quanto sai, o que tem, o que quer, o que vai mudar. <strong>É a única camada que você edita.</strong></td><td>Ponto de Partida, 5 abas</td></tr>
+    <tr><td>Diagnóstico</td><td>A projeção calculada a partir do retrato. Não se edita — é consequência.</td><td>Diagnóstico &amp; Metas</td></tr>
+    <tr><td>Acompanhamento</td><td>O mês a mês: metas congeladas, lançamentos do realizado, placar, relatório publicado.</td><td>Relatórios</td></tr>
+  </tbody>
+</table>
+
+<p>A projeção é recalculada do zero a cada carregamento de página — 621 meses em
+menos de um milissegundo. <strong>Não existe botão “recalcular” porque não existe
+cache:</strong> o que você vê é sempre o resultado do que está gravado agora.
+Salvou uma receita, a curva de patrimônio já mudou.</p>
+
+<div class="xls">
+  <div class="xls-t">Na planilha</div>
+  <p>Não havia essa separação. A mesma aba misturava valor digitado e fórmula, e
+  a <span class="cell">PROJEÇÃO CURTA!K11</span> chegou a ter um
+  <span class="cell">− 2000</span> escrito à mão <em>dentro</em> da expressão de
+  capitalização. Ninguém sabia, olhando, se uma célula era entrada ou resultado.</p>
+</div>
+
+<h2><span class="num">2</span>A ordem obrigatória</h2>
+
+<p class="lead">Os passos abaixo têm dependência real: pular um deixa a tela
+seguinte vazia ou com o botão de adicionar desabilitado.</p>
+
+<ol class="flow">
+  <li><strong>Criar o cliente</strong> — nome e <strong>data de nascimento</strong></li>
+  <li><strong>Criar o plano</strong> — mês de início, modo de valor e as quatro taxas</li>
+  <li><strong>Preencher a aposentadoria</strong> — idade-alvo, INSS, renda desejada</li>
+  <li><strong>Lançar o fluxo de caixa</strong> — receitas, custos, dívidas</li>
+  <li><strong>Lançar o patrimônio</strong> — a carteira de investimentos é obrigatória</li>
+  <li><strong>Lançar objetivos e mudanças</strong></li>
+  <li><strong>Ler o diagnóstico</strong></li>
+  <li><strong>Congelar as metas</strong> — em Relatórios</li>
+  <li><strong>Abrir o primeiro mês</strong> — em Relatórios</li>
+  <li><strong>Lançar o realizado, escrever direcionamentos e publicar</strong></li>
+</ol>
+
+<div class="trap grave">
+  <div class="trap-t">Armadilha 1 · Sem data de nascimento, nada é projetado</div>
+  <p>O formulário de cliente não exige a data de nascimento, mas o motor precisa
+  dela para saber a idade, o ano da aposentadoria e o fim do horizonte.
+  <strong>Sem ela, a projeção inteira deixa de existir — mesmo com o plano criado
+  e tudo preenchido.</strong></p>
+  <p><em>Sintoma:</em> o Diagnóstico e o Dashboard Resumo dizem “este cliente ainda
+  não tem um plano”. A mensagem é falsa: o plano existe; o que falta é o nascimento.</p>
+  <p><em>Correção:</em> Ponto de Partida → Cadastro → Dados do cliente → Data de nascimento.</p>
+</div>
+
+<!-- ══════════════════════ PARTE II ═════════════════════════ -->
+<div class="part">
+  <div class="part-eyebrow">Parte II</div>
+  <h1>Como usar a ferramenta</h1>
+  <p>Passo a passo, na ordem em que se faz. Cada passo traz o caminho na
+  interface, os campos que importam para o cálculo e as armadilhas conhecidas.</p>
+</div>
+
+<!-- ── 3 ── -->
+<h2><span class="num">3</span>Cadastro do cliente</h2>
+
+<div class="step">
+  <div class="step-head">
+    <span class="step-n">Passo 1</span>
+    <span class="step-t">Criar o cliente</span>
+    <span class="step-where">Clientes → Novo cliente</span>
+  </div>
+  <p>Para editar depois: <em>Ponto de Partida → Cadastro → Dados do cliente</em>.
+  Ao salvar um cliente novo você é levado direto para as premissas do plano.</p>
+</div>
+
+<table>
+  <thead><tr><th style="width:52mm">Campo</th><th style="width:30mm">Entra no cálculo?</th><th>Observação</th></tr></thead>
+  <tbody>
+    <tr><td>Nome</td><td class="no">não</td><td>obrigatório, mínimo 2 caracteres</td></tr>
+    <tr><td><strong>Data de nascimento</strong></td><td class="yes">sim — crítico</td><td>idade, ano de aposentadoria e fim do horizonte saem daqui</td></tr>
+    <tr><td>E-mail, profissão, adesão, notas</td><td class="no">não</td><td>metadados de relacionamento</td></tr>
+    <tr><td>Perfil de risco</td><td class="no">não</td><td>conservador · moderado · arrojado; orienta a conversa, não o motor</td></tr>
+    <tr><td>Status do plano</td><td class="no">não</td><td>rótulo de acompanhamento: ativo · diagnóstico · pendente</td></tr>
+  </tbody>
+</table>
+
+<div class="xls">
+  <div class="xls-t">Na planilha</div>
+  <p>Um arquivo <span class="cell">.xlsx</span> por cliente, com o nome no título
+  e a idade digitada como número solto. Trocar de ano significava lembrar de
+  atualizar a idade em cada aba que a usava. Aqui a idade é sempre derivada da
+  data de nascimento, no mês que estiver sendo projetado.</p>
+</div>
+
+<!-- ── 4 ── -->
+<h2><span class="num">4</span>Premissas do plano</h2>
+
+<div class="step">
+  <div class="step-head">
+    <span class="step-n">Passo 2</span>
+    <span class="step-t">Criar o plano</span>
+    <span class="step-where">Ponto de Partida → Cadastro</span>
+  </div>
+  <p>Enquanto não houver plano, <strong>receitas, custos, mudanças, previdência e
+  seguros não têm onde ser gravados</strong> — o botão “Adicionar” fica cinza com
+  a dica “Crie o plano antes”. Um cliente tem um plano ativo por vez.</p>
+</div>
+
+<h3>Início do plano</h3>
+<p>Primeiro mês projetado. Tudo antes disso é passado e o sistema ignora. É
+também a âncora do calendário: a projeção anda mês a mês a partir daqui, e é
+este mês que a tela de Relatórios sugere como o primeiro a abrir.</p>
+
+<h3>Modo de valor — a decisão mais consequente do formulário</h3>
+<table class="wrapfirst">
+  <thead><tr><th style="width:26mm">Modo</th><th>Como se comporta</th><th style="width:44mm">Quando usar</th></tr></thead>
+  <tbody>
+    <tr><td>Nominal <span style="font-weight:400;color:var(--faint)">(padrão)</span></td>
+        <td>Receitas e despesas são corrigidas pela inflação a cada ano projetado, e o patrimônio rende a taxa cheia. Os números do ano 20 estão em reais de 2046.</td>
+        <td>Quando o cliente quer ver o número que vai aparecer no extrato</td></tr>
+    <tr><td>Real</td>
+        <td>Nada é corrigido; em troca o retorno é descontado da inflação. Todos os valores ficam em poder de compra de hoje.</td>
+        <td>Para conversar sobre padrão de vida — é a leitura mais honesta</td></tr>
+  </tbody>
+</table>
+<p>Aplicar inflação dos dois lados seria contá-la duas vezes; por isso os modos
+são excludentes. <strong>Trocar o modo depois de congelar as metas invalida a
+comparação</strong> — decida antes.</p>
+
+<h3>As quatro taxas</h3>
+<p>Digite em porcentagem: <code>12</code>, nunca <code>0,12</code>. A conversão
+para fração acontece ao salvar, e o campo aceita de −100% a 100%.</p>
+
+<table>
+  <thead><tr><th style="width:56mm">Taxa</th><th>Período em que vale</th><th style="width:22mm">Padrão</th></tr></thead>
+  <tbody>
+    <tr><td>Juros — curto prazo</td><td>os primeiros <em>N</em> meses da projeção curta</td><td>12% a.a.</td></tr>
+    <tr><td>Juros — longo prazo</td><td>do fim da janela curta até a aposentadoria</td><td>10% a.a.</td></tr>
+    <tr><td>Juros na aposentadoria</td><td>da aposentadoria até o fim do horizonte</td><td>4% a.a.</td></tr>
+    <tr><td>Inflação</td><td>sempre — corrige valores ou desconta o retorno, conforme o modo</td><td>5% a.a.</td></tr>
+  </tbody>
+</table>
+
+<div class="trap">
+  <div class="trap-t">Armadilha 2 · “Meses da projeção curta” faz três coisas</div>
+  <p>O campo (padrão 36) define, ao mesmo tempo:</p>
+  <ol style="margin-top:1mm">
+    <li>o tamanho da tabela e do gráfico de curto prazo no Diagnóstico;</li>
+    <li><strong>por quanto tempo vale a taxa de juros de curto prazo;</strong></li>
+    <li>até quando é possível publicar relatórios mensais.</li>
+  </ol>
+  <p>Aumentar de 36 para 60 “para ver mais meses” aplica 12% a.a. por cinco anos
+  em vez de três, e o patrimônio projetado sobe. E, com o padrão de 36, o ciclo
+  mensal simplesmente para depois de três anos — publicar passa a falhar com
+  <em>“este mês está fora da janela projetada”</em>.</p>
+</div>
+
+<p><strong>Horizonte (idade limite)</strong> — padrão 101 anos; até onde a
+projeção anda. <strong>Dia de referência, de pagamento e da fatura</strong> são
+informativos e não entram em nenhum cálculo.</p>
+
+<div class="xls">
+  <div class="xls-t">Na planilha</div>
+  <p>As taxas estavam espalhadas por três abas — <span class="cell">PROJEÇÃO CURTA</span>,
+  <span class="cell">PROJEÇÃO LONGA</span> e <span class="cell">APOSENTADORIA</span> —
+  cada uma com sua própria fórmula de capitalização. Mudar a premissa de retorno
+  significava caçar a constante nas três, e a costura entre elas foi exatamente
+  onde nasceu o erro do <em>$F$8 congelado</em> (Achado 3, na Parte III).</p>
+</div>
+
+<!-- ── 5 ── -->
+<h2><span class="num">5</span>Aposentadoria</h2>
+
+<div class="step">
+  <div class="step-head">
+    <span class="step-n">Passo 3</span>
+    <span class="step-t">Definir a aposentadoria</span>
+    <span class="step-where">Ponto de Partida → Cadastro</span>
+  </div>
+  <p>Três campos, e o do meio é mais amplo do que o nome sugere.</p>
+</div>
+
+<table class="wrapfirst">
+  <thead><tr><th style="width:44mm">Campo</th><th>O que faz no motor</th></tr></thead>
+  <tbody>
+    <tr><td>Idade de aposentadoria</td><td>o mês em que o cliente para de trabalhar; a partir dele a taxa de juros cai para a de aposentadoria e a previdência deixa de ser paga</td></tr>
+    <tr><td>Renda do INSS</td><td><strong>substitui integralmente todas as receitas</strong> a partir daquele mês</td></tr>
+    <tr><td>Renda desejada</td><td>só comparação — não afeta a projeção, apenas o diagnóstico de cobertura</td></tr>
+  </tbody>
+</table>
+
+<div class="trap grave">
+  <div class="trap-t">Armadilha 3 · Toda receita morre na aposentadoria</div>
+  <p>A partir da idade-alvo, a receita projetada passa a ser <strong>exclusivamente
+  o valor do campo “Renda do INSS”</strong>. Aluguéis, participações societárias,
+  pró-labore residual e qualquer receita recorrente que você tenha cadastrado
+  desaparecem do fluxo.</p>
+  <p><em>Como operar hoje:</em> se o cliente tem renda que sobrevive à
+  aposentadoria, some-a ao campo — ele é, na prática, <strong>“renda mensal total
+  na aposentadoria”</strong>, não apenas o benefício previdenciário. Registre a
+  composição real nas notas do cliente para não perder a informação.</p>
+</div>
+
+<!-- ── 6 ── -->
+<h2><span class="num">6</span>Fluxo de caixa</h2>
+
+<div class="step">
+  <div class="step-head">
+    <span class="step-n">Passo 4</span>
+    <span class="step-t">Lançar receitas, custos e dívidas</span>
+    <span class="step-where">Ponto de Partida → Fluxo de Caixa</span>
+  </div>
+  <p>Quatro blocos. Os três primeiros são listas editáveis; o quarto —
+  <em>Orçamento por controlabilidade</em> — é derivado e não se edita.</p>
+</div>
+
+<h3>Receitas</h3>
+<table class="wrapfirst">
+  <thead><tr><th style="width:38mm">Campo</th><th>Regra</th></tr></thead>
+  <tbody>
+    <tr><td>Fonte</td><td>texto livre — plantões, salário, aluguel…</td></tr>
+    <tr><td>Valor</td><td><strong>sempre o valor cheio.</strong> Uma receita anual de R$ 12.000 se digita como 12.000, nunca 1.000</td></tr>
+    <tr><td>Frequência</td><td>Mensal ou Anual</td></tr>
+    <tr><td>Mês de ocorrência</td><td>aparece só quando a frequência é Anual; é o mês em que o valor cheio entra</td></tr>
+    <tr><td>Tipo</td><td>13º · Férias · Comum — rótulo de leitura, não muda o cálculo</td></tr>
+  </tbody>
+</table>
+
+<p>A lista mostra as anuais <strong>rateadas por 12</strong>, para somarem na
+mesma coluna que as mensais; o valor gravado continua cheio. Na projeção, uma
+receita anual de R$ 12.000 com ocorrência em dezembro entra como R$ 12.000
+<strong>em dezembro</strong> e R$ 0 nos outros onze meses — não como R$ 1.000/mês.</p>
+
+<p>Daí os dois conceitos de receita que aparecem nas telas:
+<strong>receita mensalizada</strong> (a média, para dimensionar o orçamento) e
+<strong>receita do mês comum</strong> (o que entra num mês sem nenhum evento anual).</p>
+
+<h3>Custo de vida</h3>
+<table class="wrapfirst">
+  <thead><tr><th style="width:38mm">Campo</th><th>Regra</th></tr></thead>
+  <tbody>
+    <tr><td>Categoria</td><td>obrigatória; vem do catálogo da organização</td></tr>
+    <tr><td>Descrição</td><td>opcional; quando preenchida, é o que aparece na lista</td></tr>
+    <tr><td>Valor</td><td>cheio, mesma regra dos anuais</td></tr>
+    <tr><td><strong>Controlabilidade</strong></td><td><strong>Fixo</strong> = não dá para cortar neste mês · <strong>Extra</strong> = dá</td></tr>
+    <tr><td>Frequência e mês</td><td>idem receitas</td></tr>
+  </tbody>
+</table>
+
+<p>A controlabilidade não muda o total: muda o bloco <strong>Orçamento</strong>,
+que reparte o custo em <em>Custos Fixos</em>, <em>Gastos extras</em>,
+<em>Parcelas</em> e <em>Adicionais do mês</em>. É a leitura que responde “quanto
+deste orçamento é negociável?”. Os <em>Adicionais</em> ficam sempre zerados aqui
+por definição — eles são o extraordinário de um mês específico e vivem em Mudanças.</p>
+
+<h3>Parcelas e dívidas</h3>
+<table class="wrapfirst">
+  <thead><tr><th style="width:38mm">Campo</th><th>Regra</th></tr></thead>
+  <tbody>
+    <tr><td>Descrição, Credor</td><td>texto</td></tr>
+    <tr><td>Parcela mensal</td><td>o que sai do caixa por mês</td></tr>
+    <tr><td>Primeira parcela</td><td>mês de início; em branco significa “já está correndo”</td></tr>
+    <tr><td><strong>Última parcela</strong></td><td><strong>em branco = dívida perpétua</strong></td></tr>
+  </tbody>
+</table>
+
+<div class="trap">
+  <div class="trap-t">Armadilha 4 · Dívida sem data de fim corre para sempre</div>
+  <p>Deixar “Última parcela” vazio faz a projeção descontar aquela parcela até os
+  101 anos do cliente. A lista marca essas linhas com um aviso âmbar, e a aba
+  Mudanças conta quantas existem. É o erro mais fácil de cometer e o mais caro:
+  destrói o patrimônio projetado inteiro.</p>
+</div>
+
+<div class="note">
+  <div class="note-t">Em compensação: a quitação é automática</div>
+  <p>Com a data de fim preenchida, a parcela some do fluxo no mês seguinte e a
+  quitação aparece sozinha na aba <em>Mudanças</em>, em “Quitações previstas”.
+  <strong>Você não precisa — e não deve — criar uma mudança manual para o fim de
+  uma dívida.</strong></p>
+</div>
+
+<div class="trap">
+  <div class="trap-t">Armadilha 5 · Os quatro cartões do topo não fecham</div>
+  <p>Na tela de Fluxo de Caixa,
+  <em>Receita mensalizada − Custo mensalizado − Parcelas ≠ Sobras mensais</em>.
+  A diferença é <strong>previdência + seguros</strong>: eles são debitados das
+  Sobras, mas são cadastrados em outra tela (Cadastro) e não aparecem em nenhum
+  dos três primeiros cartões. Se a conta não bate, é isso.</p>
+</div>
+
+<div class="xls">
+  <div class="xls-t">Na planilha</div>
+  <p>Este bloco era <span class="cell">PLANILHA MENSAL</span>. O valor anual ficava
+  guardado <em>já dividido por 12</em> e era reconstituído com
+  <span class="cell">SUMIF(...)×12</span> — de modo que uma linha anual sem mês de
+  ocorrência simplesmente sumia do modelo. Foi o que aconteceu com a revisão do
+  carro do cliente de referência: <span class="cell">F37</span> marcada como
+  Anual, <span class="cell">G37</span> em branco, R$ 2.000 por ano evaporando em
+  silêncio. Aqui o valor é guardado cheio e o mês de ocorrência é obrigatório
+  quando a frequência é anual.</p>
+</div>
+
+<!-- ── 7 ── -->
+<h2><span class="num">7</span>Patrimônio</h2>
+
+<div class="step">
+  <div class="step-head">
+    <span class="step-n">Passo 5</span>
+    <span class="step-t">Lançar o patrimônio</span>
+    <span class="step-where">Ponto de Partida → Patrimônio</span>
+  </div>
+  <p>Quatro blocos — e <strong>só um deles alimenta a projeção</strong>.</p>
+</div>
+
+<table class="wrapfirst">
+  <thead><tr><th style="width:48mm">Bloco</th><th style="width:28mm">Entra no motor?</th><th>Para que serve</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Carteira de investimentos</strong></td><td class="yes">sim</td><td>é o patrimônio do mês zero — o que rende</td></tr>
+    <tr><td>Ativos</td><td class="no">não</td><td>compõe o patrimônio líquido nas telas de resumo</td></tr>
+    <tr><td>Passivos</td><td class="no">não</td><td>idem</td></tr>
+    <tr><td>Dívidas a liquidar</td><td class="yes">sim, via parcelas</td><td>mesma tabela do Fluxo de Caixa, outra leitura</td></tr>
+  </tbody>
+</table>
+
+<div class="trap">
+  <div class="trap-t">Armadilha 6 · Imóvel não é patrimônio para o motor</div>
+  <p>Cadastrar a casa de R$ 800.000 em <em>Ativos</em> muda o “Patrimônio líquido”
+  exibido, mas <strong>não muda um centavo da projeção</strong>. O motor parte da
+  soma dos <em>investimentos</em>, e apenas dela.</p>
+  <p>Isso é deliberado: um imóvel de moradia não rende 12% a.a. nem vira renda de
+  aposentadoria. Se o cliente pretende vendê-lo, modele a venda como um
+  <strong>objetivo de curto prazo com valor negativo</strong> na data prevista.</p>
+</div>
+
+<p>O bloco de dívidas aqui mostra o <strong>saldo devedor estimado</strong>
+(parcela × meses restantes), enquanto o Fluxo de Caixa mostra a <strong>parcela
+mensal</strong>. É a mesma tabela vista de dois ângulos: editar em qualquer uma
+das telas altera as duas. O saldo não desconta juros embutidos — é o desembolso
+futuro, não o valor presente.</p>
+
+<div class="trap">
+  <div class="trap-t">Armadilha 7 · A previdência é penalizada pelo modelo</div>
+  <p>A contribuição cadastrada em <em>Cadastro → Previdência</em> sai do caixa
+  todo mês, reduz as sobras, reduz o patrimônio projetado, para na aposentadoria —
+  e <strong>nunca retorna como renda</strong>, porque na aposentadoria a receita
+  vira só o INSS.</p>
+  <p><em>Como operar hoje:</em> registre o <strong>saldo acumulado</strong> da
+  previdência em <em>Patrimônio → Carteira de investimentos</em>, classe
+  <em>Previdência</em> — isso entra na projeção corretamente. Quanto ao fluxo de
+  contribuição, escolha conscientemente: cadastrá-lo mostra a saída de caixa real
+  mas subestima o patrimônio; não cadastrá-lo acerta o patrimônio e subestima
+  levemente o custo de vida. Anote a escolha nas notas do cliente.</p>
+</div>
+
+<!-- ── 8 ── -->
+<h2><span class="num">8</span>Objetivos</h2>
+
+<div class="step">
+  <div class="step-head">
+    <span class="step-n">Passo 6a</span>
+    <span class="step-t">Cadastrar objetivos</span>
+    <span class="step-where">Ponto de Partida → Objetivos</span>
+  </div>
+  <p>Dois tipos, com regras bem diferentes. Ambos debitam o <strong>patrimônio</strong>,
+  não as sobras — aparecem na coluna <em>Objetivos</em> da projeção e como marcos
+  no gráfico.</p>
+</div>
+
+<h3>Curto prazo — data marcada</h3>
+<table class="wrapfirst">
+  <thead><tr><th style="width:38mm">Campo</th><th>Regra</th></tr></thead>
+  <tbody>
+    <tr><td>Prazo</td><td>“Curto — data marcada”</td></tr>
+    <tr><td>Valor</td><td><strong>positivo = saída</strong> (uma compra) · <strong>negativo = entrada</strong> (venda, herança, resgate)</td></tr>
+    <tr><td>Quando</td><td>o mês em que o valor sai ou entra</td></tr>
+    <tr><td>Prioridade · Já concluído</td><td>organização; marcar <em>concluído</em> <strong>remove o objetivo da projeção</strong></td></tr>
+  </tbody>
+</table>
+
+<h3>Recorrente — se repete</h3>
+<p>O valor é o custo de <em>uma</em> ocorrência, e a periodicidade diz de quantos
+em quantos anos ela se repete. <strong>A compra recorrente sempre cai em
+dezembro</strong>, e a primeira ocorrência é em dezembro do ano seguinte ao
+início do plano: um carro de R$ 60.000 a cada 5 anos, num plano iniciado em 2026,
+sai em dez/2027, dez/2032, dez/2037…</p>
+
+<p>O total exibido na lista é o custo vitalício — <em>valor × (100 − idade) ÷
+periodicidade</em>. É soma nominal, sem trazer a valor presente: leitura de
+magnitude, não de valuation.</p>
+
+<div class="trap">
+  <div class="trap-t">Armadilha 8 · O sinal se inverte entre duas abas vizinhas</div>
+  <table style="margin:2mm 0 0; font-size:9pt">
+    <thead><tr><th style="width:40mm">Tela</th><th>Valor positivo significa</th></tr></thead>
+    <tbody>
+      <tr><td>Objetivos</td><td>saída de caixa — custa dinheiro</td></tr>
+      <tr><td>Mudanças</td><td>melhora do fluxo — entra dinheiro</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:2mm">São convenções opostas. Confira o sinal antes de salvar.</p>
+</div>
+
+<div class="xls">
+  <div class="xls-t">Na planilha</div>
+  <p>Havia uma aba inteira chamada <span class="cell">objetivos planilha</span> —
+  242 linhas de <span class="cell">SUMIFS</span> que não guardavam informação
+  nenhuma: apenas reexpressavam mês a mês as duas tabelas de mudanças e objetivos.
+  Ela foi eliminada; o mesmo resultado é calculado na hora.</p>
+</div>
+
+<!-- ── 9 ── -->
+<h2><span class="num">9</span>Mudanças</h2>
+
+<div class="step">
+  <div class="step-head">
+    <span class="step-n">Passo 6b</span>
+    <span class="step-t">Montar a linha do tempo</span>
+    <span class="step-where">Ponto de Partida → Mudanças</span>
+  </div>
+  <p>É aqui que se modela tudo que <strong>altera o fluxo a partir de uma data</strong>
+  e não é consequência automática de outra coisa.</p>
+</div>
+
+<table class="wrapfirst">
+  <thead><tr><th style="width:38mm">Campo</th><th>Regra</th></tr></thead>
+  <tbody>
+    <tr><td>O que muda</td><td>texto — “deixar de pagar aluguel”, “redução de carga horária”</td></tr>
+    <tr><td><strong>Efeito no caixa</strong></td><td><strong>positivo melhora, negativo piora</strong> — em qualquer categoria</td></tr>
+    <tr><td>Categoria</td><td>Receita · Despesa · Dívida — define em qual linha da projeção o efeito aparece</td></tr>
+    <tr><td>A partir de</td><td>primeiro mês em que vale</td></tr>
+    <tr><td>Até</td><td><strong>em branco = vale para sempre</strong></td></tr>
+    <tr><td>Observação</td><td>vira <strong>marco</strong> no gráfico e na tabela do Diagnóstico</td></tr>
+  </tbody>
+</table>
+
+<h3>Três exemplos</h3>
+<table class="wrapfirst">
+  <thead><tr><th style="width:56mm">Situação</th><th>Como cadastrar</th></tr></thead>
+  <tbody>
+    <tr><td>Cliente sai do aluguel de R$ 3.000 em mar/2027</td><td>categoria <em>Despesa</em> · valor <strong>+3.000</strong> · a partir de 03/2027 · sem fim</td></tr>
+    <tr><td>Reduz plantões e perde R$ 4.000/mês por seis meses</td><td>categoria <em>Receita</em> · valor <strong>−4.000</strong> · de 01/2028 a 06/2028</td></tr>
+    <tr><td>Reforma de R$ 15.000 num único mês</td><td>categoria <em>Despesa</em> · valor <strong>−15.000</strong> · de 05/2027 a 05/2027</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Não cadastre aqui:</strong> o fim de uma dívida (já é automático pela
+data de última parcela) nem compras pontuais com data — para estas use Objetivos
+de curto prazo. A diferença é que <em>Objetivos debitam o patrimônio</em>,
+enquanto <em>Mudanças alteram o fluxo</em>.</p>
+
+<p>Sem nenhuma mudança cadastrada, a projeção repete o mês típico até os 101 anos.
+Uma carreira real quase nunca é assim — <strong>um plano sem mudanças é um plano
+incompleto.</strong></p>
+
+<div class="xls">
+  <div class="xls-t">Na planilha</div>
+  <p>As mudanças viviam em duas tabelas separadas por horizonte, e o fim de uma
+  dívida era uma linha escrita à mão que somava a parcela de volta. Esquecer essa
+  linha fazia a dívida correr para sempre — e ninguém percebia, porque o erro só
+  aparecia trinta anos à frente. Hoje a dívida carrega as próprias datas e o
+  sistema deriva a quitação (Achado 1).</p>
+</div>
+
+<!-- ── 10 ── -->
+<h2><span class="num">10</span>Ler o diagnóstico</h2>
+
+<div class="step">
+  <div class="step-head">
+    <span class="step-n">Passo 7</span>
+    <span class="step-t">Interpretar a projeção</span>
+    <span class="step-where">Diagnóstico &amp; Metas</span>
+  </div>
+  <p>Nada se edita aqui. Quatro leituras, em ordem de importância.</p>
+</div>
+
+<h3>1 · “O dinheiro acaba”</h3>
+<p>O ano em que o patrimônio fica negativo. É o achado mais acionável do modelo
+inteiro: quando existe, aparece em vermelho no topo do Diagnóstico e também no
+Dashboard Resumo, com as três alavancas nomeadas — <strong>adiar a aposentadoria,
+cortar o custo projetado, elevar o aporte mensal</strong>.</p>
+
+<h3>2 · Renda na aposentadoria contra renda desejada</h3>
+<p>A cobertura em porcentagem, e quanto falta em reais.</p>
+
+<h3>3 · Composição da renda na aposentadoria</h3>
+<p>INSS mais renda privada. A <strong>renda privada</strong> é o rendimento de um
+mês do patrimônio acumulado <em>sem consumir o principal</em>. Atenção ao usá-la
+com o cliente: <strong>a projeção não saca esse valor — ela saca o déficit
+inteiro.</strong> É por isso que o patrimônio pode cair mesmo com renda privada
+positiva. O número serve para dizer “seu patrimônio rende X por mês”, não para
+descrever o que o modelo faz.</p>
+
+<h3>4 · Fluxo projetado e tabela mês a mês</h3>
+<p>Colunas <em>Receitas, Despesas, Dívidas, Sobras, Objetivos, Patrimônio</em>.
+Despesas, dívidas e previdência aparecem negativas; <em>Sobras</em> é a soma
+algébrica das quatro primeiras. <em>Patrimônio</em> é estoque: no agregado anual
+vale o do último mês do ano, nunca a soma dos doze.</p>
+
+<div class="formula">
+  A cada mês:<br>
+  <b>patrimônio</b> = patrimônio × (1 + taxa)<sup>1/12</sup> + <b>sobras</b> + <b>objetivos</b><br>
+  <b>sobras</b> = receitas + despesas + dívidas + previdência &nbsp;<span style="color:#7fa3b5">(as três últimas já negativas)</span>
+</div>
+
+<p>A taxa é a de curto prazo enquanto o mês está dentro da janela curta, a de
+longo prazo até a aposentadoria, e a de aposentadoria depois disso. No modo Real,
+cada uma é descontada da inflação.</p>
+
+<!-- ── 11 ── -->
+<h2><span class="num">11</span>Congelar as metas</h2>
+
+<div class="step">
+  <div class="step-head">
+    <span class="step-n">Passo 8</span>
+    <span class="step-t">Fechar o plano</span>
+    <span class="step-where">Relatórios → Metas do plano</span>
+  </div>
+  <p>Nota de navegação: o item <em>Relatórios</em> na barra lateral aparece
+  marcado “Em breve”, mas a tela funciona integralmente. O selo é resíduo de
+  navegação — clique normalmente.</p>
+</div>
+
+<p>Congelar tira uma <strong>foto da projeção atual</strong> — a janela curta e a
+longa — e a grava como as metas do plano. É contra essa foto, e nunca contra a
+projeção corrente, que cada mês é medido depois.</p>
+
+<p><strong>Por que congelar:</strong> se o alvo fosse recalculado a cada mês, ele
+se moveria junto com o cliente e o acompanhamento não significaria nada. A meta
+precisa ser histórica para ser meta.</p>
+
+<p><strong>Recongelar</strong> substitui a foto. A tela pede confirmação porque os
+meses já publicados passam a ser lidos contra um alvo diferente do que valia
+quando saíram — embora os relatórios já publicados guardem o próprio placar
+gravado e não mudem.</p>
+
+<p>Se você editar o plano depois de congelar, a tela de Relatórios exibe um aviso
+âmbar: <em>“o plano mudou desde que as metas foram congeladas”</em>. Isso é
+legítimo — a meta é histórica de propósito — e o aviso existe para você não
+comparar coisas diferentes sem perceber.</p>
+
+<div class="trap">
+  <div class="trap-t">Sem metas congeladas não é possível publicar nenhum relatório</div>
+  <p>É o pré-requisito de todo o ciclo mensal. Se o botão de publicar recusar com
+  “congele as metas do plano antes”, este é o passo pendente.</p>
+</div>
+
+<div class="xls">
+  <div class="xls-t">Na planilha</div>
+  <p>A foto era a aba <span class="cell">PROJEÇÃO ORIGINAL</span>, colada como
+  valores. Nada impedia que alguém a recalculasse por engano — e, quando isso
+  acontecia, não havia registro de que o alvo tinha mudado. Aqui a série
+  congelada guarda uma impressão digital das premissas que a geraram, e é
+  comparando essa impressão com as premissas de hoje que o aviso âmbar aparece.</p>
+</div>
+
+<!-- ── 12 ── -->
+<h2><span class="num">12</span>O ciclo mensal</h2>
+
+<div class="step">
+  <div class="step-head">
+    <span class="step-n">Passo 9</span>
+    <span class="step-t">Abrir o mês</span>
+    <span class="step-where">Relatórios → Abrir um mês</span>
+  </div>
+  <p>O campo já vem preenchido com o <strong>primeiro mês do plano ainda não
+  aberto</strong> — você não precisa lembrar onde parou, e o sistema recusa
+  reabrir um mês existente. Abrir cria de uma vez o registro do realizado
+  <em>e</em> o relatório em rascunho.</p>
+</div>
+
+<div class="step">
+  <div class="step-head">
+    <span class="step-n">Passo 10</span>
+    <span class="step-t">Lançar, orientar e publicar</span>
+    <span class="step-where">Relatórios → [mês]</span>
+  </div>
+</div>
+
+<h3>Lançar o realizado</h3>
+<table class="wrapfirst">
+  <thead><tr><th style="width:44mm">Lista</th><th>Campos</th></tr></thead>
+  <tbody>
+    <tr><td>Receitas realizadas</td><td>fonte · valor recebido</td></tr>
+    <tr><td>Gastos realizados</td><td>categoria · descrição · valor · balde (fixo, extra, parcela ou adicional)</td></tr>
+    <tr><td>Faturas de cartão</td><td>cartão · categoria da fatura · valor</td></tr>
+  </tbody>
+</table>
+
+<p>A <strong>categoria da fatura</strong> usa a taxonomia do extrato bancário
+(alimentação, transporte, compras…), diferente da taxonomia do plano. É
+proposital: uma é o que o banco devolve, a outra é como você orçou. Não tente
+conciliá-las. Um mesmo cartão não pode ter duas linhas na mesma categoria —
+edite a existente.</p>
+
+<h3>Observações e direcionamentos</h3>
+<p><strong>Observações do mês</strong> é texto livre: o que os números não contam.
+<strong>Direcionamentos do próximo mês</strong> é a lista numerada que vai para a
+última página do relatório — a orientação prática (“juntar R$ 1.000 ao longo do
+mês”).</p>
+
+<h3>Publicar</h3>
+<p>Publicar <strong>congela o placar</strong> no documento e tranca toda a edição
+do mês: lançamentos, observação e direcionamentos ficam somente leitura. O
+relatório entregue continua dizendo o que dizia quando saiu, mesmo que o plano
+seja refeito depois. Para corrigir algo: <em>Reabrir para correção</em>, ajustar,
+publicar de novo.</p>
+
+<table class="wrapfirst">
+  <thead><tr><th style="width:74mm">Se a publicação falhar com…</th><th>O que está pendente</th></tr></thead>
+  <tbody>
+    <tr><td>“Congele as metas do plano antes”</td><td>o passo 8 não foi feito</td></tr>
+    <tr><td>“Este mês está fora da janela projetada”</td><td>o mês está além dos <em>meses da projeção curta</em> — ver Armadilha 2</td></tr>
+  </tbody>
+</table>
+
+<h3>Gerar o PDF do cliente</h3>
+<p><em>Ver o documento</em> → <strong>Imprimir</strong> → <em>Salvar como PDF</em>.
+Cinco páginas:</p>
+<ol>
+  <li><strong>Como foi o mês</strong> — placar em estrelas e orçamento</li>
+  <li><strong>Fluxo projetado</strong> — entradas e saídas dos próximos doze meses, com os marcos</li>
+  <li><strong>Patrimônio</strong> — a curva curta e a curva longa até a aposentadoria</li>
+  <li><strong>O que aconteceu no mês</strong> — receitas, gastos, faturas e observações</li>
+  <li><strong>O próximo mês</strong> — metas do mês seguinte, direcionamentos e objetivos</li>
+</ol>
+
+<!-- ── 13 ── -->
+<h2><span class="num">13</span>O placar — como a nota é calculada</h2>
+
+<p class="lead">Quatro métricas: Receitas, Despesas, Sobras e Investimentos
+(patrimônio). A régua mede o <strong>desvio absoluto da meta</strong>, não o
+percentual atingido.</p>
+
+<table>
+  <thead><tr><th style="width:52mm">Desvio em relação à meta</th><th>Nota</th></tr></thead>
+  <tbody>
+    <tr><td>até 5%</td><td><span class="stars">★★★★★</span></td></tr>
+    <tr><td>até 10%</td><td><span class="stars">★★★★<i>★</i></span></td></tr>
+    <tr><td>até 20%</td><td><span class="stars">★★★<i>★★</i></span></td></tr>
+    <tr><td>até 35%</td><td><span class="stars">★★<i>★★★</i></span></td></tr>
+    <tr><td>acima de 35%</td><td><span class="stars">★<i>★★★★</i></span></td></tr>
+  </tbody>
+</table>
+
+<p>Duas exceções, ambas deliberadas: em <strong>Sobras</strong> e
+<strong>Investimentos</strong>, superar a meta vale nota máxima — sobrar mais que
+o planejado é boa notícia. Em <strong>Despesas</strong>, estourar o orçamento
+nunca vira nota alta, e a régua de desvio vale integralmente.</p>
+
+<p>Uma receita 40% <em>acima</em> do previsto também tira estrelas. É intencional:
+ou o plano estava errado, ou entrou dinheiro que ninguém decidiu onde alocar. Nos
+dois casos, é conversa. Quando a meta é zero não há denominador, e a linha mostra
+“sem meta definida para o mês”.</p>
+
+<div class="trap grave">
+  <div class="trap-t">Armadilha 9 · O placar não lê os seus lançamentos</div>
+  <p>O placar compara <strong>projeção corrente contra projeção congelada</strong> —
+  não o realizado contra a meta. Os valores digitados em “Receitas realizadas” e
+  “Gastos realizados” alimentam os três cartões do topo da tela do mês e as
+  páginas 1 e 4 do relatório, mas <strong>não movem nenhuma estrela</strong>.</p>
+  <p>Consequência prática: se o cliente estourou o orçamento em 40% e você lançou
+  isso corretamente, o placar seguirá em cinco estrelas — porque o <em>plano</em>
+  não mudou. As estrelas só se movem quando você edita o plano e o afasta da foto
+  congelada.</p>
+  <p><em>Como operar hoje:</em> leia o placar como <strong>“o quanto o plano se
+  afastou do plano original”</strong>, e leia o realizado nos cartões de topo e na
+  página 4 do documento.</p>
+</div>
+
+<div class="xls">
+  <div class="xls-t">Na planilha</div>
+  <p>O placar era o bloco <span class="cell">Planilha1!F17:K26</span> e as estrelas
+  eram <strong>digitadas à mão</strong>: não havia régua nenhuma. Junho/26 do
+  cliente de referência tinha cinco estrelas em despesas com 115% do orçamento
+  gasto. A régua acima é a correção desse defeito — e a limitação descrita na
+  armadilha acima é herdada da planilha, que já comparava plano com plano.</p>
+</div>
+
+<!-- ── 14 ── -->
+<h2><span class="num">14</span>Checklist antes de congelar as metas</h2>
+
+<ul class="check">
+  <li><strong>Data de nascimento</strong> preenchida</li>
+  <li><strong>Modo de valor</strong> escolhido conscientemente — Real para conversar sobre padrão de vida</li>
+  <li>Todas as <strong>dívidas com última parcela</strong> preenchida: nenhum aviso âmbar na aba Mudanças</li>
+  <li><strong>Receitas anuais</strong> com valor cheio e mês de ocorrência correto</li>
+  <li><strong>Carteira de investimentos</strong> preenchida — é o ponto de partida do patrimônio</li>
+  <li><strong>Renda do INSS</strong> reflete toda a renda esperada na aposentadoria, não só o benefício</li>
+  <li><strong>Objetivos</strong> com o sinal correto — positivo é compra</li>
+  <li><strong>Mudanças</strong> com o sinal correto — positivo melhora o caixa</li>
+  <li>Pelo menos <strong>uma mudança</strong> cadastrada: plano sem mudanças é irreal</li>
+  <li><strong>Objetivos já realizados</strong> marcados como concluídos</li>
+  <li><strong>Diagnóstico lido:</strong> o ano de ruína faz sentido? A cobertura da renda desejada é plausível?</li>
+</ul>
+
+<!-- ══════════════════════ PARTE III ════════════════════════ -->
+<div class="part">
+  <div class="part-eyebrow">Parte III</div>
+  <h1>Da planilha ao Hub</h1>
+  <p>Contexto para quem operava o arquivo <span style="font-family:var(--mono);font-size:9pt">.xlsx</span>:
+  onde cada aba foi parar, o que estava errado e o que isso muda no dia a dia.</p>
+</div>
+
+<h2><span class="num">15</span>Mapa de equivalência</h2>
+
+<table class="wrapfirst">
+  <thead><tr><th style="width:52mm">Na planilha</th><th style="width:52mm">No Hub</th><th>O que mudou</th></tr></thead>
+  <tbody>
+    <tr><td><span class="cell">PLANILHA MENSAL</span> — bloco superior</td><td>Ponto de Partida → Fluxo de Caixa</td><td>valor anual guardado cheio, com mês de ocorrência obrigatório</td></tr>
+    <tr><td><span class="cell">PLANILHA MENSAL</span> — bloco ORÇAMENTO</td><td>card “Orçamento por controlabilidade”</td><td>derivado das próprias linhas de custo, com os anuais incluídos</td></tr>
+    <tr><td><span class="cell">PROJEÇÃO CURTA</span></td><td rowspan="3" style="vertical-align:middle">Diagnóstico &amp; Metas<br><span style="font-weight:400;color:var(--soft);font-size:8.6pt">três recortes da mesma série mensal</span></td><td>tabela e gráfico dos primeiros <em>N</em> meses</td></tr>
+    <tr><td><span class="cell">PROJEÇÃO LONGA</span></td><td>agregado anual até a aposentadoria</td></tr>
+    <tr><td><span class="cell">APOSENTADORIA</span></td><td>cartões de desfecho e composição da renda</td></tr>
+    <tr><td><span class="cell">objetivos planilha</span></td><td><em>eliminada</em></td><td>242 linhas de <span class="cell">SUMIFS</span> que só reexpressavam outras tabelas</td></tr>
+    <tr><td><span class="cell">PROJEÇÃO ORIGINAL</span></td><td>Relatórios → Metas congeladas</td><td>guarda a impressão digital das premissas que a geraram</td></tr>
+    <tr><td><span class="cell">Planilha1!F17:K26</span></td><td>Placar do mês</td><td>régua explícita de estrelas, com sinal por métrica</td></tr>
+    <tr><td>PDF montado à mão</td><td>Relatórios → Ver o documento</td><td>cinco páginas geradas dos dados, impressas pelo navegador</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">16</span>Os sete achados</h2>
+
+<p class="lead">O que a auditoria da planilha encontrou, e como cada ponto foi
+tratado. Vale conhecer: três destes explicam por que os números do Hub
+<em>não batem</em> com os da planilha antiga — por decisão, não por defeito.</p>
+
+<table class="wrapfirst">
+  <thead><tr><th style="width:8mm">#</th><th style="width:56mm">O defeito na planilha</th><th>Como o Hub trata</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>O fim de uma dívida era uma linha de mudança escrita à mão. Esquecê-la fazia a parcela correr para sempre.</td><td>A dívida carrega <em>primeira</em> e <em>última parcela</em>; a quitação é derivada e aparece sozinha na linha do tempo.</td></tr>
+    <tr><td>2</td><td>As estrelas do placar eram digitadas. Não havia régua — 115% do orçamento gasto recebeu cinco estrelas.</td><td>Régua por desvio absoluto, com sinal invertido em despesas. Ver seção 13.</td></tr>
+    <tr><td>3</td><td>A projeção longa usava <span class="cell">=$F$8 + Δ</span> para a despesa de <em>todo</em> ano — referência absoluta a um único total. No modo nominal o patrimônio compunha contra uma despesa congelada.</td><td>Uma passagem mensal única recompõe a despesa ano a ano e aplica inflação no modo Nominal. <strong>É a maior divergência de números entre os dois sistemas.</strong></td></tr>
+    <tr><td>4</td><td>A janela de metas era um corte por data feito à mão na aba original.</td><td>A série congelada guarda exatamente a janela projetada, com carimbo de geração.</td></tr>
+    <tr><td>5</td><td>Remendos manuais dentro de fórmulas — o <span class="cell">− 2000</span> de jun/26 dentro da expressão de capitalização.</td><td>Não existe entrada digitada dentro de cálculo. Toda entrada é uma linha de dados.</td></tr>
+    <tr><td>6</td><td>Valores anuais guardados já divididos por 12 e reconstituídos por <span class="cell">SUMIF</span>. Uma linha anual sem mês de ocorrência sumia do modelo.</td><td>Valor guardado cheio; mês de ocorrência obrigatório quando a frequência é anual. O rateio é feito só para exibição.</td></tr>
+    <tr><td>7</td><td>Os baldes do orçamento vinham de marcadores manuais na coluna C, e nenhum custo anual tinha marcador — IPVA e revisão ficavam fora do orçamento inteiro.</td><td>A controlabilidade é um campo da própria linha de custo, e os anuais entram rateados.</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <div class="note-t">Paridade verificada</div>
+  <p>O motor foi testado célula a célula contra a planilha do cliente de
+  referência, numa janela de doze meses calculada inteiramente por fórmula:
+  <strong>46 das 48 células idênticas a menos de um centavo</strong>. As duas
+  divergências têm causa nomeada — a revisão anual sem mês (achado 6) e o bloco
+  de orçamento sem os anuais (achado 7). Divergência sem causa nomeada é tratada
+  como defeito.</p>
+</div>
+
+<h2><span class="num">17</span>O que mudou na prática</h2>
+
+<table class="wrapfirst">
+  <thead><tr><th style="width:60mm">Antes</th><th>Agora</th></tr></thead>
+  <tbody>
+    <tr><td>Um arquivo por cliente, versionado por nome de arquivo</td><td>Um plano ativo por cliente, com versão e histórico no banco</td></tr>
+    <tr><td>Recalcular era abrir o arquivo e torcer para as fórmulas estarem intactas</td><td>A projeção é recalculada a cada carregamento de página, do zero</td></tr>
+    <tr><td>Três abas com fórmulas diferentes para curto, longo e aposentadoria</td><td>Uma passagem mensal única; os três horizontes são recortes dela</td></tr>
+    <tr><td>Esquecer de cancelar uma parcela quebrava a projeção em silêncio</td><td>A dívida sabe quando acaba</td></tr>
+    <tr><td>As estrelas eram uma opinião digitada</td><td>As estrelas são uma régua declarada, igual para todos os clientes</td></tr>
+    <tr><td>O relatório era montado à mão a cada mês</td><td>Cinco páginas geradas dos dados; “Imprimir → Salvar como PDF”</td></tr>
+    <tr><td>O alvo do acompanhamento podia ser recalculado por engano</td><td>Metas congeladas, com aviso quando o plano se afasta delas</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">18</span>Glossário</h2>
+
+<table class="wrapfirst">
+  <thead><tr><th style="width:46mm">Termo</th><th>Significado no sistema</th></tr></thead>
+  <tbody>
+    <tr><td>Mês comum</td><td>mês sem nenhum evento anual — sem 13º, IPVA ou férias</td></tr>
+    <tr><td>Mensalizado</td><td>valor anual rateado por 12; é média para dimensionamento, não fluxo real</td></tr>
+    <tr><td>Sobras</td><td>receitas − despesas − parcelas − previdência − seguros</td></tr>
+    <tr><td>Janela curta</td><td>os primeiros <em>N</em> meses: define a tabela mensal, o prazo da taxa de curto prazo e o limite do acompanhamento</td></tr>
+    <tr><td>Projeção longa</td><td>agregado anual, do início do plano até o ano da aposentadoria</td></tr>
+    <tr><td>Metas congeladas</td><td>a foto da projeção tirada no fechamento do plano; o denominador de todo placar</td></tr>
+    <tr><td>Balde / controlabilidade</td><td>fixo, extra, parcela ou adicional — leitura do orçamento por negociabilidade</td></tr>
+    <tr><td>Marco</td><td>observação de uma mudança ou título de um objetivo, anotado no gráfico e na tabela</td></tr>
+    <tr><td>Ano de ruína</td><td>primeiro ano, após a aposentadoria, em que o patrimônio fica negativo</td></tr>
+    <tr><td>Renda privada</td><td>rendimento mensal do patrimônio na aposentadoria sem consumir o principal</td></tr>
+    <tr><td>Rascunho · Publicado</td><td>estados do relatório mensal; publicado congela o placar e tranca a edição</td></tr>
+  </tbody>
+</table>
+
+<div class="closing">
+  <p><b>Uma observação final sobre este documento.</b> As nove armadilhas
+  descritas aqui não são erros de quem usa: são pontos em que a ferramenta ainda
+  não protege o planejador. Elas estão documentadas porque o sistema vai ser usado
+  antes de ser corrigido, e um manual honesto vale mais que um manual que descreve
+  o comportamento desejado. Quando forem tratadas, esta é a seção que encolhe.</p>
+  <p style="margin-bottom:0">HFC Consultoria · Guia do Planejador · versão 1.0 · julho de 2026</p>
+</div>
+
+</body>
+</html>

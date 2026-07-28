@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldQuestion, TrendingUp, Waves, Wind } from "lucide-react";
+import { Select } from "@/components/ui/Select";
 import { salvarCliente, type Estado } from "@/lib/actions/planejamento";
 
 const base =
@@ -72,12 +73,32 @@ export function FormularioCliente({ cliente }: { cliente?: DadosCliente }) {
         </Campo>
 
         <Campo label="Perfil de investidor">
-          <select name="risco" defaultValue={cliente?.risco ?? ""} className={base}>
-            <option value="">Não definido</option>
-            <option value="conservador">Conservador</option>
-            <option value="moderado">Moderado</option>
-            <option value="arrojado">Arrojado</option>
-          </select>
+          <Select
+            name="risco"
+            defaultValue={cliente?.risco ?? ""}
+            placeholder="Não definido"
+            opcoes={[
+              { valor: "", rotulo: "Não definido", icone: ShieldQuestion },
+              {
+                valor: "conservador",
+                rotulo: "Conservador",
+                descricao: "Preserva o capital; aceita retorno menor",
+                icone: Waves,
+              },
+              {
+                valor: "moderado",
+                rotulo: "Moderado",
+                descricao: "Equilibra risco e retorno",
+                icone: Wind,
+              },
+              {
+                valor: "arrojado",
+                rotulo: "Arrojado",
+                descricao: "Aceita oscilação por retorno maior",
+                icone: TrendingUp,
+              },
+            ]}
+          />
         </Campo>
 
         <Campo
@@ -93,15 +114,27 @@ export function FormularioCliente({ cliente }: { cliente?: DadosCliente }) {
         </Campo>
 
         <Campo label="Status do plano">
-          <select
+          <Select
             name="plano_status"
             defaultValue={cliente?.plano_status ?? "diagnostico"}
-            className={base}
-          >
-            <option value="diagnostico">Em diagnóstico</option>
-            <option value="ativo">Plano ativo</option>
-            <option value="pendente">Pendente</option>
-          </select>
+            opcoes={[
+              {
+                valor: "diagnostico",
+                rotulo: "Em diagnóstico",
+                descricao: "Levantando os dados; o plano ainda não fechou",
+              },
+              {
+                valor: "ativo",
+                rotulo: "Plano ativo",
+                descricao: "Plano fechado e em acompanhamento mensal",
+              },
+              {
+                valor: "pendente",
+                rotulo: "Pendente",
+                descricao: "Acompanhamento parado, à espera do cliente",
+              },
+            ]}
+          />
         </Campo>
 
         <Campo

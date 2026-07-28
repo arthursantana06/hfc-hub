@@ -3,8 +3,19 @@
 import { useActionState } from "react";
 import { updateUserRole } from "@/lib/actions/settings";
 import { FormAlert } from "@/components/ui/Form";
-import { ROLE_LABEL, ASSIGNABLE_ROLES } from "@/lib/roles";
+import { ROLE_LABEL, ROLE_DESCRICAO, ASSIGNABLE_ROLES } from "@/lib/roles";
+import { Select } from "@/components/ui/Select";
+import { ShieldCheck, UserRound } from "lucide-react";
 import type { AppUser } from "@/lib/dal";
+
+const ICONE_PAPEL = { admin: ShieldCheck, planner: UserRound } as const;
+
+const OPCOES_PAPEL = ASSIGNABLE_ROLES.map((r) => ({
+  valor: r,
+  rotulo: ROLE_LABEL[r],
+  descricao: ROLE_DESCRICAO[r],
+  icone: ICONE_PAPEL[r as keyof typeof ICONE_PAPEL],
+}));
 
 export function UsersTable({
   users,
@@ -45,21 +56,15 @@ export function UsersTable({
             {canEdit ? (
               <form action={action} className="flex items-center gap-2 shrink-0">
                 <input type="hidden" name="userId" value={u.id} />
-                <label htmlFor={`role-${u.id}`} className="sr-only">
-                  Papel de {u.nome ?? u.email}
-                </label>
-                <select
+                <Select
                   id={`role-${u.id}`}
                   name="role"
                   defaultValue={u.role}
-                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg font-inter text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
-                >
-                  {ASSIGNABLE_ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {ROLE_LABEL[r]}
-                    </option>
-                  ))}
-                </select>
+                  opcoes={OPCOES_PAPEL}
+                  tamanho="sm"
+                  className="w-44"
+                  aria-label={`Papel de ${u.nome ?? u.email ?? "usuário"}`}
+                />
                 <button
                   type="submit"
                   disabled={pending}

@@ -5,6 +5,7 @@ import {
   escreverMoeda,
   type Campo,
 } from "@/lib/forms/planejamento";
+import { Select } from "@/components/ui/Select";
 
 export interface OpcoesRef {
   categoria?: { valor: string; rotulo: string; grupo?: string }[];
@@ -63,29 +64,34 @@ export function CampoForm({
           <span className="font-inter text-sm text-slate-600">Sim</span>
         </label>
       ) : campo.tipo === "select" ? (
-        <select {...comum} defaultValue={valor === null || valor === undefined ? "" : String(valor)} className={base}>
-          {!campo.obrigatorio && !campo.opcoes?.some((o) => o.valor === "") && (
-            <option value="">—</option>
-          )}
-          {campo.opcoes?.map((o) => (
-            <option key={o.valor} value={o.valor}>
-              {o.rotulo}
-            </option>
-          ))}
-        </select>
+        <Select
+          id={campo.key}
+          name={campo.key}
+          required={campo.obrigatorio}
+          defaultValue={valor === null || valor === undefined ? "" : String(valor)}
+          onChange={onChange}
+          placeholder="—"
+          opcoes={[
+            ...(!campo.obrigatorio && !campo.opcoes?.some((o) => o.valor === "")
+              ? [{ valor: "", rotulo: "—" }]
+              : []),
+            ...(campo.opcoes ?? []),
+          ]}
+        />
       ) : campo.tipo === "ref" ? (
-        <select {...comum} defaultValue={valor ? String(valor) : ""} className={base}>
-          <option value="">Escolha…</option>
-          {agrupar(opcoes?.categoria ?? []).map(([grupo, itens]) => (
-            <optgroup key={grupo} label={grupo}>
-              {itens.map((o) => (
-                <option key={o.valor} value={o.valor}>
-                  {o.rotulo}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+        <Select
+          id={campo.key}
+          name={campo.key}
+          required={campo.obrigatorio}
+          defaultValue={valor ? String(valor) : ""}
+          onChange={onChange}
+          placeholder="Escolha…"
+          opcoes={(opcoes?.categoria ?? []).map((o) => ({
+            valor: o.valor,
+            rotulo: o.rotulo,
+            grupo: GRUPOS[o.grupo ?? "outros"] ?? "Outros",
+          }))}
+        />
       ) : campo.tipo === "mes" ? (
         <input
           {...comum}
@@ -142,13 +148,3 @@ const GRUPOS: Record<string, string> = {
   filhos_pets: "Filhos e Pets",
   outros: "Outros",
 };
-
-function agrupar(itens: { valor: string; rotulo: string; grupo?: string }[]) {
-  const mapa = new Map<string, typeof itens>();
-  for (const i of itens) {
-    const g = GRUPOS[i.grupo ?? "outros"] ?? "Outros";
-    if (!mapa.has(g)) mapa.set(g, []);
-    mapa.get(g)!.push(i);
-  }
-  return [...mapa.entries()];
-}

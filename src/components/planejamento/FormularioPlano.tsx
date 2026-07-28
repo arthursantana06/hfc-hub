@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { Loader2 } from "lucide-react";
+import { Coins, Loader2, Scale } from "lucide-react";
+import { Select } from "@/components/ui/Select";
 import {
   salvarPlano,
   salvarAposentadoria,
@@ -68,14 +69,24 @@ export function FormularioPlano({
           label="Modo de valor"
           ajuda="Real: tudo em poder de compra de hoje. Nominal: valores correntes, corrigidos pela inflação."
         >
-          <select
+          <Select
             name="modo_valor"
             defaultValue={plano?.modo_valor ?? "nominal"}
-            className={base}
-          >
-            <option value="nominal">Valor Nominal</option>
-            <option value="real">Valor Real</option>
-          </select>
+            opcoes={[
+              {
+                valor: "nominal",
+                rotulo: "Valor Nominal",
+                descricao: "Valores correntes; receitas e despesas crescem com a inflação",
+                icone: Coins,
+              },
+              {
+                valor: "real",
+                rotulo: "Valor Real",
+                descricao: "Tudo em poder de compra de hoje; a inflação sai do retorno",
+                icone: Scale,
+              },
+            ]}
+          />
         </Campo>
 
         <Campo label="Juros — curto prazo (% a.a.)">

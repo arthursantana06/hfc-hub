@@ -1,10 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { Trash2 } from "lucide-react";
+import { ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { createInvite, deleteInvite } from "@/lib/actions/settings";
 import { Field, FormAlert } from "@/components/ui/Form";
-import { ROLE_LABEL, ASSIGNABLE_ROLES } from "@/lib/roles";
+import { ROLE_LABEL, ROLE_DESCRICAO, ASSIGNABLE_ROLES } from "@/lib/roles";
+import { Select } from "@/components/ui/Select";
 import type { SignupInvite } from "@/lib/dal";
 
 function formatDate(iso: string) {
@@ -39,18 +40,18 @@ export function InvitesPanel({ invites }: { invites: SignupInvite[] }) {
           <label htmlFor="role" className="font-inter text-sm text-slate-700">
             Papel
           </label>
-          <select
+          <Select
             id="role"
             name="role"
             defaultValue="planner"
-            className="px-4 py-2.5 bg-white border border-slate-200 rounded-lg shadow-sm font-inter text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-300"
-          >
-            {ASSIGNABLE_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {ROLE_LABEL[r]}
-              </option>
-            ))}
-          </select>
+            className="min-w-52"
+            opcoes={ASSIGNABLE_ROLES.map((r) => ({
+              valor: r,
+              rotulo: ROLE_LABEL[r],
+              descricao: ROLE_DESCRICAO[r],
+              icone: r === "admin" ? ShieldCheck : UserRound,
+            }))}
+          />
         </div>
 
         <button

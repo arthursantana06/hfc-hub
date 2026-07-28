@@ -12,6 +12,29 @@ body {
   overflow: hidden;
 }
 
+/* Entrada do painel do Select — curta o bastante para não atrasar a escolha. */
+@keyframes select-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.select-painel {
+  animation: select-entra 120ms ease-out;
+}
+
+/* A regra de redução vem DEPOIS, senão a animação a sobrescreve por ordem. */
+@media (prefers-reduced-motion: reduce) {
+  .select-painel {
+    animation: none;
+  }
+}
+
 /*
  * Impressão do relatório mensal.
  *
