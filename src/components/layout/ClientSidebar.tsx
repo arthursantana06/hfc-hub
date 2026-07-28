@@ -45,7 +45,15 @@ export function ClientSidebar({ client }: { client: Client }) {
         </div>
       </div>
 
-      <nav className="flex-1 px-4 mt-8 flex flex-col gap-2 overflow-y-auto">
+      {/* Mesmo wordmark simplificado da tela de login — só a marca, sem o
+          painel inteiro. Valor estético, acima das abas do menu do cliente. */}
+      <div className="px-6 pt-2 shrink-0">
+        <span className="font-outfit font-medium text-sm tracking-tight lowercase text-brand-300/70">
+          hfc <span className="text-brand-300">hub</span>
+        </span>
+      </div>
+
+      <nav className="flex-1 px-4 mt-4 flex flex-col gap-2 overflow-y-auto">
         <SideNavLink href={`/clientes/${client.id}`} icon={LayoutDashboard} label="Dashboard Resumo" exact />
         <SideNavLink href={`/clientes/${client.id}/ponto-de-partida`} icon={Compass} label="Ponto de Partida" />
         <SideNavLink href={`/clientes/${client.id}/diagnostico`} icon={Target} label="Diagnóstico & Metas" />
