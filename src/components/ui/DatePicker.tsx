@@ -12,11 +12,15 @@ import {
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { Select } from "@/components/ui/Select";
+import {
+  gradeDoMes,
+  hojeISO,
+  MESES_PT,
+  primeiroDoMes,
+  somarDias,
+  somarMeses,
+} from "@/lib/calendario";
 
-const MESES = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-];
 const DIAS = ["D", "S", "T", "Q", "Q", "S", "S"];
 
 /** Altura desejada do painel, em px — usada para decidir se abre para cima. */
@@ -171,23 +175,15 @@ export function DatePicker({
   }, [disabled, iso]);
 
   /** As 42 casas da grade — seis semanas cobrem qualquer mês. */
-  const grade = useMemo(() => {
-    const [ano, mes] = cursor.split("-").map(Number);
-    const primeiro = new Date(Date.UTC(ano, mes - 1, 1));
-    const inicio = primeiro.getUTCDay();
-    const dias = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
-
-    return Array.from({ length: 42 }, (_, i) => {
-      const dia = i - inicio + 1;
-      if (dia < 1 || dia > dias) return null;
-      return `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
-    });
-  }, [cursor]);
+  const grade = useMemo(
+    () => gradeDoMes(cursor).map((c) => (c.noMes ? c.data : null)),
+    [cursor],
+  );
 
   const anoCursor = Number(cursor.slice(0, 4));
 
   const opcoesMes = useMemo(
-    () => MESES.map((m, i) => ({ valor: String(i + 1), rotulo: m })),
+    () => MESES_PT.map((m, i) => ({ valor: String(i + 1), rotulo: m })),
     [],
   );
 
@@ -501,26 +497,6 @@ function Passo({
       {children}
     </button>
   );
-}
-
-// ── datas, sempre em UTC ────────────────────────────────────────
-// Fuso local com `new Date(iso)` desloca o dia: no Brasil, `2026-07-28`
-// vira 27/07 às 21h. Tudo aqui usa UTC para o dia não escorregar.
-
-const hojeISO = () => new Date().toISOString().slice(0, 10);
-
-const primeiroDoMes = (iso: string) => `${iso.slice(0, 7)}-01`;
-
-function somarDias(iso: string, dias: number): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + dias);
-  return d.toISOString().slice(0, 10);
-}
-
-function somarMeses(iso: string, meses: number): string {
-  const [ano, mes] = iso.split("-").map(Number);
-  const total = ano * 12 + (mes - 1) + meses;
-  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}-01`;
 }
 
 function isoParaBr(iso: string): string {

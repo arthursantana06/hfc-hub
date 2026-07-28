@@ -1,17 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { Select } from "@/components/ui/Select";
 
-const base =
-  "px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 " +
-  "font-inter focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent " +
-  "cursor-pointer";
-
-/**
- * Filtros por planejador e por cliente, vividos na URL — como a busca de
- * clientes. Poucas opções, sem descrição por item: o `<select>` nativo já
- * dá o essencial de graça, sem o custo de reimplementar o próprio.
- */
+/** Filtros por planejador e por cliente, vividos na URL — como a busca de clientes. */
 export function FiltroAgenda({
   planejadores,
   clientes,
@@ -31,33 +23,29 @@ export function FiltroAgenda({
 
   return (
     <div className="flex items-center gap-2">
-      <select
+      <Select
         aria-label="Filtrar por planejador"
         value={params.get("planejador") ?? ""}
-        onChange={(e) => definir("planejador", e.target.value)}
-        className={base}
-      >
-        <option value="">Todos os planejadores</option>
-        {planejadores.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.nome}
-          </option>
-        ))}
-      </select>
+        onChange={(v) => definir("planejador", v)}
+        placeholder="Todos os planejadores"
+        className="w-52"
+        opcoes={[
+          { valor: "", rotulo: "Todos os planejadores" },
+          ...planejadores.map((p) => ({ valor: p.id, rotulo: p.nome })),
+        ]}
+      />
 
-      <select
+      <Select
         aria-label="Filtrar por cliente"
         value={params.get("cliente") ?? ""}
-        onChange={(e) => definir("cliente", e.target.value)}
-        className={base}
-      >
-        <option value="">Todos os clientes</option>
-        {clientes.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.nome}
-          </option>
-        ))}
-      </select>
+        onChange={(v) => definir("cliente", v)}
+        placeholder="Todos os clientes"
+        className="w-52"
+        opcoes={[
+          { valor: "", rotulo: "Todos os clientes" },
+          ...clientes.map((c) => ({ valor: c.id, rotulo: c.nome })),
+        ]}
+      />
     </div>
   );
 }

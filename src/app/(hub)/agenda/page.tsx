@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Page } from "@/components/layout/Page";
 import { FiltroAgenda } from "@/components/agenda/FiltroAgenda";
-import { ListaReunioes } from "@/components/agenda/ListaReunioes";
+import { CalendarioAgenda } from "@/components/agenda/CalendarioAgenda";
 import { listMeetings } from "@/lib/agenda-dal";
 import { listClients } from "@/lib/planning-dal";
 import { getCurrentUser, listOrgUsers } from "@/lib/dal";
@@ -44,7 +44,7 @@ export default async function AgendaPage({
         <FiltroAgenda planejadores={opcoesPlanejadores} clientes={opcoesClientes} />
       }
     >
-      <ListaReunioes
+      <CalendarioAgenda
         reunioes={filtradas}
         clientes={opcoesClientes}
         planejadores={opcoesPlanejadores}
