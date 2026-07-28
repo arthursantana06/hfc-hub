@@ -20,13 +20,13 @@ export function Page({
 }) {
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-      <header className="shrink-0 flex items-center justify-between gap-6 px-8 py-5 bg-white border-b border-slate-200">
+      <header className="shrink-0 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-8 py-5 bg-white border-b border-slate-200">
         <div className="min-w-0">
           <h1 className="font-poppins font-medium text-2xl text-brand-950 truncate">
             {title}
           </h1>
           {subtitle && (
-            <p className="font-inter text-sm text-slate-500 mt-0.5">{subtitle}</p>
+            <p className="font-inter text-sm text-slate-500 mt-0.5 truncate">{subtitle}</p>
           )}
         </div>
         {actions && (
