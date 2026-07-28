@@ -30,9 +30,15 @@ export function HubSidebar({
           de login: só o texto, sem ícone nem legenda "HFC Consultoria". */}
       <Link
         href="/"
-        className="shrink-0 flex items-center px-6 py-5 border-b border-white/10 hover:bg-brand-600/20 transition-colors"
+        className="shrink-0 flex items-center pl-9 pr-6 py-[1.125rem] border-b border-white/10 hover:bg-brand-600/20 transition-colors"
       >
-        <span className="font-outfit font-medium text-white text-2xl tracking-tight lowercase">
+        {/* `pl-9` = padding do <nav> (px-4) + borda-esquerda do SideNavLink
+            (border-l-4) + padding do próprio SideNavLink (px-4) — alinha o
+            texto com os ícones das abas logo abaixo. `py-[1.125rem]` em vez
+            de `py-5`: o texto maior (text-3xl) tem 4px a mais de altura de
+            linha que o texto-2xl anterior; reduzir o padding compensa, para
+            a caixinha continuar com a mesma altura de antes. */}
+        <span className="font-outfit font-medium text-white text-3xl tracking-tight lowercase">
           hfc <span className="text-brand-300">hub</span>
         </span>
       </Link>
