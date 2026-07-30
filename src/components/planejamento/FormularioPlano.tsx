@@ -3,6 +3,8 @@
 import { useActionState } from "react";
 import { Coins, Loader2, Scale } from "lucide-react";
 import { Select } from "@/components/ui/Select";
+import { MesPicker } from "@/components/ui/MesPicker";
+import { InputMoeda } from "@/components/ui/InputMoeda";
 import {
   salvarPlano,
   salvarAposentadoria,
@@ -56,12 +58,10 @@ export function FormularioPlano({
           label="Início do plano"
           ajuda="Primeiro mês projetado. Meses anteriores são realizado, não projeção."
         >
-          <input
+          <MesPicker
             name="inicio"
-            type="month"
             required
             defaultValue={dataParaMes(plano?.inicio) || mesAtual()}
-            className={base}
           />
         </Campo>
 
@@ -226,18 +226,16 @@ export function FormularioAposentadoria({
         </Campo>
 
         <Campo label="Renda do INSS (mensal)">
-          <input
+          <InputMoeda
             name="renda_inss"
-            inputMode="decimal"
             defaultValue={escreverMoeda(dados?.renda_inss ?? 0)}
             className={`${base} text-right tabular-nums`}
           />
         </Campo>
 
         <Campo label="Renda desejada (mensal)">
-          <input
+          <InputMoeda
             name="renda_desejada"
-            inputMode="decimal"
             defaultValue={escreverMoeda(dados?.renda_desejada ?? 0)}
             className={`${base} text-right tabular-nums`}
           />

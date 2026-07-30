@@ -6,6 +6,8 @@ import {
   type Campo,
 } from "@/lib/forms/planejamento";
 import { Select } from "@/components/ui/Select";
+import { MesPicker } from "@/components/ui/MesPicker";
+import { InputMoeda } from "@/components/ui/InputMoeda";
 
 export interface OpcoesRef {
   categoria?: { valor: string; rotulo: string; grupo?: string }[];
@@ -93,11 +95,12 @@ export function CampoForm({
           }))}
         />
       ) : campo.tipo === "mes" ? (
-        <input
-          {...comum}
-          type="month"
+        <MesPicker
+          id={campo.key}
+          name={campo.key}
+          required={campo.obrigatorio}
           defaultValue={dataParaMes(valor as string | null)}
-          className={base}
+          onChange={onChange}
         />
       ) : campo.tipo === "inteiro" ? (
         <input
@@ -114,12 +117,11 @@ export function CampoForm({
           <span className="absolute left-3 top-1/2 -translate-y-1/2 font-inter text-sm text-slate-400 pointer-events-none">
             R$
           </span>
-          <input
-            {...comum}
-            type="text"
-            inputMode="decimal"
+          <InputMoeda
+            id={campo.key}
+            name={campo.key}
+            required={campo.obrigatorio}
             defaultValue={escreverMoeda(valor as number | null)}
-            placeholder="0,00"
             className={`${base} pl-10 text-right tabular-nums`}
           />
         </div>
