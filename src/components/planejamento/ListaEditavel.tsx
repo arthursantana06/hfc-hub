@@ -43,6 +43,7 @@ export function ListaEditavel({
   vazio,
   extra,
   somenteLeitura = false,
+  comScroll = false,
 }: Vinculo & {
   entidade: string;
   linhas: LinhaDados[];
@@ -52,6 +53,8 @@ export function ListaEditavel({
   extra?: React.ReactNode;
   /** Um mês publicado não se edita mais sem reabrir o relatório. */
   somenteLeitura?: boolean;
+  /** Lista longa rola dentro do próprio cartão em vez de esticar a página. */
+  comScroll?: boolean;
 }) {
   const def = ENTIDADES[entidade];
   const [aberto, setAberto] = useState<LinhaDados | "novo" | null>(null);
@@ -86,7 +89,11 @@ export function ListaEditavel({
           {vazio ?? `Nenhum registro em ${def.plural.toLowerCase()}.`}
         </p>
       ) : (
-        <ul className="flex flex-col">
+        <ul
+          className={`flex flex-col ${
+            comScroll ? "max-h-96 overflow-y-auto pr-1" : ""
+          }`}
+        >
           {linhas.map((l) => (
             <li
               key={l.id}

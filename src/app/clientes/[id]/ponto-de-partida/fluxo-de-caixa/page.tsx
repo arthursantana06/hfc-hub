@@ -140,6 +140,7 @@ export default async function FluxoDeCaixa({
             clientId={id}
             opcoesRef={{ categoria: categorias }}
             vazio="Nenhum custo registrado."
+            comScroll
             linhas={despesas.map((e) => {
               const cat = nomeCategoria.get(e.categoria_id);
               return {
