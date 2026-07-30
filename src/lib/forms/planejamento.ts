@@ -62,6 +62,14 @@ export interface Entidade {
    * partir dele. Os dois só existem depois que o mês é aberto.
    */
   escopo: "plano" | "cliente" | "registro" | "relatorio";
+  /**
+   * Só para `escopo: "cliente"`: a tabela também tem coluna `plan_id` e deve
+   * receber o plano ativo ao gravar (liga o registro à versão do raio-x).
+   * `asset`, `liability` e `investment` são de escopo cliente mas não têm
+   * essa coluna — setar isto sem checar quebra o insert com "column plan_id
+   * does not exist".
+   */
+  vinculaAoPlano?: boolean;
   singular: string;
   plural: string;
   campos: Campo[];
@@ -152,6 +160,7 @@ export const ENTIDADES: Record<string, Entidade> = {
   divida: {
     tabela: "debt",
     escopo: "cliente",
+    vinculaAoPlano: true,
     singular: "Dívida",
     plural: "Dívidas",
     campos: [
@@ -171,6 +180,7 @@ export const ENTIDADES: Record<string, Entidade> = {
   objetivo: {
     tabela: "goal",
     escopo: "cliente",
+    vinculaAoPlano: true,
     singular: "Objetivo",
     plural: "Objetivos",
     campos: [

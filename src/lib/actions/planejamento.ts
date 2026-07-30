@@ -158,9 +158,12 @@ export async function salvarLinha(
     } else {
       if (!clientId) return { erro: "Cliente não identificado." };
       vinculo.client_id = clientId;
-      // Tabelas de escopo cliente também carregam plan_id quando há plano —
-      // é o que liga a dívida ou o objetivo à versão do raio-x.
-      if (planId) vinculo.plan_id = planId;
+      // Só as tabelas de escopo cliente que de fato têm coluna `plan_id`
+      // (dívida, objetivo) a recebem — é o que as liga à versão do raio-x.
+      // `asset`/`liability`/`investment` são escopo cliente mas não têm essa
+      // coluna; setar incondicionalmente quebrava o insert com "column
+      // plan_id does not exist" sempre que o cliente já tinha um plano ativo.
+      if (planId && entidade.vinculaAoPlano) vinculo.plan_id = planId;
     }
 
     // `income_entry`, `expense_entry` e `card_statement` não têm coluna `ordem`;
