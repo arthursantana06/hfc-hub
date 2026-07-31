@@ -39,7 +39,7 @@ Fornecer um ecossistema completo onde a consultoria possa:
 | Módulo | Papel | Situação |
 | --- | --- | --- |
 | **CRM** | Tronco do sistema: carteira de clientes, agenda, reuniões, metas e tarefas da consultoria. | Núcleo (Fase 1) |
-| **Planejamento (Raio-X)** | Nativo, **dentro do CRM**: fluxo de caixa, orçamento (ideal × real), patrimônio, objetivos, linha do tempo, projeções e aposentadoria. | **MVP** (Fase 2) |
+| **Planejamento (Raio-X)** | Nativo, **dentro do CRM**: espaço de trabalho por período (mês, bimestre ou trimestre) com fluxo de caixa, patrimônio, objetivos, mudanças, projeções e aposentadoria. | **MVP** (Fase 2) |
 | **Análise de Investimentos** | Sistema externo **`rendafixa`** (em desenvolvimento). O Hub se integra por **API** e traz os dados. | Integração (Fase 5) |
 | **Investimentos** | Adaptação do CRM focada na área de investimentos (alocação, rentabilidade, carteira). | Planejado (Fase 5) |
 | **Portal do Cliente** | Ferramenta de *report* voltada ao cliente final: acompanha gastos, metas e evolução e lê os relatórios publicados (papel `client`, modo leitura). | Futuro |
@@ -81,8 +81,11 @@ Fornecer um ecossistema completo onde a consultoria possa:
 diretamente da planilha e da operação do CRM:
 
 - **Núcleo/CRM:** `organization`, `app_user` (papéis), `client`, `meeting`, `report`
-- **Planejamento:** `monthly_record` → `income_entry` / `expense_entry`, `budget_category`,
-  `budget_target`, `debt`, `asset`, `liability`, `goal`, `timeline_event`, `retirement_plan`, `projection`
+- **Planejamento:** `financial_plan` — **uma versão por período de acompanhamento** — e tudo
+  que pendura nela: `plan_income` / `plan_expense`, `plan_change`, `plan_pension`,
+  `plan_insurance`, `debt`, `goal`, `asset`, `liability`, `investment`, `retirement_plan`,
+  `projection`. O realizado fica à parte, em `monthly_record` → `income_entry` /
+  `expense_entry` / `card_statement`, com `budget_category` / `budget_target`.
 - **Investimentos:** `investment`, `rendafixa_link`
 - **Gamificação:** `point_event`, `referral`, `reward`, `reward_redemption` (e `client.pontos_total` / `client.tier` — níveis Bronze/Prata/Ouro)
 
@@ -163,10 +166,12 @@ Notas do ambiente:
 - `src/app/` — rotas e layouts (App Router).
   - `(hub)/` — casca do hub, visão geral e lista de clientes.
   - `clientes/[id]/` — painel individual do cliente.
-    - `ponto-de-partida/` — Raio-X: cadastro, fluxo de caixa, patrimônio,
-      objetivos e mudanças.
-    - `diagnostico/` — projeções e aposentadoria.
-    - `relatorios/` — fechamento mensal e o documento de 5 páginas.
+    - `cadastro/` — quem é a pessoa e as premissas do plano.
+    - `planejamento/` — o espaço de trabalho por período: fluxo de caixa,
+      patrimônio, objetivos e mudanças, com o filtro de período no canto.
+    - `acompanhamento/` — projeções, aposentadoria, metas congeladas e o
+      fechamento mês a mês.
+    - `relatorios/[mes]/` — o documento de 5 páginas de cada mês.
 - `src/lib/planning/` — **o motor**: funções puras, sem I/O. É onde vive a
   tradução da planilha em código.
 - `src/lib/forms/` — esquema dos formulários, compartilhado entre tela e

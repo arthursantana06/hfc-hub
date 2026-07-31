@@ -356,9 +356,19 @@
     <div class="sec-head">
       <span class="eyebrow">00 · Progresso</span>
       <h2>O que já está de pé</h2>
-      <p>Fase 0 aplicada e verificada em produção, mais design e navegação já reorganizados — antes de abrir a Fase 1 (Planejamento / Raio-X).</p>
+      <p>Fase 0 aplicada e verificada em produção; o Planejamento saiu do papel e já roda por período, com o motor traduzido da planilha.</p>
     </div>
     <div class="decisions">
+      <div class="decision">
+        <span class="k">Planejamento por período</span>
+        <span class="v">O Ponto de Partida virou o primeiro de muitos</span>
+        <p class="note">Cada período de acompanhamento — mês, bimestre ou trimestre — é uma versão completa do plano, clonada da anterior. O planejador abre a ferramenta, escolhe o período no canto superior direito e mexe no que mudou enquanto conversa com o cliente; o período anterior fica intacto. O "Ponto de Partida" é simplesmente a versão&nbsp;1. Ativos, passivos, carteira, dívidas e objetivos passaram a pertencer ao período, e não ao cliente — sem isso todo período mostraria o mesmo patrimônio.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Balanço patrimonial</span>
+        <span class="v">A carteira é ativo, a dívida é passivo</span>
+        <p class="note">O patrimônio líquido era <code>asset − liability</code> e ignorava justamente o dinheiro de que a projeção parte. Agora é <b>bens + carteira − passivos − saldo devedor</b>, e o saldo devedor sai da própria dívida em vez de ser redigitado como <code>liability</code>: duas cópias do mesmo número divergem no primeiro mês em que alguém atualiza só uma delas.</p>
+      </div>
       <div class="decision">
         <span class="k">Backend &amp; dados</span>
         <span class="v">Supabase aplicado e verificado</span>
@@ -588,12 +598,12 @@
             <li class="fk"><b>org_id</b><span class="ty">fk</span></li>
             <li class="fk"><b>planner_id</b><span class="ty">fk → app_user</span></li>
             <li>profissao<span class="ty">text</span></li>
-            <li>risco<span class="ty">enum</span></li>
-            <li>plano_status<span class="ty">enum</span></li>
+            <li>risco<span class="ty">enum · via Portal</span></li>
+            <li>plano_status<span class="ty">enum · aposentado</span></li>
             <li>pontos_total<span class="ty">numeric · gamif.</span></li>
             <li>tier<span class="ty">bronze|prata|ouro</span></li>
           </ul>
-          <div class="ent-rel">◂ organization · <b>tudo do planejamento pendura aqui</b></div>
+          <div class="ent-rel">◂ organization · ▸ <b>financial_plan</b> (um por período)</div>
         </div>
         <div class="ent">
           <div class="ent-h"><span class="ent-name">meeting</span></div>
@@ -620,6 +630,30 @@
 
       <div class="erd-lane" style="--lc:var(--m-plan)">
         <div class="erd-lane-h">Fluxo &amp; Orçamento</div>
+        <div class="ent root">
+          <div class="ent-h"><span class="ent-name">financial_plan</span><span class="ent-badge">período</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li>versao<span class="ty">int · 1 = ponto de partida</span></li>
+            <li>inicio<span class="ty">date · o período</span></li>
+            <li>cadencia<span class="ty">mensal|bimestral|trimestral</span></li>
+            <li>status<span class="ty">rascunho|ativo|arquivado</span></li>
+            <li>modo_valor, juros, inflação<span class="ty">premissas</span></li>
+          </ul>
+          <div class="ent-rel">◂ client · <b>uma versão por reunião — tudo do raio-x pendura aqui</b></div>
+        </div>
+        <div class="ent">
+          <div class="ent-h"><span class="ent-name">plan_income / plan_expense</span></div>
+          <ul class="ent-f">
+            <li><b>id</b><span class="ty">uuid · pk</span></li>
+            <li class="fk"><b>plan_id</b><span class="ty">fk</span></li>
+            <li>valor<span class="ty">numeric · cheio</span></li>
+            <li>frequencia<span class="ty">mensal|anual|meses</span></li>
+            <li>meses<span class="ty">smallint[] · 1–12</span></li>
+          </ul>
+          <div class="ent-rel">◂ financial_plan — a linha de base. <b>meses</b> é o IPVA em três parcelas</div>
+        </div>
         <div class="ent">
           <div class="ent-h"><span class="ent-name">monthly_record</span></div>
           <ul class="ent-f">
@@ -674,11 +708,12 @@
           <div class="ent-h"><span class="ent-name">debt</span></div>
           <ul class="ent-f">
             <li><b>id</b><span class="ty">uuid · pk</span></li>
-            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
-            <li>total<span class="ty">numeric</span></li>
+            <li class="fk"><b>plan_id</b><span class="ty">fk</span></li>
             <li>parcela<span class="ty">numeric</span></li>
+            <li>inicio / fim<span class="ty">date</span></li>
+            <li>saldo<span class="ty">numeric · vira passivo</span></li>
           </ul>
-          <div class="ent-rel">◂ client — DÍVIDAS</div>
+          <div class="ent-rel">◂ financial_plan — <b>é o passivo</b>, sem cópia em liability</div>
         </div>
       </div>
 
@@ -688,32 +723,32 @@
           <div class="ent-h"><span class="ent-name">asset</span></div>
           <ul class="ent-f">
             <li><b>id</b><span class="ty">uuid · pk</span></li>
-            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li class="fk"><b>plan_id</b><span class="ty">fk</span></li>
             <li>nome<span class="ty">text</span></li>
             <li>valor<span class="ty">numeric</span></li>
           </ul>
-          <div class="ent-rel">◂ client — ATIVOS</div>
+          <div class="ent-rel">◂ financial_plan — BENS que não rendem juros</div>
         </div>
         <div class="ent">
           <div class="ent-h"><span class="ent-name">liability</span></div>
           <ul class="ent-f">
             <li><b>id</b><span class="ty">uuid · pk</span></li>
-            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
+            <li class="fk"><b>plan_id</b><span class="ty">fk</span></li>
             <li>nome<span class="ty">text</span></li>
             <li>valor<span class="ty">numeric</span></li>
           </ul>
-          <div class="ent-rel">◂ client — PASSIVOS · líquido = ativos − passivos</div>
+          <div class="ent-rel">◂ financial_plan — só o que NÃO tem parcela · líquido = bens + carteira − passivos − saldo devedor</div>
         </div>
         <div class="ent">
           <div class="ent-h"><span class="ent-name">goal</span></div>
           <ul class="ent-f">
             <li><b>id</b><span class="ty">uuid · pk</span></li>
-            <li class="fk"><b>client_id</b><span class="ty">fk</span></li>
-            <li>prazo<span class="ty">curto|longo</span></li>
-            <li>alvo / atual<span class="ty">numeric</span></li>
-            <li>prioridade<span class="ty">1–5 ★</span></li>
+            <li class="fk"><b>plan_id</b><span class="ty">fk</span></li>
+            <li>prazo<span class="ty">evento único | recorrente</span></li>
+            <li>alvo<span class="ty">numeric · negativo = entrada</span></li>
+            <li>data_alvo / periodicidade_anos<span class="ty">quando</span></li>
           </ul>
-          <div class="ent-rel">◂ client — OBJETIVOS</div>
+          <div class="ent-rel">◂ financial_plan — OBJETIVOS · prioridade aposentada</div>
         </div>
         <div class="ent">
           <div class="ent-h"><span class="ent-name">timeline_event</span></div>
@@ -900,10 +935,10 @@
       <div class="phase">
         <div class="pnum">1<small>MVP</small></div>
         <div class="pbody">
-          <h3>Planejamento / Raio-X real <span class="pill next">A seguir · Marco MVP</span></h3>
-          <p>Aprofundar o “Ponto de Partida”: fluxo de caixa, orçamento (ideal × real), patrimônio, objetivos com prioridade em estrelas e linha do tempo — tudo por cliente, com registro mensal.</p>
+          <h3>Planejamento / Raio-X real <span class="pill now">Em curso · Marco MVP</span></h3>
+          <p>O “Ponto de Partida” virou <b>espaço de trabalho por período</b>: o planejador escolhe mês, bimestre ou trimestre no canto e edita o retrato daquela reunião — fluxo de caixa, patrimônio, objetivos e mudanças —, enquanto o período anterior fica guardado como estava. Cada versão do plano é um retrato; a versão&nbsp;1 é o ponto de partida.</p>
           <p style="margin-top:8px"><b>Detalhamento completo:</b> <a href="./plano-planejamento.html">plano-planejamento.html</a> — mapa das 13 abas da planilha para o modelo de dados, as fórmulas do motor de projeção e as cinco sub-fases (P1–P5).</p>
-          <div class="chips"><span class="chip">Fluxo de caixa</span><span class="chip">Orçamento</span><span class="chip">Patrimônio</span><span class="chip">Objetivos ★</span><span class="chip">Linha do tempo</span><span class="chip">Registro mensal</span><span class="chip">Mudanças</span><span class="chip">Aposentadoria</span></div>
+          <div class="chips"><span class="chip">Períodos versionados</span><span class="chip">Fluxo de caixa</span><span class="chip">Meses escolhidos</span><span class="chip">Patrimônio unificado</span><span class="chip">Objetivos e mudanças</span><span class="chip">Horizonte ajustável</span><span class="chip">Registro mensal</span><span class="chip">Aposentadoria</span></div>
         </div>
       </div>
       <div class="phase">
