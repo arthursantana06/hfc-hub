@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/dal";
 import {
   ENTIDADES,
   camposVisiveis,
+  lerMeses,
   lerMoeda,
   mesParaData,
   type Campo,
@@ -110,6 +111,10 @@ function converter(c: Campo, bruto: string): unknown {
     }
     case "mes":
       return mesParaData(bruto) ?? undefined;
+    case "meses": {
+      const meses = lerMeses(bruto);
+      return meses === null || meses.length === 0 ? undefined : meses;
+    }
     case "select":
       return c.opcoes?.some((o) => o.valor === bruto) ? bruto || null : undefined;
     default:
@@ -149,6 +154,12 @@ export async function salvarLinha(
     if (entidade.escopo === "plano") {
       if (!planId) return { erro: "Este cliente ainda não tem um plano." };
       vinculo.plan_id = planId;
+      // Dívida, objetivo, ativo, passivo e carteira pertencem ao período desde
+      // a Fase 2, mas mantêm o `client_id not null` de quando eram do cliente.
+      if (entidade.vinculaAoCliente) {
+        if (!clientId) return { erro: "Cliente não identificado." };
+        vinculo.client_id = clientId;
+      }
     } else if (entidade.escopo === "registro") {
       if (!recordId) return { erro: "Mês não identificado." };
       vinculo.record_id = recordId;
@@ -158,12 +169,6 @@ export async function salvarLinha(
     } else {
       if (!clientId) return { erro: "Cliente não identificado." };
       vinculo.client_id = clientId;
-      // Só as tabelas de escopo cliente que de fato têm coluna `plan_id`
-      // (dívida, objetivo) a recebem — é o que as liga à versão do raio-x.
-      // `asset`/`liability`/`investment` são escopo cliente mas não têm essa
-      // coluna; setar incondicionalmente quebrava o insert com "column
-      // plan_id does not exist" sempre que o cliente já tinha um plano ativo.
-      if (planId && entidade.vinculaAoPlano) vinculo.plan_id = planId;
     }
 
     // `income_entry`, `expense_entry` e `card_statement` não têm coluna `ordem`;
@@ -248,17 +253,15 @@ export async function salvarCliente(
   const nome = String(form.get("nome") ?? "").trim();
   if (nome.length < 2) return { erro: "Informe o nome do cliente." };
 
-  const nascimento = String(form.get("nascimento") ?? "").trim() || null;
-  const risco = String(form.get("risco") ?? "").trim() || null;
-  const planoStatus = String(form.get("plano_status") ?? "diagnostico");
-
+  // Nem perfil de investidor nem status do plano são gravados aqui desde a
+  // Fase 2. O perfil passa a vir do questionário do Portal do Cliente, e o
+  // status era um rótulo digitado à mão que envelhecia sozinho — quem tem plano
+  // ativo, o banco responde sem que ninguém precise lembrar de atualizar.
   const dados = {
     nome,
     email: String(form.get("email") ?? "").trim() || null,
-    nascimento,
+    nascimento: String(form.get("nascimento") ?? "").trim() || null,
     profissao: String(form.get("profissao") ?? "").trim() || null,
-    risco: risco as "conservador" | "moderado" | "arrojado" | null,
-    plano_status: planoStatus as "ativo" | "diagnostico" | "pendente",
     adesao: String(form.get("adesao") ?? "").trim() || null,
     notas: String(form.get("notas") ?? "").trim() || null,
   };
@@ -282,7 +285,7 @@ export async function salvarCliente(
   if (error || !data) return { erro: mensagem(error?.message ?? "") };
 
   revalidatePath("/", "layout");
-  redirect(`/clientes/${data.id}/ponto-de-partida/cadastro`);
+  redirect(`/clientes/${data.id}/cadastro`);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -320,8 +323,13 @@ export async function salvarPlano(
     taxas[chave] = pct / 100;
   }
 
+  const cadencia = String(form.get("cadencia") ?? "mensal");
+
   const dados = {
     inicio,
+    cadencia: (["mensal", "bimestral", "trimestral"].includes(cadencia)
+      ? cadencia
+      : "mensal") as "mensal" | "bimestral" | "trimestral",
     modo_valor: (String(form.get("modo_valor") ?? "nominal") === "real"
       ? "real"
       : "nominal") as "real" | "nominal",
@@ -367,6 +375,144 @@ export async function salvarPlano(
 
   revalidatePath("/", "layout");
   return { ok: "Plano criado. Agora monte o fluxo de caixa." };
+}
+
+/** Quantos meses cada cadência anda entre um período e o seguinte. */
+const PASSO: Record<string, number> = { mensal: 1, bimestral: 2, trimestral: 3 };
+
+/** As listas que compõem um raio-x. Abrir um período copia todas elas. */
+const TABELAS_DO_PLANO = [
+  "plan_income",
+  "plan_expense",
+  "plan_pension",
+  "plan_insurance",
+  "plan_change",
+  "debt",
+  "goal",
+  "asset",
+  "liability",
+  "investment",
+] as const;
+
+/**
+ * Abre o próximo período de planejamento.
+ *
+ * O período novo nasce como cópia fiel do anterior — é assim que a reunião
+ * começa: com o retrato de como as coisas estavam, para o planejador mexer no
+ * que mudou enquanto conversa com o cliente. O período anterior é arquivado e
+ * fica lá, intacto: é o que permite olhar para trás e ver o que mudou entre
+ * duas conversas.
+ *
+ * Partir de um plano em branco a cada mês seria pedir que se redigitasse a vida
+ * do cliente inteira toda vez, e ninguém faria isso duas vezes.
+ */
+export async function abrirPeriodo(
+  _estado: Estado,
+  form: FormData,
+): Promise<Estado> {
+  const a = await autor();
+  if ("erro" in a) return a;
+
+  const clientId = String(form.get("__clientId") ?? "");
+  if (!clientId) return { erro: "Cliente não identificado." };
+
+  const supabase = await createClient();
+  const { data: atual } = await supabase
+    .from("financial_plan")
+    .select("*")
+    .eq("client_id", clientId)
+    .eq("status", "ativo")
+    .maybeSingle();
+
+  if (!atual) {
+    return { erro: "Não há período aberto para continuar. Crie o plano primeiro." };
+  }
+
+  // O mês pedido manda; sem ele, a cadência decide. Assim o planejador que
+  // atrasou uma reunião não fica preso a um calendário que não seguiu.
+  const pedido = mesParaData(String(form.get("mes") ?? ""));
+  const proximo =
+    pedido ?? somarMeses(atual.inicio, PASSO[atual.cadencia] ?? 1);
+
+  if (proximo <= atual.inicio) {
+    return { erro: "O período novo precisa vir depois do atual." };
+  }
+
+  const premissas = semChavesProprias(atual);
+
+  // Arquivar antes de inserir: o índice parcial só admite um período ativo por
+  // cliente, e é ele que impede duas versões concorrentes do mesmo raio-x.
+  const { error: erroArquivo } = await supabase
+    .from("financial_plan")
+    .update({ status: "arquivado" })
+    .eq("id", atual.id);
+  if (erroArquivo) return { erro: mensagem(erroArquivo.message) };
+
+  const { data: novo, error } = await supabase
+    .from("financial_plan")
+    .insert({
+      ...premissas,
+      inicio: proximo,
+      versao: atual.versao + 1,
+      status: "ativo",
+      updated_at: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
+
+  if (error || !novo) {
+    // Sem o plano novo, desfazer o arquivamento — senão o cliente fica sem
+    // período aberto por causa de uma falha de escrita.
+    await supabase.from("financial_plan").update({ status: "ativo" }).eq("id", atual.id);
+    return { erro: mensagem(error?.message ?? "") };
+  }
+
+  for (const tabela of TABELAS_DO_PLANO) {
+    const { data: linhas } = await generico(supabase)
+      .from(tabela)
+      .select("*")
+      .eq("plan_id", atual.id);
+
+    const copias = (linhas ?? []).map((l: Record<string, unknown>) => ({
+      ...semChavesProprias(l),
+      plan_id: novo.id,
+    }));
+
+    if (copias.length === 0) continue;
+    const { error: erroCopia } = await generico(supabase).from(tabela).insert(copias);
+    if (erroCopia) return { erro: mensagem(erroCopia.message) };
+  }
+
+  // A aposentadoria é 1:1 com o cliente (`client_id unique`): em vez de copiar,
+  // ela passa a apontar para o período novo.
+  await supabase
+    .from("retirement_plan")
+    .update({ plan_id: novo.id })
+    .eq("client_id", clientId);
+
+  revalidatePath("/", "layout");
+  return { ok: `Período de ${rotuloDoMes(proximo)} aberto, copiado do anterior.` };
+}
+
+/**
+ * A linha sem o que é dela e só dela.
+ *
+ * `id` e `created_at` pertencem ao registro antigo: copiá-los faria o insert
+ * colidir com a chave primária e mentiria sobre quando a cópia nasceu.
+ */
+function semChavesProprias<T extends Record<string, unknown>>(
+  linha: T,
+): Omit<T, "id" | "created_at"> {
+  const copia: Record<string, unknown> = { ...linha };
+  delete copia.id;
+  delete copia.created_at;
+  return copia as Omit<T, "id" | "created_at">;
+}
+
+/** Soma meses a uma data `YYYY-MM-DD` sem passar por `Date`. */
+function somarMeses(iso: string, meses: number): string {
+  const total = Number(iso.slice(0, 4)) * 12 + Number(iso.slice(5, 7)) - 1 + meses;
+  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}-01`;
 }
 
 export async function salvarAposentadoria(

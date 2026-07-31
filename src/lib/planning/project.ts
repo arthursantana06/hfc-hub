@@ -40,7 +40,8 @@ export function project(plan: PlanInput): ProjectionResult {
   const fimHorizonte = nascimento + a.idadeLimite * 12;
   const fimCurto = a.inicio + a.mesesCurto - 1;
 
-  // Receitas e despesas anuais indexadas pelo mês em que caem cheias.
+  // Receitas e despesas de calendário indexadas pelo mês em que caem cheias:
+  // as anuais e as de meses escolhidos.
   const anuaisReceita = porMes(plan.incomes);
   const anuaisDespesa = porMes(plan.expenses);
 
@@ -145,11 +146,30 @@ function taxaEm(
   return a.modoValor === "real" ? (1 + nominal) / (1 + a.inflacao) - 1 : nominal;
 }
 
-function porMes(linhas: { frequencia: string; mesOcorrencia: number | null; valor: number }[]) {
+/**
+ * O que cai em cada mês do ano, fora o que é mensal.
+ *
+ * `anual` entra cheia uma vez; `meses` entra com o valor da PARCELA em cada mês
+ * marcado — que é a diferença entre o IPVA aparecer inteiro em janeiro e
+ * aparecer em três pedaços de janeiro a março, como o cliente realmente paga.
+ */
+function porMes(
+  linhas: {
+    frequencia: string;
+    mesOcorrencia: number | null;
+    meses?: number[] | null;
+    valor: number;
+  }[],
+) {
   const m = new Map<number, number>();
+  const somar = (mes: number, valor: number) => m.set(mes, (m.get(mes) ?? 0) + valor);
+
   for (const l of linhas) {
-    if (l.frequencia !== "anual" || l.mesOcorrencia === null) continue;
-    m.set(l.mesOcorrencia, (m.get(l.mesOcorrencia) ?? 0) + l.valor);
+    if (l.frequencia === "anual" && l.mesOcorrencia !== null) {
+      somar(l.mesOcorrencia, l.valor);
+    } else if (l.frequencia === "meses") {
+      for (const mes of l.meses ?? []) somar(mes, l.valor);
+    }
   }
   return m;
 }

@@ -7,6 +7,7 @@ import { iniciaisDe, type Client } from "@/lib/types";
 import { fromISO } from "@/lib/planning/period";
 import type { Tables } from "@/lib/supabase/database.types";
 import type { PlanInput, ProjectionMonth } from "@/lib/planning/types";
+import { summarizeBalance } from "@/lib/planning/balance";
 import { project, type ProjectionResult } from "@/lib/planning/project";
 
 /**
@@ -21,18 +22,18 @@ import { project, type ProjectionResult } from "@/lib/planning/project";
 // Clientes
 // ─────────────────────────────────────────────────────────────
 
+const CAMPOS_CLIENTE =
+  "id, nome, email, risco, avatar_path, nascimento, profissao, adesao, notas";
+
 export const listClients = cache(async (): Promise<Client[]> => {
   await verifySession();
   const supabase = await createClient();
 
-  const { data } = await supabase
-    .from("client")
-    .select(
-      "id, nome, email, risco, plano_status, avatar_path, nascimento, profissao, adesao, notas, asset(valor), liability(valor)",
-    )
-    .order("nome");
+  const { data } = await supabase.from("client").select(CAMPOS_CLIENTE).order("nome");
+  const linhas = data ?? [];
 
-  return Promise.all((data ?? []).map(toClient));
+  const balancos = await balancosPorCliente(linhas.map((c) => c.id));
+  return Promise.all(linhas.map((c) => toClient(c, balancos.get(c.id))));
 });
 
 export const getClient = cache(async (id: string): Promise<Client | null> => {
@@ -41,13 +42,13 @@ export const getClient = cache(async (id: string): Promise<Client | null> => {
 
   const { data } = await supabase
     .from("client")
-    .select(
-      "id, nome, email, risco, plano_status, avatar_path, nascimento, profissao, adesao, notas, asset(valor), liability(valor)",
-    )
+    .select(CAMPOS_CLIENTE)
     .eq("id", id)
     .maybeSingle();
 
-  return data ? toClient(data) : null;
+  if (!data) return null;
+  const balancos = await balancosPorCliente([id]);
+  return toClient(data, balancos.get(id));
 });
 
 type ClientRow = {
@@ -55,28 +56,25 @@ type ClientRow = {
   nome: string;
   email: string | null;
   risco: Client["risco"];
-  plano_status: Client["planoStatus"];
   avatar_path: string | null;
   nascimento: string | null;
   profissao: string | null;
   adesao: string | null;
   notas: string | null;
-  asset: { valor: number }[] | null;
-  liability: { valor: number }[] | null;
 };
 
-async function toClient(row: ClientRow): Promise<Client> {
-  const ativos = (row.asset ?? []).reduce((a, x) => a + Number(x.valor), 0);
-  const passivos = (row.liability ?? []).reduce((a, x) => a + Number(x.valor), 0);
-
+async function toClient(
+  row: ClientRow,
+  balanco: BalancoDoCliente | undefined,
+): Promise<Client> {
   return {
     id: row.id,
     nome: row.nome,
     email: row.email,
     iniciais: iniciaisDe(row.nome),
     risco: row.risco,
-    patrimonio: ativos - passivos,
-    planoStatus: row.plano_status,
+    patrimonio: balanco?.liquido ?? 0,
+    temPlano: balanco !== undefined,
     avatarUrl: await signedAvatarUrl(row.avatar_path),
     nascimento: row.nascimento,
     profissao: row.profissao,
@@ -84,6 +82,80 @@ async function toClient(row: ClientRow): Promise<Client> {
     notas: row.notas,
   };
 }
+
+interface BalancoDoCliente {
+  liquido: number;
+}
+
+/**
+ * Patrimônio líquido de cada cliente, lido do período corrente.
+ *
+ * Duas idas ao banco em vez de uma por cliente: primeiro os planos ativos,
+ * depois só as linhas que pertencem a eles. Sem o filtro por plano a soma
+ * misturaria todos os períodos já registrados e o patrimônio cresceria a cada
+ * reunião sem que nada tivesse acontecido.
+ */
+async function balancosPorCliente(
+  clientIds: string[],
+): Promise<Map<string, BalancoDoCliente>> {
+  const saida = new Map<string, BalancoDoCliente>();
+  if (clientIds.length === 0) return saida;
+
+  const supabase = await createClient();
+  const { data: planos } = await supabase
+    .from("financial_plan")
+    .select("id, client_id, inicio")
+    .eq("status", "ativo")
+    .in("client_id", clientIds);
+
+  if (!planos?.length) return saida;
+
+  const planIds = planos.map((p) => p.id);
+  const [ativos, passivos, carteira, dividas] = await Promise.all([
+    supabase.from("asset").select("valor, plan_id").in("plan_id", planIds),
+    supabase.from("liability").select("valor, plan_id").in("plan_id", planIds),
+    supabase.from("investment").select("valor, plan_id").in("plan_id", planIds),
+    supabase
+      .from("debt")
+      .select("parcela, inicio, fim, saldo, plan_id")
+      .in("plan_id", planIds),
+  ]);
+
+  for (const plano of planos) {
+    const meu = <T extends { plan_id: string | null }>(linhas: T[] | null) =>
+      (linhas ?? []).filter((l) => l.plan_id === plano.id);
+
+    const soma = (linhas: { valor: number }[]) =>
+      linhas.reduce((a, x) => a + Number(x.valor), 0);
+
+    const balanco = summarizeBalance({
+      assumptions: { inicio: fromISO(plano.inicio) } as PlanInput["assumptions"],
+      ativosNaoInvestidos: soma(meu(ativos.data)),
+      passivosDeclarados: soma(meu(passivos.data)),
+      patrimonioInicial: soma(meu(carteira.data)),
+      debts: meu(dividas.data).map(paraDivida),
+    });
+
+    saida.set(plano.client_id, { liquido: balanco.liquido });
+  }
+
+  return saida;
+}
+
+type DividaBruta = {
+  parcela: number | null;
+  inicio: string | null;
+  fim: string | null;
+  saldo: number | null;
+};
+
+const paraDivida = (d: DividaBruta) => ({
+  descricao: "",
+  parcela: Number(d.parcela ?? 0),
+  inicio: d.inicio ? fromISO(d.inicio) : null,
+  fim: d.fim ? fromISO(d.fim) : null,
+  saldo: d.saldo === null ? null : Number(d.saldo),
+});
 
 // ─────────────────────────────────────────────────────────────
 // Plano
@@ -96,21 +168,37 @@ async function toClient(row: ClientRow): Promise<Client> {
  * erro: um cliente recém-cadastrado passa por aqui antes do primeiro raio-x.
  */
 export const getPlanInput = cache(
-  async (clientId: string): Promise<PlanInput | null> => {
+  async (clientId: string, planId?: string): Promise<PlanInput | null> => {
     await verifySession();
     const supabase = await createClient();
 
-    const { data: plano } = await supabase
+    const consulta = supabase
       .from("financial_plan")
       .select("*, client!inner(nascimento)")
-      .eq("client_id", clientId)
-      .eq("status", "ativo")
-      .maybeSingle();
+      .eq("client_id", clientId);
+
+    // Sem `planId` o período é o corrente. Com ele, a tela está olhando um
+    // período anterior — e a projeção precisa partir daquele retrato, não deste.
+    const { data: plano } = await (planId
+      ? consulta.eq("id", planId)
+      : consulta.eq("status", "ativo")
+    ).maybeSingle();
 
     if (!plano) return null;
 
-    const [receitas, despesas, dividas, previdencia, seguros, objetivos, mudancas, investimentos, aposentadoria] =
-      await Promise.all([
+    const [
+      receitas,
+      despesas,
+      dividas,
+      previdencia,
+      seguros,
+      objetivos,
+      mudancas,
+      investimentos,
+      ativos,
+      passivos,
+      aposentadoria,
+    ] = await Promise.all([
         supabase.from("plan_income").select("*").eq("plan_id", plano.id).order("ordem"),
         supabase
           .from("plan_expense")
@@ -122,7 +210,9 @@ export const getPlanInput = cache(
         supabase.from("plan_insurance").select("*").eq("plan_id", plano.id).order("ordem"),
         supabase.from("goal").select("*").eq("plan_id", plano.id).order("ordem"),
         supabase.from("plan_change").select("*").eq("plan_id", plano.id).order("ordem"),
-        supabase.from("investment").select("valor").eq("client_id", clientId),
+        supabase.from("investment").select("valor").eq("plan_id", plano.id),
+        supabase.from("asset").select("valor").eq("plan_id", plano.id),
+        supabase.from("liability").select("valor").eq("plan_id", plano.id),
         supabase.from("retirement_plan").select("*").eq("plan_id", plano.id).maybeSingle(),
       ]);
 
@@ -142,11 +232,11 @@ export const getPlanInput = cache(
         mesesCurto: plano.meses_curto,
       },
       nascimento,
-      // O patrimônio de partida é o que já está investido hoje.
-      patrimonioInicial: (investimentos.data ?? []).reduce(
-        (a, i) => a + Number(i.valor),
-        0,
-      ),
+      // O patrimônio de partida é o que já está investido hoje: só a carteira
+      // rende juros. Imóvel e veículo entram no balanço, não na capitalização.
+      patrimonioInicial: somar(investimentos.data),
+      ativosNaoInvestidos: somar(ativos.data),
+      passivosDeclarados: somar(passivos.data),
       retirement: {
         idadeAlvo: aposentadoria.data?.idade_alvo ?? 65,
         rendaInss: Number(aposentadoria.data?.renda_inss ?? 0),
@@ -157,6 +247,7 @@ export const getPlanInput = cache(
         valor: Number(r.valor),
         frequencia: r.frequencia,
         mesOcorrencia: r.mes_ocorrencia,
+        meses: r.meses,
       })),
       expenses: (despesas.data ?? []).map((e) => {
         const cat = e.budget_category as unknown as { nome: string; grupo: string } | null;
@@ -167,14 +258,13 @@ export const getPlanInput = cache(
           valor: Number(e.valor),
           frequencia: e.frequencia,
           mesOcorrencia: e.mes_ocorrencia,
+          meses: e.meses,
           bucket: e.bucket as "fixo" | "extra",
         };
       }),
       debts: (dividas.data ?? []).map((d) => ({
+        ...paraDivida(d),
         descricao: d.descricao,
-        parcela: Number(d.parcela ?? 0),
-        inicio: d.inicio ? fromISO(d.inicio) : null,
-        fim: d.fim ? fromISO(d.fim) : null,
       })),
       pensions: (previdencia.data ?? []).map((p) => ({
         nome: p.nome,
@@ -212,11 +302,14 @@ export const getPlanInput = cache(
  * um número sempre correto por um que pode estar velho.
  */
 export const getProjection = cache(
-  async (clientId: string): Promise<ProjectionResult | null> => {
-    const plan = await getPlanInput(clientId);
+  async (clientId: string, planId?: string): Promise<ProjectionResult | null> => {
+    const plan = await getPlanInput(clientId, planId);
     return plan ? project(plan) : null;
   },
 );
+
+const somar = (linhas: { valor: number }[] | null) =>
+  (linhas ?? []).reduce((a, x) => a + Number(x.valor), 0);
 
 // ─────────────────────────────────────────────────────────────
 // Leituras cruas, para as telas de edição
@@ -241,6 +334,51 @@ export const getPlanoAtivo = cache(async (clientId: string) => {
 
   return data;
 });
+
+/**
+ * Os períodos já registrados do cliente, do mais recente para o mais antigo.
+ *
+ * Cada linha é uma versão do plano — um retrato tirado numa reunião. A versão 1
+ * é o Ponto de Partida; as seguintes são o acompanhamento.
+ */
+export const listPeriodos = cache(async (clientId: string) => {
+  await verifySession();
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("financial_plan")
+    .select("id, versao, inicio, status, cadencia, created_at")
+    .eq("client_id", clientId)
+    .order("inicio", { ascending: false });
+
+  return data ?? [];
+});
+
+/**
+ * O período que a tela está mostrando.
+ *
+ * Sem `planId`, o corrente. Com um `planId` que não é do cliente, `null` — a
+ * RLS já barraria, mas devolver o plano de outra pessoa por um id na URL seria
+ * um jeito ruim de descobrir isso.
+ */
+export const getPlanoDoPeriodo = cache(
+  async (clientId: string, planId?: string) => {
+    await verifySession();
+    const supabase = await createClient();
+
+    const consulta = supabase
+      .from("financial_plan")
+      .select("*")
+      .eq("client_id", clientId);
+
+    const { data } = await (planId
+      ? consulta.eq("id", planId)
+      : consulta.eq("status", "ativo")
+    ).maybeSingle();
+
+    return data;
+  },
+);
 
 export const getAposentadoria = cache(async (clientId: string) => {
   await verifySession();
@@ -283,14 +421,24 @@ function generico(supabase: Awaited<ReturnType<typeof createClient>>) {
   return supabase as unknown as SupabaseClient;
 }
 
+/**
+ * Tudo que compõe um raio-x pende do plano, e não do cliente.
+ *
+ * Antes, dívida, objetivo, ativo, passivo e carteira eram do cliente: com um
+ * plano por período isso faria as cinco listas serem as mesmas em todos os
+ * períodos, e o acompanhamento não teria o que mostrar.
+ */
 type TabelaPlano =
   | "plan_income"
   | "plan_expense"
   | "plan_change"
   | "plan_pension"
-  | "plan_insurance";
-
-type TabelaCliente = "debt" | "goal" | "asset" | "liability" | "investment";
+  | "plan_insurance"
+  | "debt"
+  | "goal"
+  | "asset"
+  | "liability"
+  | "investment";
 
 /**
  * Linhas cruas de uma tabela ligada ao plano.
@@ -309,21 +457,6 @@ export async function linhasDoPlano<T extends TabelaPlano>(
     .from(tabela)
     .select("*")
     .eq("plan_id", planId)
-    .order("ordem");
-  return (data ?? []) as Tables<T>[];
-}
-
-/** Linhas cruas de uma tabela ligada ao cliente. */
-export async function linhasDoCliente<T extends TabelaCliente>(
-  tabela: T,
-  clientId: string,
-): Promise<Tables<T>[]> {
-  await verifySession();
-  const supabase = await createClient();
-  const { data } = await generico(supabase)
-    .from(tabela)
-    .select("*")
-    .eq("client_id", clientId)
     .order("ordem");
   return (data ?? []) as Tables<T>[];
 }

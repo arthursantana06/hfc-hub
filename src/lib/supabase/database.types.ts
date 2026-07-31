@@ -59,6 +59,7 @@ export type Database = {
           nome: string
           ordem: number
           org_id: string
+          plan_id: string | null
           valor: number
         }
         Insert: {
@@ -67,6 +68,7 @@ export type Database = {
           nome: string
           ordem?: number
           org_id: string
+          plan_id?: string | null
           valor?: number
         }
         Update: {
@@ -75,6 +77,7 @@ export type Database = {
           nome?: string
           ordem?: number
           org_id?: string
+          plan_id?: string | null
           valor?: number
         }
         Relationships: [
@@ -309,6 +312,7 @@ export type Database = {
           parcela: number | null
           parcelas_total: number | null
           plan_id: string | null
+          saldo: number | null
           total: number
         }
         Insert: {
@@ -323,6 +327,7 @@ export type Database = {
           parcela?: number | null
           parcelas_total?: number | null
           plan_id?: string | null
+          saldo?: number | null
           total?: number
         }
         Update: {
@@ -337,6 +342,7 @@ export type Database = {
           parcela?: number | null
           parcelas_total?: number | null
           plan_id?: string | null
+          saldo?: number | null
           total?: number
         }
         Relationships: [
@@ -420,6 +426,7 @@ export type Database = {
       }
       financial_plan: {
         Row: {
+          cadencia: Database["public"]["Enums"]["plan_cadence"]
           client_id: string
           created_at: string
           dia_fatura: number | null
@@ -440,6 +447,7 @@ export type Database = {
           versao: number
         }
         Insert: {
+          cadencia?: Database["public"]["Enums"]["plan_cadence"]
           client_id: string
           created_at?: string
           dia_fatura?: number | null
@@ -460,6 +468,7 @@ export type Database = {
           versao?: number
         }
         Update: {
+          cadencia?: Database["public"]["Enums"]["plan_cadence"]
           client_id?: string
           created_at?: string
           dia_fatura?: number | null
@@ -618,6 +627,7 @@ export type Database = {
           nome: string | null
           ordem: number
           org_id: string
+          plan_id: string | null
           valor: number
         }
         Insert: {
@@ -629,6 +639,7 @@ export type Database = {
           nome?: string | null
           ordem?: number
           org_id: string
+          plan_id?: string | null
           valor?: number
         }
         Update: {
@@ -640,6 +651,7 @@ export type Database = {
           nome?: string | null
           ordem?: number
           org_id?: string
+          plan_id?: string | null
           valor?: number
         }
         Relationships: [
@@ -666,6 +678,7 @@ export type Database = {
           nome: string
           ordem: number
           org_id: string
+          plan_id: string | null
           valor: number
         }
         Insert: {
@@ -674,6 +687,7 @@ export type Database = {
           nome: string
           ordem?: number
           org_id: string
+          plan_id?: string | null
           valor?: number
         }
         Update: {
@@ -682,6 +696,7 @@ export type Database = {
           nome?: string
           ordem?: number
           org_id?: string
+          plan_id?: string | null
           valor?: number
         }
         Relationships: [
@@ -949,6 +964,7 @@ export type Database = {
           frequencia: Database["public"]["Enums"]["entry_frequency"]
           id: string
           mes_ocorrencia: number | null
+          meses: number[] | null
           ordem: number
           org_id: string
           plan_id: string
@@ -961,6 +977,7 @@ export type Database = {
           frequencia?: Database["public"]["Enums"]["entry_frequency"]
           id?: string
           mes_ocorrencia?: number | null
+          meses?: number[] | null
           ordem?: number
           org_id: string
           plan_id: string
@@ -973,6 +990,7 @@ export type Database = {
           frequencia?: Database["public"]["Enums"]["entry_frequency"]
           id?: string
           mes_ocorrencia?: number | null
+          meses?: number[] | null
           ordem?: number
           org_id?: string
           plan_id?: string
@@ -1009,6 +1027,7 @@ export type Database = {
           frequencia: Database["public"]["Enums"]["entry_frequency"]
           id: string
           mes_ocorrencia: number | null
+          meses: number[] | null
           ordem: number
           org_id: string
           plan_id: string
@@ -1020,6 +1039,7 @@ export type Database = {
           frequencia?: Database["public"]["Enums"]["entry_frequency"]
           id?: string
           mes_ocorrencia?: number | null
+          meses?: number[] | null
           ordem?: number
           org_id: string
           plan_id: string
@@ -1031,6 +1051,7 @@ export type Database = {
           frequencia?: Database["public"]["Enums"]["entry_frequency"]
           id?: string
           mes_ocorrencia?: number | null
+          meses?: number[] | null
           ordem?: number
           org_id?: string
           plan_id?: string
@@ -1717,7 +1738,7 @@ export type Database = {
         | "outros"
       change_category: "receita" | "despesa" | "divida"
       derived_income: "decimo_terceiro" | "ferias"
-      entry_frequency: "mensal" | "anual"
+      entry_frequency: "mensal" | "anual" | "meses"
       expense_group:
         | "casa"
         | "saude"
@@ -1727,6 +1748,7 @@ export type Database = {
         | "outros"
       goal_term: "curto" | "longo"
       investment_class: "renda_fixa" | "renda_variavel" | "previdencia"
+      plan_cadence: "mensal" | "bimestral" | "trimestral"
       plan_horizon: "curto" | "longo"
       plan_lifecycle: "rascunho" | "ativo" | "arquivado"
       plan_status: "ativo" | "diagnostico" | "pendente"
@@ -1879,7 +1901,7 @@ export const Constants = {
       ],
       change_category: ["receita", "despesa", "divida"],
       derived_income: ["decimo_terceiro", "ferias"],
-      entry_frequency: ["mensal", "anual"],
+      entry_frequency: ["mensal", "anual", "meses"],
       expense_group: [
         "casa",
         "saude",
@@ -1890,6 +1912,7 @@ export const Constants = {
       ],
       goal_term: ["curto", "longo"],
       investment_class: ["renda_fixa", "renda_variavel", "previdencia"],
+      plan_cadence: ["mensal", "bimestral", "trimestral"],
       plan_horizon: ["curto", "longo"],
       plan_lifecycle: ["rascunho", "ativo", "arquivado"],
       plan_status: ["ativo", "diagnostico", "pendente"],

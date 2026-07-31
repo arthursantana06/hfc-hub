@@ -145,7 +145,7 @@ export function SemPlano({ clienteId }: { clienteId: string }) {
         daí a projeção se monta sozinha.
       </p>
       <Link
-        href={`/clientes/${clienteId}/ponto-de-partida/fluxo-de-caixa`}
+        href={`/clientes/${clienteId}/planejamento/fluxo-de-caixa`}
         className="mt-6 bg-brand-600 hover:bg-brand-900 transition-colors text-white font-poppins font-medium px-4 py-2 rounded-lg text-sm"
       >
         Começar o raio-x

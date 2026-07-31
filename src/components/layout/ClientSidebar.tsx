@@ -1,12 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, LayoutDashboard, Compass, Target, Gift, FileText, Calculator } from "lucide-react";
-import { PLAN_STATUS_LABEL, type Client } from "@/lib/types";
+import { usePathname } from "next/navigation";
+import {
+  ArrowLeft,
+  LayoutDashboard,
+  Compass,
+  LineChart,
+  Gift,
+  Calculator,
+  SquarePen,
+} from "lucide-react";
+import type { Client } from "@/lib/types";
 import { Avatar } from "@/components/ui/Avatar";
 import { SideNavLink } from "./SideNavLink";
 
 export function ClientSidebar({ client }: { client: Client }) {
+  const pathname = usePathname();
+  const cadastro = `/clientes/${client.id}/cadastro`;
+  const noCadastro = pathname === cadastro;
+
   return (
     <aside className="w-64 bg-brand-900 flex flex-col shrink-0 shadow-lg z-10">
       {/* Wordmark simplificado, igual ao da tela de login — só o texto, sem
@@ -34,18 +47,27 @@ export function ClientSidebar({ client }: { client: Client }) {
             className="mb-4 shadow-sm ring-2 ring-brand-300"
           />
           <h2 className="font-poppins text-xl font-medium text-white mb-2">{client.nome}</h2>
-          <span className="bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-medium border border-emerald-500/30">
-            {PLAN_STATUS_LABEL[client.planoStatus]}
-          </span>
+
+          {/* No lugar do antigo selo de status do plano — que era digitado à
+              mão e envelhecia sozinho — o atalho para editar quem é a pessoa.
+              É o que se quer clicar quando se está olhando para o nome dela. */}
+          <Link
+            href={cadastro}
+            className={`inline-flex items-center gap-1.5 font-inter text-xs transition-colors ${
+              noCadastro ? "text-white" : "text-brand-300 hover:text-white"
+            }`}
+          >
+            <SquarePen className="w-3.5 h-3.5" />
+            Cadastro
+          </Link>
         </div>
       </div>
 
       <nav className="flex-1 px-4 mt-8 flex flex-col gap-2 overflow-y-auto">
-        <SideNavLink href={`/clientes/${client.id}`} icon={LayoutDashboard} label="Dashboard Resumo" exact />
-        <SideNavLink href={`/clientes/${client.id}/ponto-de-partida`} icon={Compass} label="Ponto de Partida" />
-        <SideNavLink href={`/clientes/${client.id}/diagnostico`} icon={Target} label="Diagnóstico & Metas" />
+        <SideNavLink href={`/clientes/${client.id}`} icon={LayoutDashboard} label="Dashboard" exact />
+        <SideNavLink href={`/clientes/${client.id}/planejamento`} icon={Compass} label="Planejamento" />
+        <SideNavLink href={`/clientes/${client.id}/acompanhamento`} icon={LineChart} label="Acompanhamento" />
         <SideNavLink href={`/clientes/${client.id}/indicacoes`} icon={Gift} label="Rewards" soon />
-        <SideNavLink href={`/clientes/${client.id}/relatorios`} icon={FileText} label="Relatórios" soon />
         <SideNavLink
           href={`/clientes/${client.id}/simuladores`}
           icon={Calculator}

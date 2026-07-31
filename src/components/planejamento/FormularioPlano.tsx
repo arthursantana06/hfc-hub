@@ -20,6 +20,7 @@ const base =
 export interface DadosPlano {
   id?: string;
   inicio?: string;
+  cadencia?: string;
   modo_valor?: string;
   dia_referencia?: number;
   dia_pagamento?: number | null;
@@ -55,13 +56,28 @@ export function FormularioPlano({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Campo
-          label="Início do plano"
-          ajuda="Primeiro mês projetado. Meses anteriores são realizado, não projeção."
+          label="Mês do período"
+          ajuda="O primeiro mês projetado. No plano novo, é o ponto de partida do cliente."
         >
           <MesPicker
             name="inicio"
             required
             defaultValue={dataParaMes(plano?.inicio) || mesAtual()}
+          />
+        </Campo>
+
+        <Campo
+          label="Cadência do acompanhamento"
+          ajuda="De quanto em quanto tempo você revisita o plano com o cliente. Define o passo de um período para o próximo."
+        >
+          <Select
+            name="cadencia"
+            defaultValue={plano?.cadencia ?? "mensal"}
+            opcoes={[
+              { valor: "mensal", rotulo: "Mensal", descricao: "Uma reunião por mês" },
+              { valor: "bimestral", rotulo: "Bimestral", descricao: "A cada dois meses" },
+              { valor: "trimestral", rotulo: "Trimestral", descricao: "A cada três meses" },
+            ]}
           />
         </Campo>
 

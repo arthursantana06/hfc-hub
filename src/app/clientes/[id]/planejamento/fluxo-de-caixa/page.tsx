@@ -2,20 +2,14 @@ import Link from "next/link";
 import { Wallet, ShoppingCart, CreditCard, Scale } from "lucide-react";
 import {
   getPlanInput,
-  getPlanoAtivo,
-  linhasDoCliente,
+  getPlanoDoPeriodo,
   linhasDoPlano,
   listCategorias,
 } from "@/lib/planning-dal";
-import { summarizeBaseline } from "@/lib/planning/baseline";
+import { mensalizar, summarizeBaseline } from "@/lib/planning/baseline";
 import { formatCurrency } from "@/lib/types";
-import { escreverMoeda } from "@/lib/forms/planejamento";
-import {
-  Barra,
-  Card,
-  Stat,
-  pct,
-} from "@/components/planejamento/primitives";
+import { escreverMoeda, rotuloDosMeses } from "@/lib/forms/planejamento";
+import { Barra, Card, Stat, pct } from "@/components/planejamento/primitives";
 import { ListaEditavel } from "@/components/planejamento/ListaEditavel";
 
 const MESES = [
@@ -32,29 +26,42 @@ const GRUPOS: Record<string, string> = {
   outros: "Outros",
 };
 
+/** "Mensal", "Anual · março" ou "Parcelado · jan · fev" — como a linha se repete. */
+function quando(
+  frequencia: string,
+  mes: number | null,
+  meses: number[] | null,
+): string {
+  if (frequencia === "anual") return `Anual · ${mes ? MESES[mes - 1] : "sem mês"}`;
+  if (frequencia === "meses") {
+    const lista = rotuloDosMeses(meses);
+    return lista ? `Parcelado · ${lista}` : "Parcelado · sem meses";
+  }
+  return "Mensal";
+}
+
 export default async function FluxoDeCaixa({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ periodo?: string }>;
 }) {
-  const { id } = await params;
-  const plano = await getPlanoAtivo(id);
+  const [{ id }, { periodo }] = await Promise.all([params, searchParams]);
+  const plano = await getPlanoDoPeriodo(id, periodo);
 
   if (!plano) return <PrecisaPlano clienteId={id} />;
 
   const [plan, receitas, despesas, dividas, categorias] = await Promise.all([
-    getPlanInput(id),
+    getPlanInput(id, plano.id),
     linhasDoPlano("plan_income", plano.id),
     linhasDoPlano("plan_expense", plano.id),
-    linhasDoCliente("debt", id),
+    linhasDoPlano("debt", plano.id),
     listCategorias(),
   ]);
 
   const base = plan ? summarizeBaseline(plan) : null;
   const nomeCategoria = new Map(categorias.map((c) => [c.valor, c]));
-
-  const freq = (f: string, m: number | null) =>
-    f === "anual" ? `Anual · ${m ? MESES[m - 1] : "sem mês"}` : "Mensal";
 
   const tomBalde: Record<string, string> = {
     fixo: "bg-brand-600",
@@ -70,12 +77,12 @@ export default async function FluxoDeCaixa({
           <Stat
             rotulo="Receita mensalizada"
             valor={formatCurrency(base.receitaTotalMensalizada, 2)}
-            hint={`${formatCurrency(base.receitaMensal, 2)} num mês sem anuais`}
+            hint={`${formatCurrency(base.receitaMensal, 2)} num mês sem sazonais`}
           />
           <Stat
             rotulo="Custo mensalizado"
             valor={formatCurrency(base.despesaTotalMensalizada, 2)}
-            hint={`${formatCurrency(base.despesaMensal, 2)} num mês sem anuais`}
+            hint={`${formatCurrency(base.despesaMensal, 2)} num mês sem sazonais`}
           />
           <Stat
             rotulo="Parcelas"
@@ -110,18 +117,17 @@ export default async function FluxoDeCaixa({
             linhas={receitas.map((r) => ({
               id: r.id,
               titulo: r.fonte,
-              detalhe: freq(r.frequencia, r.mes_ocorrencia),
-              // Anual aparece rateado, para somar com as mensais na mesma coluna.
-              valor: `R$ ${escreverMoeda(
-                r.frequencia === "anual" ? Number(r.valor) / 12 : Number(r.valor),
-              )}`,
+              detalhe: quando(r.frequencia, r.mes_ocorrencia, r.meses),
+              // O que não é mensal aparece rateado, para somar com as mensais
+              // na mesma coluna.
+              valor: `R$ ${escreverMoeda(mensalizar(r))}`,
               bruto: r,
             }))}
             extra={
-              receitas.some((r) => r.frequencia === "anual") ? (
+              receitas.some((r) => r.frequencia !== "mensal") ? (
                 <p className="font-inter text-xs text-slate-400 mt-3">
-                  Receitas anuais aparecem rateadas por 12. Elas entram cheias no
-                  mês de ocorrência.
+                  Receitas sazonais aparecem rateadas por 12. Elas entram cheias
+                  no mês em que caem.
                 </p>
               ) : null
             }
@@ -146,42 +152,61 @@ export default async function FluxoDeCaixa({
               return {
                 id: e.id,
                 titulo: e.descricao || cat?.rotulo || "—",
-                detalhe: `${GRUPOS[cat?.grupo ?? "outros"]} · ${freq(e.frequencia, e.mes_ocorrencia)} · ${
-                  e.bucket === "fixo" ? "fixo" : "extra"
-                }`,
-                valor: `R$ ${escreverMoeda(
-                  e.frequencia === "anual" ? Number(e.valor) / 12 : Number(e.valor),
-                )}`,
+                detalhe: `${GRUPOS[cat?.grupo ?? "outros"]} · ${quando(
+                  e.frequencia,
+                  e.mes_ocorrencia,
+                  e.meses,
+                )} · ${e.bucket === "fixo" ? "fixo" : "extra"}`,
+                valor: `R$ ${escreverMoeda(mensalizar(e))}`,
                 bruto: e,
               };
             })}
           />
         </Card>
 
+        {/* As dívidas moram no Patrimônio, junto do passivo que elas são. Aqui
+            aparecem só como o peso que fazem no caixa do mês — antes a mesma
+            dívida era cadastrada em duas telas e divergia entre elas. */}
         <Card
-          titulo="Parcelas e dívidas"
+          titulo="Parcelas de dívidas"
           icone={CreditCard}
           tom="ambar"
           total={base?.parcelasMensais}
         >
-          <ListaEditavel
-            entidade="divida"
-            planId={plano.id}
-            clientId={id}
-            vazio="Sem dívidas ativas."
-            linhas={dividas.map((d) => ({
-              id: d.id,
-              titulo: d.descricao,
-              detalhe: d.fim
-                ? `Até ${MESES[Number(d.fim.slice(5, 7)) - 1]}/${d.fim.slice(0, 4)}`
-                : undefined,
-              alerta: d.fim
-                ? undefined
-                : "Sem última parcela — a projeção a trata como perpétua",
-              valor: `R$ ${escreverMoeda(Number(d.parcela ?? 0))}`,
-              bruto: d,
-            }))}
-          />
+          {dividas.length === 0 ? (
+            <p className="font-inter text-sm text-slate-500 py-2">
+              Sem dívidas neste período.
+            </p>
+          ) : (
+            <ul className="flex flex-col">
+              {dividas.map((d) => (
+                <li
+                  key={d.id}
+                  className="flex items-baseline justify-between gap-3 py-2.5 border-b border-slate-50 last:border-none"
+                >
+                  <div className="min-w-0">
+                    <p className="font-inter text-sm font-medium text-slate-700 truncate">
+                      {d.descricao}
+                    </p>
+                    <p className="font-inter text-xs text-slate-500 mt-0.5">
+                      {d.fim
+                        ? `Até ${MESES[Number(d.fim.slice(5, 7)) - 1]}/${d.fim.slice(0, 4)}`
+                        : "Sem última parcela — a projeção a trata como perpétua"}
+                    </p>
+                  </div>
+                  <span className="font-inter text-sm text-slate-600 tabular-nums shrink-0">
+                    R$ {escreverMoeda(Number(d.parcela ?? 0))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link
+            href={`/clientes/${id}/planejamento/patrimonio`}
+            className="mt-4 inline-flex items-center gap-1.5 font-inter text-sm text-brand-600 hover:text-brand-900 transition-colors"
+          >
+            Editar em Patrimônio
+          </Link>
         </Card>
 
         {base && (
@@ -211,7 +236,7 @@ export default async function FluxoDeCaixa({
             </div>
             <p className="font-inter text-xs text-slate-400 mt-4">
               Derivado das listas ao lado: cada custo carrega se é fixo ou extra,
-              e as parcelas vêm das dívidas. Anuais entram rateados.
+              e as parcelas vêm das dívidas. Sazonais entram rateados.
             </p>
           </Card>
         )}
@@ -228,10 +253,10 @@ function PrecisaPlano({ clienteId }: { clienteId: string }) {
       </p>
       <p className="font-inter text-sm text-slate-500 mt-1 max-w-md">
         Receitas e custos precisam de um plano para existir. Ele leva meio minuto
-        para criar — data de início, modo de valor e as taxas.
+        para criar — mês de partida, cadência do acompanhamento e as taxas.
       </p>
       <Link
-        href={`/clientes/${clienteId}/ponto-de-partida/cadastro`}
+        href={`/clientes/${clienteId}/cadastro`}
         className="mt-6 bg-brand-600 hover:bg-brand-900 transition-colors text-white font-poppins font-medium px-4 py-2 rounded-lg text-sm"
       >
         Criar o plano

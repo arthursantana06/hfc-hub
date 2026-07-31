@@ -2,11 +2,13 @@
 
 import {
   dataParaMes,
+  escreverMeses,
   escreverMoeda,
   type Campo,
 } from "@/lib/forms/planejamento";
 import { Select } from "@/components/ui/Select";
 import { MesPicker } from "@/components/ui/MesPicker";
+import { SeletorMeses } from "@/components/ui/SeletorMeses";
 import { InputMoeda } from "@/components/ui/InputMoeda";
 
 export interface OpcoesRef {
@@ -101,6 +103,14 @@ export function CampoForm({
           required={campo.obrigatorio}
           defaultValue={dataParaMes(valor as string | null)}
           onChange={onChange}
+        />
+      ) : campo.tipo === "meses" ? (
+        <SeletorMeses
+          id={campo.key}
+          name={campo.key}
+          required={campo.obrigatorio}
+          aria-label={campo.label}
+          defaultValue={escreverMeses(valor as number[] | null)}
         />
       ) : campo.tipo === "inteiro" ? (
         <input

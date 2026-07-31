@@ -14,6 +14,8 @@ export type TipoCampo =
   | "moeda"
   | "inteiro"
   | "mes"
+  /** Quadradinhos de janeiro a dezembro — a despesa que cai em meses escolhidos. */
+  | "meses"
   | "select"
   | "ref"
   | "bool";
@@ -63,13 +65,14 @@ export interface Entidade {
    */
   escopo: "plano" | "cliente" | "registro" | "relatorio";
   /**
-   * Só para `escopo: "cliente"`: a tabela também tem coluna `plan_id` e deve
-   * receber o plano ativo ao gravar (liga o registro à versão do raio-x).
-   * `asset`, `liability` e `investment` são de escopo cliente mas não têm
-   * essa coluna — setar isto sem checar quebra o insert com "column plan_id
-   * does not exist".
+   * Só para `escopo: "plano"`: a tabela também tem `client_id not null` e
+   * precisa recebê-lo ao gravar.
+   *
+   * São as tabelas que nasceram penduradas no cliente (dívida, objetivo, ativo,
+   * passivo, carteira) e passaram a pertencer ao período na Fase 2. A coluna
+   * antiga continua lá e continua obrigatória — o insert precisa das duas.
    */
-  vinculaAoPlano?: boolean;
+  vinculaAoCliente?: boolean;
   singular: string;
   plural: string;
   campos: Campo[];
@@ -88,6 +91,7 @@ const FREQUENCIA: Campo = {
   opcoes: [
     { valor: "mensal", rotulo: "Mensal" },
     { valor: "anual", rotulo: "Anual" },
+    { valor: "meses", rotulo: "Meses escolhidos" },
   ],
 };
 
@@ -99,6 +103,24 @@ const MES_OCORRENCIA: Campo = {
   opcoes: MESES,
   visivelSe: { campo: "frequencia", valor: "anual" },
   ajuda: "Em que mês o valor cheio entra ou sai.",
+};
+
+/**
+ * Os quadradinhos de janeiro a dezembro.
+ *
+ * Existe porque metade das despesas anuais não é anual de verdade: o IPVA vem
+ * em três parcelas, o material escolar em duas, o seguro em quatro. Guardar
+ * isso como "anual ÷ 12" acerta a média e erra o caixa dos meses em que a
+ * parcela realmente sai — que é onde o cliente sente o aperto.
+ */
+const MESES_ESCOLHIDOS: Campo = {
+  key: "meses",
+  label: "Em que meses",
+  tipo: "meses",
+  obrigatorio: true,
+  span: 2,
+  visivelSe: { campo: "frequencia", valor: "meses" },
+  ajuda: "O valor acima é o de CADA parcela, não o total do ano.",
 };
 
 export const ENTIDADES: Record<string, Entidade> = {
@@ -118,6 +140,7 @@ export const ENTIDADES: Record<string, Entidade> = {
       },
       FREQUENCIA,
       MES_OCORRENCIA,
+      MESES_ESCOLHIDOS,
       {
         key: "derivado",
         label: "Tipo",
@@ -154,13 +177,14 @@ export const ENTIDADES: Record<string, Entidade> = {
       },
       FREQUENCIA,
       MES_OCORRENCIA,
+      MESES_ESCOLHIDOS,
     ],
   },
 
   divida: {
     tabela: "debt",
-    escopo: "cliente",
-    vinculaAoPlano: true,
+    escopo: "plano",
+    vinculaAoCliente: true,
     singular: "Dívida",
     plural: "Dívidas",
     campos: [
@@ -174,25 +198,33 @@ export const ENTIDADES: Record<string, Entidade> = {
         tipo: "mes",
         ajuda: "Sem isto a projeção trata a dívida como perpétua.",
       },
+      {
+        key: "saldo",
+        label: "Saldo devedor",
+        tipo: "moeda",
+        span: 2,
+        ajuda:
+          "Quanto ainda se deve, como está no extrato. É este valor que entra no passivo do balanço. Em branco, estimamos por parcela × meses restantes.",
+      },
     ],
   },
 
   objetivo: {
     tabela: "goal",
-    escopo: "cliente",
-    vinculaAoPlano: true,
+    escopo: "plano",
+    vinculaAoCliente: true,
     singular: "Objetivo",
     plural: "Objetivos",
     campos: [
       { key: "titulo", label: "Objetivo", tipo: "texto", obrigatorio: true, span: 2 },
       {
         key: "prazo",
-        label: "Prazo",
+        label: "Tipo",
         tipo: "select",
         obrigatorio: true,
         opcoes: [
-          { valor: "curto", rotulo: "Curto — data marcada" },
-          { valor: "longo", rotulo: "Recorrente — se repete" },
+          { valor: "curto", rotulo: "Evento único — acontece uma vez" },
+          { valor: "longo", rotulo: "Recorrente — se repete a cada N anos" },
         ],
       },
       {
@@ -218,7 +250,6 @@ export const ENTIDADES: Record<string, Entidade> = {
         max: 50,
         visivelSe: { campo: "prazo", valor: "longo" },
       },
-      { key: "prioridade", label: "Prioridade (1–5)", tipo: "inteiro", min: 1, max: 5 },
       { key: "concluido", label: "Já concluído", tipo: "bool" },
     ],
   },
@@ -256,29 +287,58 @@ export const ENTIDADES: Record<string, Entidade> = {
 
   ativo: {
     tabela: "asset",
-    escopo: "cliente",
+    escopo: "plano",
+    vinculaAoCliente: true,
     singular: "Ativo",
     plural: "Ativos",
     campos: [
-      { key: "nome", label: "Ativo", tipo: "texto", obrigatorio: true, span: 2 },
-      { key: "valor", label: "Valor", tipo: "moeda", obrigatorio: true },
+      {
+        key: "nome",
+        label: "Ativo",
+        tipo: "texto",
+        obrigatorio: true,
+        span: 2,
+        placeholder: "Imóvel, veículo, participação…",
+      },
+      {
+        key: "valor",
+        label: "Valor",
+        tipo: "moeda",
+        obrigatorio: true,
+        ajuda: "Bens que não rendem juros. A carteira investida tem lista própria.",
+      },
     ],
   },
 
   passivo: {
     tabela: "liability",
-    escopo: "cliente",
+    escopo: "plano",
+    vinculaAoCliente: true,
     singular: "Passivo",
     plural: "Passivos",
     campos: [
-      { key: "nome", label: "Passivo", tipo: "texto", obrigatorio: true, span: 2 },
-      { key: "valor", label: "Valor", tipo: "moeda", obrigatorio: true },
+      {
+        key: "nome",
+        label: "Passivo",
+        tipo: "texto",
+        obrigatorio: true,
+        span: 2,
+        placeholder: "Empréstimo com familiar, tributo em aberto…",
+      },
+      {
+        key: "valor",
+        label: "Valor",
+        tipo: "moeda",
+        obrigatorio: true,
+        ajuda: "Só o que NÃO tem parcela mensal — o que tem, cadastre como dívida.",
+      },
     ],
   },
 
   investimento: {
     tabela: "investment",
-    escopo: "cliente",
+    escopo: "plano",
+    vinculaAoCliente: true,
     singular: "Investimento",
     plural: "Investimentos",
     campos: [
@@ -434,6 +494,41 @@ export function escreverMoeda(n: number | null | undefined): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+/**
+ * Lê os meses marcados nos quadradinhos.
+ *
+ * Chegam como "1,2,3" num campo escondido — uma string em vez de doze
+ * checkboxes com o mesmo `name`, para que o valor sobreviva à ida e volta pelo
+ * `FormData` na mesma forma em que a coluna `smallint[]` o guarda.
+ *
+ * Devolve `null` para entrada inválida (e não uma lista vazia): quem chama
+ * precisa distinguir "não escolheu nada" de "escolheu errado".
+ */
+export function lerMeses(bruto: string): number[] | null {
+  const partes = bruto
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const meses: number[] = [];
+  for (const p of partes) {
+    const n = Number(p);
+    if (!Number.isInteger(n) || n < 1 || n > 12) return null;
+    if (!meses.includes(n)) meses.push(n);
+  }
+  return meses.sort((a, b) => a - b);
+}
+
+export function escreverMeses(meses: number[] | null | undefined): string {
+  return (meses ?? []).join(",");
+}
+
+/** "jan · fev · mar" — como a lista mostra os meses marcados. */
+export function rotuloDosMeses(meses: number[] | null | undefined): string {
+  const curtos = (meses ?? []).map((m) => MESES[m - 1]?.rotulo.slice(0, 3).toLowerCase());
+  return curtos.filter(Boolean).join(" · ");
 }
 
 /** `<input type="month">` devolve "YYYY-MM"; a coluna é `date`. */

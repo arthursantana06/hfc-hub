@@ -1,7 +1,14 @@
 import type { YearMonth } from "./period";
 
 export type ValueMode = "nominal" | "real";
-export type Frequency = "mensal" | "anual";
+/**
+ * `meses` é a despesa (ou receita) que cai em meses escolhidos do ano.
+ *
+ * O IPVA é anual, mas muita gente o paga em três parcelas entre janeiro e
+ * março. Guardar isso como "anual/12" acerta a média e erra o caixa dos meses
+ * em que a parcela de fato sai — que é justamente onde o cliente sente.
+ */
+export type Frequency = "mensal" | "anual" | "meses";
 export type ExpenseBucket = "fixo" | "extra" | "parcela" | "adicional";
 export type ChangeCategory = "receita" | "despesa" | "divida";
 export type GoalTerm = "curto" | "longo";
@@ -24,6 +31,8 @@ export interface IncomeLine {
   valor: number;
   frequencia: Frequency;
   mesOcorrencia: number | null;
+  /** Meses (1–12) em que o valor entra, quando a frequência é `meses`. */
+  meses?: number[] | null;
 }
 
 export interface ExpenseLine {
@@ -33,6 +42,8 @@ export interface ExpenseLine {
   valor: number;
   frequencia: Frequency;
   mesOcorrencia: number | null;
+  /** Meses (1–12) em que o valor sai, quando a frequência é `meses`. */
+  meses?: number[] | null;
   bucket: "fixo" | "extra";
 }
 
@@ -42,6 +53,8 @@ export interface DebtLine {
   inicio: YearMonth | null;
   /** Último mês com parcela. `null` = ainda sem data — tratada como perpétua. */
   fim: YearMonth | null;
+  /** Quanto ainda se deve. `null` = estimar por parcela × meses restantes. */
+  saldo?: number | null;
 }
 
 export interface NamedAmount {
@@ -86,9 +99,31 @@ export interface PlanInput {
   insurances: NamedAmount[];
   goals: GoalLine[];
   changes: ChangeLine[];
-  /** Patrimônio investido no mês zero. */
+  /** Patrimônio investido no mês zero — a carteira, e só ela, é o que rende. */
   patrimonioInicial: number;
+  /** Bens que não estão investidos (imóvel, veículo). Não rendem na projeção. */
+  ativosNaoInvestidos: number;
+  /** Passivos sem parcela mensal. Os que têm parcela vivem em `debts`. */
+  passivosDeclarados: number;
   retirement: RetirementInput;
+}
+
+/**
+ * O balanço patrimonial como as telas o mostram.
+ *
+ * A carteira investida é ATIVO: até a Fase 2 ela ficava fora do patrimônio
+ * líquido, embora a projeção partisse dela — o cliente via dois números que
+ * deveriam ser o mesmo. E o saldo devedor das dívidas é PASSIVO, sem precisar
+ * ser redigitado: a dívida já sabe quanto falta pagar.
+ */
+export interface BalanceSummary {
+  ativosNaoInvestidos: number;
+  carteira: number;
+  ativos: number;
+  passivosDeclarados: number;
+  saldoDevedor: number;
+  passivos: number;
+  liquido: number;
 }
 
 /** Uma linha da projeção — as colunas de `PROJEÇÃO CURTA`. */

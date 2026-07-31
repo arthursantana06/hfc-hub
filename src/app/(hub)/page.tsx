@@ -6,7 +6,7 @@ import { Card, Stat } from "@/components/planejamento/primitives";
 import { listClients } from "@/lib/planning-dal";
 import { createClient } from "@/lib/supabase/server";
 import { verifySession } from "@/lib/dal";
-import { formatCurrency, PLAN_STATUS_LABEL } from "@/lib/types";
+import { formatCurrency } from "@/lib/types";
 
 export default async function Dashboard() {
   await verifySession();
@@ -23,7 +23,7 @@ export default async function Dashboard() {
   ]);
 
   const patrimonioTotal = clientes.reduce((a, c) => a + c.patrimonio, 0);
-  const comPlano = clientes.filter((c) => c.planoStatus === "ativo").length;
+  const comPlano = clientes.filter((c) => c.temPlano).length;
 
   return (
     <Page
@@ -44,7 +44,7 @@ export default async function Dashboard() {
           <Stat
             rotulo="Patrimônio sob acompanhamento"
             valor={formatCurrency(patrimonioTotal)}
-            hint="soma dos ativos menos passivos da carteira"
+            hint="bens e carteira, menos passivos e dívidas"
           />
           <Stat
             rotulo="Clientes"
@@ -88,7 +88,7 @@ export default async function Dashboard() {
                           {c.nome}
                         </p>
                         <p className="font-inter text-xs text-slate-500 mt-0.5">
-                          {PLAN_STATUS_LABEL[c.planoStatus]}
+                          {c.temPlano ? "Planejamento em curso" : "Sem plano"}
                           {c.profissao ? ` · ${c.profissao}` : ""}
                         </p>
                       </div>

@@ -1,9 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { Loader2, ShieldQuestion, TrendingUp, Waves, Wind } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { DatePicker } from "@/components/ui/DatePicker";
-import { Select } from "@/components/ui/Select";
 import { salvarCliente, type Estado } from "@/lib/actions/planejamento";
 
 const base =
@@ -17,8 +16,6 @@ export interface DadosCliente {
   email?: string | null;
   nascimento?: string | null;
   profissao?: string | null;
-  risco?: string | null;
-  plano_status?: string;
   adesao?: string | null;
   notas?: string | null;
 }
@@ -78,34 +75,9 @@ export function FormularioCliente({ cliente }: { cliente?: DadosCliente }) {
           />
         </Campo>
 
-        <Campo label="Perfil de investidor">
-          <Select
-            name="risco"
-            defaultValue={cliente?.risco ?? ""}
-            placeholder="Não definido"
-            opcoes={[
-              { valor: "", rotulo: "Não definido", icone: ShieldQuestion },
-              {
-                valor: "conservador",
-                rotulo: "Conservador",
-                descricao: "Preserva o capital; aceita retorno menor",
-                icone: Waves,
-              },
-              {
-                valor: "moderado",
-                rotulo: "Moderado",
-                descricao: "Equilibra risco e retorno",
-                icone: Wind,
-              },
-              {
-                valor: "arrojado",
-                rotulo: "Arrojado",
-                descricao: "Aceita oscilação por retorno maior",
-                icone: TrendingUp,
-              },
-            ]}
-          />
-        </Campo>
+        {/* O perfil de investidor saiu daqui: ele é resultado de um
+            questionário, não de um palpite do planejador digitado num select.
+            Volta como variável quando o Portal do Cliente existir. */}
 
         <Campo
           label="Data de adesão"
@@ -119,29 +91,8 @@ export function FormularioCliente({ cliente }: { cliente?: DadosCliente }) {
           />
         </Campo>
 
-        <Campo label="Status do plano">
-          <Select
-            name="plano_status"
-            defaultValue={cliente?.plano_status ?? "diagnostico"}
-            opcoes={[
-              {
-                valor: "diagnostico",
-                rotulo: "Em diagnóstico",
-                descricao: "Levantando os dados; o plano ainda não fechou",
-              },
-              {
-                valor: "ativo",
-                rotulo: "Plano ativo",
-                descricao: "Plano fechado e em acompanhamento mensal",
-              },
-              {
-                valor: "pendente",
-                rotulo: "Pendente",
-                descricao: "Acompanhamento parado, à espera do cliente",
-              },
-            ]}
-          />
-        </Campo>
+        {/* O status do plano também saiu: era um rótulo digitado à mão que
+            envelhecia sozinho. Quem tem período aberto, o banco responde. */}
 
         <Campo
           label="Observações"

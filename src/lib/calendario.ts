@@ -12,7 +12,18 @@ export const MESES_PT = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-export const hojeISO = (): string => new Date().toISOString().slice(0, 10);
+/**
+ * Hoje no fuso de São Paulo, e não em UTC.
+ *
+ * `toISOString()` devolve a data UTC: depois das 21h no Brasil ela já virou o
+ * dia seguinte, e o calendário passava a marcar amanhã como "hoje" — além de
+ * abrir "nova reunião" na data errada para quem trabalha à noite.
+ *
+ * "sv-SE" formata datas como AAAA-MM-DD por convenção da localidade: é o jeito
+ * mais curto de obter o formato ISO num fuso específico.
+ */
+export const hojeISO = (): string =>
+  new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
 
 export const primeiroDoMes = (iso: string): string => `${iso.slice(0, 7)}-01`;
 

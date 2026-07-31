@@ -1,5 +1,8 @@
 import { fromISO } from "../period";
-import type { PlanInput } from "../types";
+import type { Frequency, PlanInput } from "../types";
+
+const soma = (linhas: { valor: number }[] | undefined) =>
+  (linhas ?? []).reduce((a, l) => a + l.valor, 0);
 
 /**
  * A forma dos JSONs de fixture — ver `exemplo.json`.
@@ -22,12 +25,17 @@ export interface FixtureBruto {
     meses_curto: number;
   };
   patrimonio_inicial: number;
+  /** Bens que não rendem juros. Ausente nos fixtures antigos. */
+  ativos?: { nome: string; valor: number }[];
+  /** Passivos sem parcela mensal — os com parcela vivem em `dividas`. */
+  passivos?: { nome: string; valor: number }[];
   aposentadoria: { idade_alvo: number; renda_inss: number; renda_desejada: number };
   receitas: {
     fonte: string;
     valor: number;
     frequencia: string;
     mes_ocorrencia?: number;
+    meses?: number[];
   }[];
   despesas: {
     categoria: string;
@@ -35,6 +43,7 @@ export interface FixtureBruto {
     valor: number;
     frequencia: string;
     mes_ocorrencia?: number;
+    meses?: number[];
     bucket: string;
   }[];
   dividas: {
@@ -42,6 +51,7 @@ export interface FixtureBruto {
     parcela: number;
     inicio?: string;
     fim?: string | null;
+    saldo?: number | null;
   }[];
   previdencia: { nome: string; valor: number }[];
   seguros: { nome: string; valor: number }[];
@@ -72,6 +82,8 @@ export function carregarFixture(raw: FixtureBruto): PlanInput {
     },
     nascimento: raw.cliente.nascimento,
     patrimonioInicial: raw.patrimonio_inicial,
+    ativosNaoInvestidos: soma(raw.ativos),
+    passivosDeclarados: soma(raw.passivos),
     retirement: {
       idadeAlvo: raw.aposentadoria.idade_alvo,
       rendaInss: raw.aposentadoria.renda_inss,
@@ -80,15 +92,17 @@ export function carregarFixture(raw: FixtureBruto): PlanInput {
     incomes: raw.receitas.map((r) => ({
       fonte: r.fonte,
       valor: r.valor,
-      frequencia: r.frequencia as "mensal" | "anual",
+      frequencia: r.frequencia as Frequency,
       mesOcorrencia: r.mes_ocorrencia ?? null,
+      meses: r.meses ?? null,
     })),
     expenses: raw.despesas.map((d) => ({
       categoria: d.categoria,
       grupo: d.grupo ?? "",
       valor: d.valor,
-      frequencia: d.frequencia as "mensal" | "anual",
+      frequencia: d.frequencia as Frequency,
       mesOcorrencia: d.mes_ocorrencia ?? null,
+      meses: d.meses ?? null,
       bucket: d.bucket as "fixo" | "extra",
     })),
     debts: raw.dividas.map((d) => ({
@@ -96,6 +110,7 @@ export function carregarFixture(raw: FixtureBruto): PlanInput {
       parcela: d.parcela,
       inicio: d.inicio ? fromISO(d.inicio) : null,
       fim: d.fim ? fromISO(d.fim) : null,
+      saldo: d.saldo ?? null,
     })),
     pensions: raw.previdencia,
     insurances: raw.seguros,

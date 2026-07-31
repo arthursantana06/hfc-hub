@@ -22,12 +22,10 @@ export default async function ResumoDoCliente({
   return (
     <>
       <header className="p-8 pb-6 shrink-0 flex justify-between items-end gap-6 border-b border-slate-200/60 bg-white shadow-sm z-0">
-        <h1 className="font-poppins font-medium text-2xl text-brand-950">
-          Resumo do Planejamento
-        </h1>
+        <h1 className="font-poppins font-medium text-2xl text-brand-950">Dashboard</h1>
         {plan && (
           <p className="font-inter text-sm text-slate-500">
-            Plano iniciado em {nomeDoMes(plan.assumptions.inicio).toLowerCase()}/
+            Período de {nomeDoMes(plan.assumptions.inicio).toLowerCase()}/
             {anoDe(plan.assumptions.inicio)}
           </p>
         )}
@@ -70,7 +68,7 @@ function Conteudo({
         <Stat
           rotulo="Patrimônio líquido"
           valor={formatCurrency(patrimonio, 2)}
-          hint="ativos menos passivos"
+          hint="bens e carteira, menos passivos e dívidas"
         />
         <Stat
           rotulo="Capacidade de poupança"
@@ -110,7 +108,7 @@ function Conteudo({
               )}
             </p>
             <Link
-              href={`/clientes/${id}/diagnostico`}
+              href={`/clientes/${id}/acompanhamento`}
               className="inline-flex items-center gap-1.5 mt-3 font-inter text-sm text-brand-600 hover:text-brand-900 transition-colors"
             >
               Ver o diagnóstico completo
@@ -160,10 +158,10 @@ function Conteudo({
             ))
           )}
           <Link
-            href={`/clientes/${id}/ponto-de-partida/linha-do-tempo`}
+            href={`/clientes/${id}/planejamento/objetivos`}
             className="inline-flex items-center gap-1.5 mt-4 font-inter text-sm text-brand-600 hover:text-brand-900 transition-colors"
           >
-            Ver a linha do tempo
+            Ver objetivos e mudanças
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </Card>
