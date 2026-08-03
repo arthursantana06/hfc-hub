@@ -481,7 +481,7 @@ export function lerMoeda(bruto: string): number | null {
 
   const normalizado = limpo.includes(",")
     ? limpo.replace(/\./g, "").replace(",", ".")
-    : limpo;
+    : limpo.replace(/\./g, "");
 
   const n = Number(normalizado);
   return Number.isFinite(n) ? n : null;

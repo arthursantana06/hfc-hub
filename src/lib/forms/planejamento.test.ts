@@ -21,8 +21,12 @@ describe("leitura de valores monetários", () => {
     expect(lerMoeda("0,50")).toBe(0.5);
   });
 
-  it("lê o formato com ponto decimal, quando não há vírgula", () => {
-    expect(lerMoeda("1234.56")).toBe(1234.56);
+  it("ponto é sempre milhar, mesmo sem vírgula — é o que InputMoeda produz ao digitar", () => {
+    // InputMoeda insere o ponto de milhar assim que há 4+ dígitos, mesmo
+    // antes de qualquer vírgula ser digitada. Se o ponto virasse decimal
+    // aqui, "1.000" (mil reais) seria salvo como 1 real.
+    expect(lerMoeda("1.000")).toBe(1000);
+    expect(lerMoeda("1.234.567")).toBe(1234567);
     expect(lerMoeda("7000")).toBe(7000);
   });
 
