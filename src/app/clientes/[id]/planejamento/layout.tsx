@@ -32,7 +32,7 @@ export default async function PlanejamentoLayout({
 
   return (
     <>
-      <header className="p-8 pb-0 shrink-0 bg-white border-b border-slate-200 shadow-sm z-0 flex flex-col">
+      <header className="p-8 pb-0 shrink-0 bg-white border-b border-slate-200 shadow-sm flex flex-col">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           <div className="min-w-0">
             <h1 className="font-poppins font-medium text-2xl text-brand-950">

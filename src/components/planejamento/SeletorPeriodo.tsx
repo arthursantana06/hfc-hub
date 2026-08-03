@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarPlus, History, Loader2, X } from "lucide-react";
 import { Select } from "@/components/ui/Select";
@@ -137,7 +138,7 @@ function DialogoNovoPeriodo({
     return () => window.removeEventListener("keydown", esc);
   }, [onFechar]);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 bg-brand-950/40 backdrop-blur-sm flex items-center justify-center p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onFechar()}
@@ -210,6 +211,7 @@ function DialogoNovoPeriodo({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
