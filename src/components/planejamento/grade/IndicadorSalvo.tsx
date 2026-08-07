@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, Loader2 } from "lucide-react";
+import { AlertCircle, Check, Loader2, PencilLine } from "lucide-react";
 import type { EstadoAutosave } from "./useAutosave";
 
 /**
@@ -18,6 +18,20 @@ export function IndicadorSalvo({ estado }: { estado: EstadoAutosave }) {
       <span className="inline-flex items-center gap-1.5 font-inter text-xs text-slate-400">
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
         Salvando…
+      </span>
+    );
+  }
+
+  // Pendência não é erro: nada quebrou, só falta preencher. Âmbar em vez de
+  // vermelho, e o texto diz o que fazer em vez de o que deu errado.
+  if (estado.fase === "pendente") {
+    return (
+      <span
+        role="status"
+        className="inline-flex items-center gap-1.5 font-inter text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-full px-2.5 py-1"
+      >
+        <PencilLine className="w-3.5 h-3.5 shrink-0" />
+        {estado.mensagem}
       </span>
     );
   }

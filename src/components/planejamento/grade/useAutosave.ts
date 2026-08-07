@@ -6,6 +6,8 @@ export type EstadoAutosave =
   | { fase: "ocioso" }
   | { fase: "salvando" }
   | { fase: "salvo" }
+  /** A linha está incompleta e por isso ainda não foi enviada. */
+  | { fase: "pendente"; mensagem: string }
   | { fase: "erro"; mensagem: string };
 
 /**
@@ -76,9 +78,16 @@ export function useAutosave() {
     setEstado({ fase: "erro", mensagem });
   }
 
-  function limparErro() {
-    setEstado((atual) => (atual.fase === "erro" ? { fase: "ocioso" } : atual));
+  /** A linha ficou incompleta: nada foi enviado, e a tela precisa dizer isso. */
+  function reportarPendencia(mensagem: string) {
+    setEstado({ fase: "pendente", mensagem });
   }
 
-  return { estado, enfileirar, reportarErro, limparErro };
+  function limparErro() {
+    setEstado((atual) =>
+      atual.fase === "erro" || atual.fase === "pendente" ? { fase: "ocioso" } : atual,
+    );
+  }
+
+  return { estado, enfileirar, reportarErro, reportarPendencia, limparErro };
 }

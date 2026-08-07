@@ -787,6 +787,31 @@ export function camposVisiveis(entidade: Entidade, valores: Record<string, unkno
 }
 
 /**
+ * O que ainda falta para a linha poder ser gravada.
+ *
+ * Existe por causa dos campos que só nascem obrigatórios depois de outra
+ * escolha: marcar a frequência como "meses escolhidos" torna `meses`
+ * obrigatório, e nesse instante a linha fica momentaneamente inválida. O grid
+ * grava a cada célula confirmada, então sem esta checagem ele mandaria a linha
+ * incompleta ao servidor, tomaria o erro e reverteria a escolha — apagando
+ * justamente a frequência que a pessoa acabou de escolher, e escondendo de
+ * novo o campo que ela precisa preencher.
+ *
+ * `bool` fica de fora: uma caixa desmarcada é uma resposta, não uma ausência.
+ */
+export function camposPendentes(
+  entidade: Entidade,
+  valores: Record<string, unknown>,
+): Campo[] {
+  return camposVisiveis(entidade, valores).filter(
+    (c) =>
+      c.obrigatorio &&
+      c.tipo !== "bool" &&
+      String(valores[c.key] ?? "").trim() === "",
+  );
+}
+
+/**
  * Converte uma linha do banco nos textos que as células do grid mostram.
  *
  * O inverso de `converter`: moeda vira "1.234,56", `date` de mês vira

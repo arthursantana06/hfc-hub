@@ -10,6 +10,7 @@ import {
 } from "@/lib/actions/grade";
 import {
   ENTIDADES,
+  camposPendentes,
   escreverMoeda,
   lerMoeda,
   type Campo,
@@ -113,7 +114,8 @@ export function GradeEditavel({
   const focoPendente = useRef<string | null>(null);
   const [removendo, setRemovendo] = useState<string | null>(null);
 
-  const { estado, enfileirar, reportarErro, limparErro } = useAutosave();
+  const { estado, enfileirar, reportarErro, reportarPendencia, limparErro } =
+    useAutosave();
 
   useEffect(() => {
     if (!focoPendente.current) return;
@@ -181,13 +183,34 @@ export function GradeEditavel({
     });
   }
 
+  /**
+   * A linha só vai para o servidor quando está inteira.
+   *
+   * Escolher "anual" ou "meses escolhidos" na frequência torna obrigatório um
+   * campo que ainda está vazio. Gravar nesse instante tomaria erro e reverteria
+   * a linha — desfazendo a escolha recém-feita e escondendo de novo o campo que
+   * falta preencher. Então a mudança fica na tela, o campo dependente aparece,
+   * e a gravação acontece quando ele for preenchido.
+   */
+  function gravarSeCompleta(linhaId: string) {
+    const linha = linhasRef.current.find((l) => l.id === linhaId);
+    if (!linha) return;
+
+    const faltando = camposPendentes(esquema, linha.valores);
+    if (faltando.length > 0) {
+      reportarPendencia(`Falta preencher: ${faltando.map((c) => c.label).join(", ")}`);
+      return;
+    }
+    gravar(linhaId);
+  }
+
   function confirmarCelula(linhaId: string, key: string, valor: string) {
     atualizarLinhas((ls) =>
       ls.map((l) =>
         l.id === linhaId ? { ...l, valores: { ...l.valores, [key]: valor } } : l,
       ),
     );
-    gravar(linhaId);
+    gravarSeCompleta(linhaId);
   }
 
   function confirmarNova(key: string, valor: string) {
@@ -207,7 +230,9 @@ export function GradeEditavel({
     const proxima = campos[campos.findIndex((c) => c.key === key) + 1];
     if (proxima) focoPendente.current = `${tempId}:${proxima.key}`;
 
-    gravar(tempId);
+    // Mesma regra da edição: a linha nova espera estar completa para nascer no
+    // banco. Até lá ela existe só na tela, e o indicador diz o que falta.
+    gravarSeCompleta(tempId);
   }
 
   /**

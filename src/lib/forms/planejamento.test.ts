@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Constants } from "@/lib/supabase/database.types";
 import {
   ENTIDADES,
+  camposPendentes,
   camposVisiveis,
   dataParaMes,
   escreverDecimal,
@@ -292,5 +293,90 @@ describe("integridade do esquema", () => {
         expect(c.key.startsWith("__"), `${chave}.${c.key}`).toBe(false);
       }
     }
+  });
+});
+
+/**
+ * O bug de 07/08/2026: escolher "meses escolhidos" na frequência deixava a
+ * linha momentaneamente inválida, o grid gravava mesmo assim, o servidor
+ * recusava e a reversão desfazia a escolha — escondendo de novo o campo que
+ * faltava preencher. O planejador ficava presos num laço.
+ */
+describe("campos que só nascem obrigatórios depois de outra escolha", () => {
+  it("frequência mensal não pede mês nem meses", () => {
+    const pendentes = camposPendentes(ENTIDADES.receita, {
+      fonte: "Salário",
+      valor: "8500",
+      frequencia: "mensal",
+    });
+    expect(pendentes).toHaveLength(0);
+  });
+
+  it("escolher 'meses' passa a exigir quais meses", () => {
+    const pendentes = camposPendentes(ENTIDADES.receita, {
+      fonte: "Salário",
+      valor: "8500",
+      frequencia: "meses",
+      meses: "",
+    });
+    expect(pendentes.map((c) => c.key)).toEqual(["meses"]);
+  });
+
+  it("escolher 'anual' passa a exigir o mês de ocorrência", () => {
+    const pendentes = camposPendentes(ENTIDADES.receita, {
+      fonte: "Salário",
+      valor: "8500",
+      frequencia: "anual",
+      mes_ocorrencia: "",
+    });
+    expect(pendentes.map((c) => c.key)).toEqual(["mes_ocorrencia"]);
+  });
+
+  it("preenchido o dependente, a linha fica pronta para gravar", () => {
+    expect(
+      camposPendentes(ENTIDADES.receita, {
+        fonte: "Salário",
+        valor: "8500",
+        frequencia: "meses",
+        meses: "1,2,3",
+      }),
+    ).toHaveLength(0);
+  });
+
+  it("voltar para mensal libera a linha sem preencher o dependente", () => {
+    // O campo some por `visivelSe`, então deixa de ser exigido.
+    expect(
+      camposPendentes(ENTIDADES.receita, {
+        fonte: "Salário",
+        valor: "8500",
+        frequencia: "mensal",
+        meses: "",
+      }),
+    ).toHaveLength(0);
+  });
+
+  it("caixa desmarcada não conta como pendência", () => {
+    // Uma booleana falsa é resposta, não ausência — senão nenhum objetivo
+    // poderia ser gravado sem ser marcado como concluído.
+    const pendentes = camposPendentes(ENTIDADES.objetivo, {
+      titulo: "Reserva",
+      prazo: "curto",
+      alvo: "40000",
+      data_alvo: "2027-01",
+      concluido: "",
+    });
+    expect(pendentes.map((c) => c.key)).not.toContain("concluido");
+  });
+
+  it("objetivo de curto prazo pede data; o de longo pede periodicidade", () => {
+    const curto = camposPendentes(ENTIDADES.objetivo, {
+      titulo: "Reserva", prazo: "curto", alvo: "40000",
+    });
+    expect(curto.map((c) => c.key)).toEqual(["data_alvo"]);
+
+    const longo = camposPendentes(ENTIDADES.objetivo, {
+      titulo: "Viagem", prazo: "longo", alvo: "20000",
+    });
+    expect(longo.map((c) => c.key)).toEqual(["periodicidade_anos"]);
   });
 });
