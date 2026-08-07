@@ -106,7 +106,7 @@ export function SeletorPeriodo({
       {abrindo && (
         <DialogoNovoPeriodo
           clientId={clientId}
-          proximo={corrente?.inicio ?? null}
+          periodoCorrente={corrente?.inicio ?? null}
           onFechar={() => setAbrindo(false)}
         />
       )}
@@ -116,11 +116,12 @@ export function SeletorPeriodo({
 
 function DialogoNovoPeriodo({
   clientId,
-  proximo,
+  periodoCorrente,
   onFechar,
 }: {
   clientId: string;
-  proximo: string | null;
+  /** Início do período que está aberto hoje — o que será arquivado. */
+  periodoCorrente: string | null;
   onFechar: () => void;
 }) {
   const [estado, acao, pendente] = useActionState<Estado, FormData>(
@@ -168,11 +169,11 @@ function DialogoNovoPeriodo({
 
           <div className="px-6 py-5 flex flex-col gap-4">
             <p className="font-inter text-sm text-slate-600">
-              O período novo nasce como cópia fiel do atual
-              {proximo ? ` (${rotulo(proximo)})` : ""} — receitas, custos,
-              dívidas, patrimônio, objetivos e mudanças. Você mexe só no que
-              mudou enquanto conversa com o cliente, e o período anterior fica
-              guardado como estava.
+              O período novo nasce do <b>planejamento HFC</b> — o que foi
+              combinado com o cliente — já com os ajustes que você fixou como
+              permanentes nos períodos anteriores. O que foi marcado como
+              pontual não viaja: o mês excepcional ficou para trás.
+              {periodoCorrente ? ` O período de ${rotulo(periodoCorrente)} fica guardado como está.` : ""}
             </p>
 
             <div>

@@ -30,12 +30,14 @@ export function BlocoCategoria({
   linhas,
   planId,
   clientId,
+  comPin,
   aoRemover,
 }: {
   bloco: { id: string; nome: string };
   linhas: LinhaGrid[];
   planId: string;
   clientId: string;
+  comPin?: boolean;
   aoRemover: (blocoId: string) => void;
 }) {
   const [nome, setNome] = useState(bloco.nome);
@@ -135,6 +137,7 @@ export function BlocoCategoria({
         planId={planId}
         clientId={clientId}
         categoriaPlanId={bloco.id}
+        comPin={comPin}
         colunaTotal="valor"
         vazio="Nenhuma despesa neste bloco ainda."
       />

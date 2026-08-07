@@ -25,6 +25,7 @@ export async function SecaoDespesa({ clienteId, plano }: SecaoProps) {
         planId={plano.id}
         clientId={clienteId}
         sugestoes={sugestoes}
+        comPin={plano.tipo === "real"}
         blocos={blocos.map((b) => ({
           id: b.id,
           nome: b.nome,

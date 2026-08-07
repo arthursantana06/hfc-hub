@@ -32,6 +32,7 @@ export async function SecaoObjetivos({ clienteId, plano }: SecaoProps) {
           }))}
           planId={plano.id}
           clientId={clienteId}
+          comPin={plano.tipo === "real"}
           vazio="Nenhum objetivo ainda."
         />
       </Card>
@@ -48,6 +49,7 @@ export async function SecaoObjetivos({ clienteId, plano }: SecaoProps) {
           }))}
           planId={plano.id}
           clientId={clienteId}
+          comPin={plano.tipo === "real"}
           vazio="Nenhuma mudança — é o que move a projeção para longe do mês típico."
         />
       </Card>

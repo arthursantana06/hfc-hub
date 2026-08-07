@@ -25,12 +25,14 @@ export function PainelDespesa({
   sugestoes,
   planId,
   clientId,
+  comPin,
 }: {
   blocos: BlocoComLinhas[];
   /** Nomes de categoria já usados na organização, para o autocomplete. */
   sugestoes: string[];
   planId: string;
   clientId: string;
+  comPin?: boolean;
 }) {
   const [blocos, setBlocos] = useState(blocosIniciais);
 
@@ -50,6 +52,7 @@ export function PainelDespesa({
           linhas={b.linhas}
           planId={planId}
           clientId={clientId}
+          comPin={comPin}
           aoRemover={(id) => setBlocos((bs) => bs.filter((x) => x.id !== id))}
         />
       ))}

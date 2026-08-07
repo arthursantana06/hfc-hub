@@ -13,6 +13,7 @@ import {
   montarRegistro,
   type Entidade,
 } from "@/lib/forms/planejamento";
+import { montarPeriodoReal, type LinhaHerdavel } from "@/lib/planning/heranca";
 
 export type Estado = { erro?: string; ok?: string } | undefined;
 
@@ -448,13 +449,21 @@ function mesCorrente(): string {
 /** Quantos meses cada cadência anda entre um período e o seguinte. */
 const PASSO: Record<string, number> = { mensal: 1, bimestral: 2, trimestral: 3 };
 
-/** As listas que compõem um raio-x. Abrir um período copia todas elas. */
+/**
+ * As listas que compõem um planejamento, na ordem em que são clonadas.
+ *
+ * `plan_expense_category` vem antes de `plan_expense` de propósito: a despesa
+ * pendura no bloco, e o bloco novo precisa existir (com id novo) antes que a
+ * despesa possa apontar para ele.
+ */
 const TABELAS_DO_PLANO = [
+  "plan_expense_category",
   "plan_income",
   "plan_expense",
   "plan_pension",
   "plan_insurance",
   "plan_change",
+  "plan_card_purchase",
   "debt",
   "goal",
   "asset",
@@ -463,16 +472,17 @@ const TABELAS_DO_PLANO = [
 ] as const;
 
 /**
- * Abre o próximo período de planejamento.
+ * Abre o próximo período do Planejamento Real.
  *
- * O período novo nasce como cópia fiel do anterior — é assim que a reunião
- * começa: com o retrato de como as coisas estavam, para o planejador mexer no
- * que mudou enquanto conversa com o cliente. O período anterior é arquivado e
- * fica lá, intacto: é o que permite olhar para trás e ver o que mudou entre
- * duas conversas.
+ * O período novo NÃO é uma cópia do anterior: ele nasce do HFC — o plano
+ * combinado — com os ajustes que o planejador marcou como permanentes já
+ * aplicados. A regra inteira está em `montarPeriodoReal`, testada à parte;
+ * aqui fica só a costura com o banco.
  *
- * Partir de um plano em branco a cada mês seria pedir que se redigitasse a vida
- * do cliente inteira toda vez, e ninguém faria isso duas vezes.
+ * Copiar o mês anterior inteiro (como fazia a versão antiga) arrastava para
+ * frente todo gasto excepcional — o conserto do carro viraria despesa fixa por
+ * esquecimento. Partir do HFC sem memória alguma apagaria a cada mês o que a
+ * reunião passada decidiu. Daí o híbrido.
  */
 export async function abrirPeriodo(
   _estado: Estado,
@@ -485,7 +495,23 @@ export async function abrirPeriodo(
   if (!clientId) return { erro: "Cliente não identificado." };
 
   const supabase = await createClient();
+
+  // O HFC é a base de tudo. Sem ele não há de onde herdar.
+  const { data: hfc } = await supabase
+    .from("financial_plan")
+    .select("*")
+    .eq("client_id", clientId)
+    .eq("tipo", "hfc")
+    .maybeSingle();
+
+  if (!hfc) {
+    return {
+      erro: "Crie o planejamento HFC antes: é dele que cada período do Real nasce.",
+    };
+  }
+
   // Só o Real tem períodos — Pré-HFC e HFC também são `ativo`, mas são retratos.
+  // Sem período ativo, este é o primeiro: o Real começa sendo o HFC.
   const { data: atual } = await supabase
     .from("financial_plan")
     .select("*")
@@ -494,36 +520,37 @@ export async function abrirPeriodo(
     .eq("tipo", "real")
     .maybeSingle();
 
-  if (!atual) {
-    return { erro: "Não há período aberto para continuar. Crie o plano primeiro." };
-  }
+  const base = atual ?? hfc;
 
   // O mês pedido manda; sem ele, a cadência decide. Assim o planejador que
   // atrasou uma reunião não fica preso a um calendário que não seguiu.
   const pedido = mesParaData(String(form.get("mes") ?? ""));
   const proximo =
-    pedido ?? somarMeses(atual.inicio, PASSO[atual.cadencia] ?? 1);
+    pedido ?? somarMeses(base.inicio, atual ? (PASSO[base.cadencia] ?? 1) : 0);
 
-  if (proximo <= atual.inicio) {
+  if (atual && proximo <= atual.inicio) {
     return { erro: "O período novo precisa vir depois do atual." };
   }
 
-  const premissas = semChavesProprias(atual);
+  const premissas = semChavesProprias(base);
 
   // Arquivar antes de inserir: o índice parcial só admite um período ativo por
   // cliente, e é ele que impede duas versões concorrentes do mesmo raio-x.
-  const { error: erroArquivo } = await supabase
-    .from("financial_plan")
-    .update({ status: "arquivado" })
-    .eq("id", atual.id);
-  if (erroArquivo) return { erro: mensagem(erroArquivo.message) };
+  if (atual) {
+    const { error: erroArquivo } = await supabase
+      .from("financial_plan")
+      .update({ status: "arquivado" })
+      .eq("id", atual.id);
+    if (erroArquivo) return { erro: mensagem(erroArquivo.message) };
+  }
 
   const { data: novo, error } = await supabase
     .from("financial_plan")
     .insert({
       ...premissas,
+      tipo: "real",
       inicio: proximo,
-      versao: atual.versao + 1,
+      versao: (atual?.versao ?? 0) + 1,
       status: "ativo",
       updated_at: new Date().toISOString(),
     })
@@ -533,35 +560,92 @@ export async function abrirPeriodo(
   if (error || !novo) {
     // Sem o plano novo, desfazer o arquivamento — senão o cliente fica sem
     // período aberto por causa de uma falha de escrita.
-    await supabase.from("financial_plan").update({ status: "ativo" }).eq("id", atual.id);
+    if (atual) {
+      await supabase.from("financial_plan").update({ status: "ativo" }).eq("id", atual.id);
+    }
     return { erro: mensagem(error?.message ?? "") };
   }
 
-  for (const tabela of TABELAS_DO_PLANO) {
-    const { data: linhas } = await generico(supabase)
-      .from(tabela)
-      .select("*")
-      .eq("plan_id", atual.id);
+  const erroHeranca = await herdarTabelas(supabase, {
+    hfcId: hfc.id,
+    anteriorId: atual?.id ?? null,
+    novoId: novo.id,
+    orgId: a.user.org_id,
+  });
 
-    const copias = (linhas ?? []).map((l: Record<string, unknown>) => ({
-      ...semChavesProprias(l),
-      plan_id: novo.id,
-    }));
-
-    if (copias.length === 0) continue;
-    const { error: erroCopia } = await generico(supabase).from(tabela).insert(copias);
-    if (erroCopia) return { erro: mensagem(erroCopia.message) };
-  }
-
-  // A aposentadoria é 1:1 com o cliente (`client_id unique`): em vez de copiar,
-  // ela passa a apontar para o período novo.
-  await supabase
-    .from("retirement_plan")
-    .update({ plan_id: novo.id })
-    .eq("client_id", clientId);
+  if (erroHeranca) return { erro: erroHeranca };
 
   revalidatePath("/", "layout");
-  return { ok: `Período de ${rotuloDoMes(proximo)} aberto, copiado do anterior.` };
+  return atual
+    ? { ok: `Período de ${rotuloDoMes(proximo)} aberto a partir do HFC.` }
+    : { ok: `Primeiro período do Real aberto em ${rotuloDoMes(proximo)}, igual ao HFC.` };
+}
+
+/**
+ * Roda a herança nas doze tabelas e grava o resultado.
+ *
+ * As linhas do período anterior são lidas SEM filtrar `suprimido`: é o
+ * tombstone que impede uma remoção permanente de ser desfeita na virada.
+ */
+async function herdarTabelas(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  ids: { hfcId: string; anteriorId: string | null; novoId: string; orgId: string },
+): Promise<string | undefined> {
+  // Origem da categoria (no HFC ou no período anterior) → id do bloco novo.
+  // A despesa herdada aponta para um bloco que acabou de ganhar id.
+  const blocoNovo = new Map<string, string>();
+
+  for (const tabela of TABELAS_DO_PLANO) {
+    const [{ data: doHfc }, anterior] = await Promise.all([
+      generico(supabase).from(tabela).select("*").eq("plan_id", ids.hfcId),
+      ids.anteriorId
+        ? generico(supabase).from(tabela).select("*").eq("plan_id", ids.anteriorId)
+        : Promise.resolve({ data: null }),
+    ]);
+
+    const novas = montarPeriodoReal(
+      (doHfc ?? []) as LinhaHerdavel[],
+      (anterior.data ?? null) as LinhaHerdavel[] | null,
+    );
+    if (novas.length === 0) continue;
+
+    const registros: Record<string, unknown>[] = [];
+    for (const linha of novas) {
+      const registro = {
+        ...semChavesProprias(linha),
+        plan_id: ids.novoId,
+        org_id: ids.orgId,
+      } as Record<string, unknown>;
+
+      if (tabela === "plan_expense") {
+        // O bloco de origem é o que a linha trazia; o novo id veio do passo
+        // anterior deste mesmo laço. Sem mapeamento a despesa ficaria órfã e o
+        // insert quebraria na chave estrangeira — melhor deixá-la de fora e
+        // seguir do que abortar o período inteiro por uma linha.
+        const destino = blocoNovo.get(String(linha.categoria_plan_id ?? ""));
+        if (!destino) continue;
+        registro.categoria_plan_id = destino;
+      }
+
+      registros.push(registro);
+    }
+    if (registros.length === 0) continue;
+
+    const { data: inseridas, error } = await generico(supabase)
+      .from(tabela)
+      .insert(registros)
+      .select("id");
+    if (error) return mensagem(error.message);
+
+    if (tabela === "plan_expense_category") {
+      // `insert` devolve na mesma ordem enviada, que é a ordem de `novas`.
+      (inseridas ?? []).forEach((nova: { id: string }, i: number) => {
+        blocoNovo.set(String(novas[i].id), nova.id);
+      });
+    }
+  }
+
+  return undefined;
 }
 
 /**

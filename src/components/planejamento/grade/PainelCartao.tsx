@@ -26,12 +26,14 @@ export function PainelCartao({
   planId,
   clientId,
   inicioDoPlano,
+  comPin,
 }: {
   linhas: LinhaGrid[];
   planId: string;
   clientId: string;
   /** `financial_plan.inicio` (ISO) — o primeiro mês da janela de fatura. */
   inicioDoPlano: string;
+  comPin?: boolean;
 }) {
   const [linhas, setLinhas] = useState(linhasIniciais);
 
@@ -53,6 +55,7 @@ export function PainelCartao({
           linhas={linhasIniciais}
           planId={planId}
           clientId={clientId}
+          comPin={comPin}
           colunaTotal="valor_parcela"
           vazio="Nenhuma compra parcelada — a fatura projetada nasce daqui."
           aoMudarLinhas={setLinhas}

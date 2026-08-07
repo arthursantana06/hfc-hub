@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { estrelasPara } from "./scorecard";
+import { buildScorecard, estrelasPara } from "./scorecard";
+import { fromISO } from "./period";
+import type { ProjectionMonth } from "./types";
 
 /**
  * A régua decidida em 27/07/2026: desvio ABSOLUTO da meta, não percentual
@@ -69,5 +71,62 @@ describe("régua das estrelas", () => {
     expect(estrelasPara("despesas", 41596.14 / 39476.43)).toBe(4);
     expect(estrelasPara("sobras", 7825 / 9944.71)).toBe(2);
     expect(estrelasPara("investimentos", 34429.87 / 38549.58)).toBe(3);
+  });
+});
+
+/**
+ * O uso novo (Fase 2): o placar do Acompanhamento compara o período do
+ * Planejamento Real com o HFC no mesmo mês. É a mesma função de sempre — o que
+ * muda é de onde vêm as duas séries.
+ */
+describe("placar do Acompanhamento — Real contra HFC", () => {
+  const mes = (periodo: number, p: Partial<ProjectionMonth>): ProjectionMonth => ({
+    periodo,
+    receitas: 10000,
+    despesas: -6000,
+    dividas: -1000,
+    previdencia: -500,
+    sobras: 2500,
+    objetivos: 0,
+    patrimonio: 100000,
+    observacoes: [],
+    ...p,
+  });
+
+  const refMes = fromISO("2026-08-01");
+
+  it("mês idêntico ao HFC dá cinco estrelas nas quatro métricas", () => {
+    const linhas = buildScorecard(refMes, [mes(refMes, {})], [mes(refMes, {})]);
+
+    expect(linhas).toHaveLength(4);
+    expect(linhas.every((l) => l.estrelas === 5)).toBe(true);
+  });
+
+  it("estourar a despesa no mês derruba a nota daquela métrica só", () => {
+    // O Real gastou 7.800 onde o HFC previa 6.000 — 20% acima somando dívidas
+    // e previdência, que é como a linha "Despesas" é composta.
+    const real = [mes(refMes, { despesas: -7800 })];
+    const hfc = [mes(refMes, {})];
+
+    const linhas = buildScorecard(refMes, real, hfc);
+    const por = (m: string) => linhas.find((l) => l.metrica === m)!;
+
+    expect(por("despesas").estrelas).toBeLessThan(5);
+    expect(por("despesas").leitura).toContain("acima do orçado");
+    expect(por("receitas").estrelas).toBe(5);
+  });
+
+  it("sobrar mais que o combinado continua valendo nota máxima", () => {
+    const real = [mes(refMes, { sobras: 4000 })];
+    const hfc = [mes(refMes, { sobras: 2500 })];
+
+    expect(buildScorecard(refMes, real, hfc).find((l) => l.metrica === "sobras")!.estrelas).toBe(5);
+  });
+
+  it("mês fora da janela de um dos lados não inventa placar", () => {
+    // O período do Real pode ser anterior ao início do HFC — devolver zeros
+    // ali seria mostrar "0% da meta" para um mês que ninguém planejou.
+    expect(buildScorecard(refMes, [], [mes(refMes, {})])).toEqual([]);
+    expect(buildScorecard(refMes, [mes(refMes, {})], [])).toEqual([]);
   });
 });

@@ -33,6 +33,7 @@ export async function SecaoPassivos({ clienteId, plano }: SecaoProps) {
           }))}
           planId={plano.id}
           clientId={clienteId}
+          comPin={plano.tipo === "real"}
           colunaTotal="parcela"
           vazio="Nenhuma dívida parcelada neste planejamento."
         />
@@ -50,6 +51,7 @@ export async function SecaoPassivos({ clienteId, plano }: SecaoProps) {
           }))}
           planId={plano.id}
           clientId={clienteId}
+          comPin={plano.tipo === "real"}
           colunaTotal="valor"
           vazio="Nenhum passivo sem parcela — o que tem parcela é dívida, acima."
         />

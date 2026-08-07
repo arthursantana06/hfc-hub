@@ -1,373 +1,269 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { ArrowRight, FileText, Target } from "lucide-react";
 import {
-  AlertTriangle,
-  ArrowRight,
-  CalendarPlus,
-  FileText,
-  LineChart,
-  Snowflake,
-  Umbrella,
-} from "lucide-react";
-import {
-  getMetas,
   getPlanInput,
-  getPlanoAtivo,
+  getPlanejamento,
+  getPlanoDoPeriodo,
+  listPeriodos,
   listRegistrosMensais,
 } from "@/lib/planning-dal";
-import { createClient } from "@/lib/supabase/server";
-import { verifySession } from "@/lib/dal";
-import { hashDoPlano, project, type ProjectionResult } from "@/lib/planning/project";
-import { anoDe, mesDe, nomeDoMes, rotuloCurto, toISO } from "@/lib/planning/period";
-import type { PlanInput } from "@/lib/planning/types";
-import { formatCurrency } from "@/lib/types";
-import { Card, Linha, SemPlano, Stat } from "@/components/planejamento/primitives";
-import { FluxoProjetado } from "@/components/planejamento/FluxoProjetado";
-import { GraficoPatrimonio } from "@/components/planejamento/GraficoPatrimonio";
-import { TabelaProjecao } from "@/components/planejamento/TabelaProjecao";
-import {
-  BotaoCongelarMetas,
-  FormularioAbrirMes,
-} from "@/components/planejamento/AcoesMes";
+import { project } from "@/lib/planning/project";
+import { buildScorecard } from "@/lib/planning/scorecard";
+import { fromISO, nomeDoMes, anoDe } from "@/lib/planning/period";
+import { Card } from "@/components/planejamento/primitives";
+import { Placar } from "@/components/planejamento/Placar";
+import { SeletorPeriodo } from "@/components/planejamento/SeletorPeriodo";
+import { SecaoReceita } from "@/components/planejamento/secoes/SecaoReceita";
+import { SecaoDespesa } from "@/components/planejamento/secoes/SecaoDespesa";
+import { SecaoCartao } from "@/components/planejamento/secoes/SecaoCartao";
+
+export const metadata = { title: "Acompanhamento — HFC Hub" };
+
+/** As seções que não mudam toda reunião ficam a um clique, não na rolagem. */
+const OUTRAS_SECOES = [
+  { slug: "ativos", rotulo: "Ativos" },
+  { slug: "passivos", rotulo: "Passivos" },
+  { slug: "investimentos", rotulo: "Investimentos" },
+  { slug: "objetivos", rotulo: "Objetivos e Mudanças" },
+  { slug: "projecao", rotulo: "Projeção" },
+];
 
 /**
- * Acompanhamento: o diagnóstico e o fechamento mensal na mesma tela.
+ * Acompanhamento: a página que o planejador abre durante a reunião.
  *
- * Eram duas abas — "Diagnóstico & Metas" e "Relatórios" — e a divisão obrigava
- * o planejador a saltar entre elas para responder a uma pergunta só: como o
- * cliente está indo contra o que combinamos. O alvo e a medição agora ficam
- * juntos, na ordem em que se conversa sobre eles.
+ * Duas coisas, na ordem em que a conversa acontece. Primeiro a **síntese**:
+ * como o mês ficou contra o que foi combinado no HFC, com as quatro métricas e
+ * as estrelas — que agora saem de uma régua e não mais da digitação à mão da
+ * planilha. Depois a **edição do período**, para ajustar o que o cliente conta
+ * enquanto conta.
+ *
+ * Só Receita, Despesa e Cartão vêm embutidas: são as que mudam em toda reunião.
+ * Empilhar as oito faria a síntese sumir da tela no primeiro rolar, e é ela que
+ * dá o assunto da conversa.
  */
 export default async function Acompanhamento({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ periodo?: string }>;
 }) {
-  const { id } = await params;
-  await verifySession();
-  const supabase = await createClient();
+  const [{ id }, { periodo }] = await Promise.all([params, searchParams]);
 
-  const [plan, plano, metas, registros, relatorios] = await Promise.all([
-    getPlanInput(id),
-    getPlanoAtivo(id),
-    getMetas(id),
-    listRegistrosMensais(id),
-    supabase
-      .from("report")
-      .select("*")
-      .eq("client_id", id)
-      .order("ref_mes", { ascending: false }),
+  const [hfc, periodos] = await Promise.all([
+    getPlanejamento(id, "hfc"),
+    listPeriodos(id),
   ]);
+
+  const real = periodo
+    ? ((await getPlanoDoPeriodo(id, periodo))?.tipo === "real"
+        ? await getPlanoDoPeriodo(id, periodo)
+        : await getPlanejamento(id, "real"))
+    : await getPlanejamento(id, "real");
 
   return (
     <>
       <header className="p-8 pb-6 shrink-0 border-b border-slate-200/60 bg-white shadow-sm z-0">
-        <h1 className="font-poppins font-medium text-2xl text-brand-950">
-          Acompanhamento
-        </h1>
-        <p className="font-inter text-sm text-slate-500 mt-1">
-          A projeção do plano e o que cada mês devolveu dela.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+          <div className="min-w-0">
+            <h1 className="font-poppins font-medium text-2xl text-brand-950">
+              Acompanhamento
+            </h1>
+            <p className="font-inter text-sm text-slate-500 mt-1">
+              {real
+                ? `Período de ${rotuloDoMes(real.inicio)} — o mês contra o que foi combinado.`
+                : "O mês contra o que foi combinado no HFC."}
+            </p>
+          </div>
+
+          <Suspense fallback={null}>
+            <SeletorPeriodo
+              clientId={id}
+              periodos={periodos.map((p) => ({
+                id: p.id,
+                versao: p.versao,
+                inicio: p.inicio,
+                status: p.status,
+              }))}
+            />
+          </Suspense>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-8">
-        {!plan ? (
-          <SemPlano clienteId={id} />
-        ) : (
-          <div className="flex flex-col gap-6 max-w-7xl mx-auto">
-            <Projecao plan={plan} />
-            <Fechamento
-              clientId={id}
-              plan={plan}
-              planoId={plano?.id ?? null}
-              inicioPlano={plano?.inicio ?? null}
-              metas={metas}
-              registros={registros}
-              relatorios={relatorios.data ?? []}
-            />
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
+        <div className="flex flex-col gap-6 max-w-7xl mx-auto">
+          {!hfc ? (
+            <SemBase clienteId={id} />
+          ) : !real ? (
+            <SemPeriodo clienteId={id} />
+          ) : (
+            <>
+              <Sintese clienteId={id} hfcId={hfc.id} realId={real.id} inicio={real.inicio} />
+              <SecaoReceita clienteId={id} plano={real} />
+              <SecaoDespesa clienteId={id} plano={real} />
+              <SecaoCartao clienteId={id} plano={real} />
+              <OutrasSecoes clienteId={id} periodoId={real.id} corrente={real.status === "ativo"} />
+            </>
+          )}
 
-// ─────────────────────────────────────────────────────────────
-// Projeção
-// ─────────────────────────────────────────────────────────────
-
-function Projecao({ plan }: { plan: PlanInput }) {
-  // As duas leituras do mesmo plano. Projetar duas vezes custa menos de dois
-  // milissegundos e evita mandar o motor para o navegador só para alternar uma
-  // visão.
-  const nominal = project(comModo(plan, "nominal"));
-  const real = project(comModo(plan, "real"));
-  const proj = plan.assumptions.modoValor === "real" ? real : nominal;
-
-  return (
-    <>
-      <Aposentadoria proj={proj} />
-      <FluxoProjetado
-        modoDoPlano={plan.assumptions.modoValor}
-        inflacao={plan.assumptions.inflacao}
-        nominal={nominal.meses.map(paraMes)}
-        real={real.meses.map(paraMes)}
-      />
-      <Longa proj={proj} />
-    </>
-  );
-}
-
-const comModo = (plan: PlanInput, modoValor: "nominal" | "real"): PlanInput => ({
-  ...plan,
-  assumptions: { ...plan.assumptions, modoValor },
-});
-
-const paraMes = (m: ProjectionResult["meses"][number]) => ({
-  periodo: m.periodo,
-  rotulo: `${nomeDoMes(m.periodo)} de ${anoDe(m.periodo)}`,
-  rotuloCurto: rotuloCurto(m.periodo),
-  ano: anoDe(m.periodo),
-  receitas: m.receitas,
-  despesas: m.despesas,
-  dividas: m.dividas,
-  previdencia: m.previdencia,
-  sobras: m.sobras,
-  objetivos: m.objetivos,
-  patrimonio: m.patrimonio,
-  marco: m.observacoes[0],
-});
-
-function Aposentadoria({ proj }: { proj: ProjectionResult }) {
-  const d = proj.desfecho;
-  const cobertura = d.rendaDesejada > 0 ? d.rendaTotal / d.rendaDesejada : null;
-
-  return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Stat
-          rotulo={`Patrimônio em ${d.anoAposentadoria}`}
-          valor={formatCurrency(d.patrimonioNaAposentadoria, 0)}
-          hint={`aos ${d.idadeAlvo} anos`}
-        />
-        <Stat
-          rotulo="Renda na aposentadoria"
-          valor={formatCurrency(d.rendaTotal, 2)}
-          tom={cobertura !== null && cobertura >= 1 ? "bom" : "atencao"}
-          hint={
-            cobertura !== null
-              ? `${(cobertura * 100).toFixed(0)}% da renda desejada`
-              : undefined
-          }
-        />
-        <Stat
-          rotulo="Renda desejada"
-          valor={formatCurrency(d.rendaDesejada, 2)}
-          hint={
-            d.rendaDesejada > d.rendaTotal
-              ? `faltam ${formatCurrency(d.rendaDesejada - d.rendaTotal, 2)}`
-              : "coberta"
-          }
-        />
-        <Stat
-          rotulo="O dinheiro acaba"
-          valor={d.anoDeRuina ? `${d.anoDeRuina}` : "não acaba"}
-          tom={d.anoDeRuina ? "ruim" : "bom"}
-          hint={d.idadeDeRuina ? `aos ${d.idadeDeRuina} anos` : "dentro do horizonte"}
-        />
-      </div>
-
-      {d.anoDeRuina !== null && (
-        <div className="bg-white rounded-xl border border-red-200 border-l-4 border-l-red-500 shadow-sm p-6 flex items-start gap-4">
-          <div className="p-2 bg-red-50 rounded-lg text-red-600 shrink-0">
-            <AlertTriangle className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="font-poppins text-lg text-brand-950 font-medium">
-              O patrimônio zera aos {d.idadeDeRuina} anos
-            </h2>
-            <p className="font-inter text-sm text-slate-600 mt-1 max-w-3xl">
-              Depois de {d.anoAposentadoria} a renda cai para os{" "}
-              {formatCurrency(d.rendaInss, 2)} do INSS, enquanto o custo de vida
-              projetado continua. A diferença sai do patrimônio todo ano, e ele
-              se esgota em {d.anoDeRuina}. Adiar a aposentadoria, cortar o custo
-              projetado ou elevar o aporte mensal são as três alavancas.
-            </p>
-          </div>
+          <Legado clienteId={id} />
         </div>
-      )}
+      </div>
+    </>
+  );
+}
 
-      <Card titulo="Composição da renda na aposentadoria" icone={Umbrella} tom="roxo">
-        <Linha nome="INSS" detalhe="renda declarada no plano" valor={d.rendaInss} />
-        <Linha
-          nome="Renda privada"
-          detalhe="rendimento real de um mês do patrimônio acumulado"
-          valor={d.rendaPrivada}
-        />
-        <Linha nome="Total" valor={d.rendaTotal} destaque />
-        <p className="font-inter text-xs text-slate-400 mt-4">
-          A renda privada é o quanto o patrimônio rende por mês sem consumir o
-          principal. Ela não é sacada na projeção — o modelo saca o déficit
-          inteiro, que é por isso que o patrimônio cai mesmo com renda positiva.
+/**
+ * A síntese do mês: o período do Real contra o HFC, no mesmo mês.
+ *
+ * Os dois lados são projeções — plano contra plano. Nenhum deles vem de
+ * extrato bancário, e a tela diz isso, para ninguém ler as estrelas como se
+ * fossem a conciliação do banco.
+ */
+async function Sintese({
+  clienteId,
+  hfcId,
+  realId,
+  inicio,
+}: {
+  clienteId: string;
+  hfcId: string;
+  realId: string;
+  inicio: string;
+}) {
+  const [planHfc, planReal] = await Promise.all([
+    getPlanInput(clienteId, hfcId),
+    getPlanInput(clienteId, realId),
+  ]);
+
+  if (!planHfc || !planReal) {
+    return (
+      <Card titulo="Síntese do mês" icone={Target} tom="brand">
+        <p className="font-inter text-sm text-slate-500">
+          Para comparar, o cadastro do cliente precisa da data de nascimento — é
+          ela que fecha a projeção dos dois lados.
         </p>
       </Card>
-    </>
-  );
-}
+    );
+  }
 
-function Longa({ proj }: { proj: ProjectionResult }) {
+  const refMes = fromISO(inicio);
+  const linhas = buildScorecard(refMes, project(planReal).meses, project(planHfc).meses);
+
   return (
-    <Card titulo="Projeção longa — até a aposentadoria" icone={LineChart}>
-      <GraficoPatrimonio
-        pontos={proj.longa.map((y) => ({
-          rotulo: String(y.ano),
-          valor: y.patrimonio,
-        }))}
-      />
-      <TabelaProjecao
-        rotulo="ano"
-        linhas={proj.longa.map((y) => ({
-          chave: String(y.ano),
-          rotulo: String(y.ano),
-          marco: `${y.idade} anos`,
-          valores: [y.receitas, y.despesas, y.dividas, y.sobras, y.objetivos, y.patrimonio],
-        }))}
-        colunas={["Receitas", "Despesas", "Dívidas", "Sobras", "Objetivos", "Patrimônio"]}
-      />
+    <Card titulo={`Síntese de ${rotuloDoMes(inicio)}`} icone={Target} tom="brand">
+      <Placar linhas={linhas} />
+      <p className="font-inter text-xs text-slate-400 mt-4">
+        Realizado é a projeção deste período do Planejamento Real; a meta é a do
+        HFC no mesmo mês. As estrelas medem o desvio da meta — superar só conta
+        como acerto em sobras e investimentos.
+      </p>
     </Card>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Fechamento mensal
-// ─────────────────────────────────────────────────────────────
-
-type Registro = Awaited<ReturnType<typeof listRegistrosMensais>>[number];
-type Relatorio = { ref_mes: string | null; status: string };
-
-function Fechamento({
-  clientId,
-  plan,
-  planoId,
-  inicioPlano,
-  metas,
-  registros,
-  relatorios,
+function OutrasSecoes({
+  clienteId,
+  periodoId,
+  corrente,
 }: {
-  clientId: string;
-  plan: PlanInput;
-  planoId: string | null;
-  inicioPlano: string | null;
-  metas: Awaited<ReturnType<typeof getMetas>>;
-  registros: Registro[];
-  relatorios: Relatorio[];
+  clienteId: string;
+  periodoId: string;
+  corrente: boolean;
 }) {
-  const porMes = new Map(relatorios.map((r) => [r.ref_mes ?? "", r]));
-
-  // O plano mudou desde que as metas foram congeladas?
-  const desatualizado =
-    metas !== null && metas.hash !== null && metas.hash !== hashDoPlano(plan);
-
-  const sugestao = proximoMesAberto(
-    inicioPlano,
-    registros.map((r) => r.ref_mes),
-  );
+  // O período corrente dispensa `?periodo=`: a URL limpa é a de hoje.
+  const query = corrente ? "" : `?periodo=${periodoId}`;
 
   return (
-    <>
-      <Card titulo="Metas do plano" icone={Snowflake} tom="roxo">
-        <div className="flex flex-col gap-4">
-          <p className="font-inter text-sm text-slate-600 max-w-2xl">
-            {metas
-              ? `Metas congeladas em ${new Date(metas.geradoEm).toLocaleDateString("pt-BR")}${
-                  metas.rotulo ? ` — ${metas.rotulo}` : ""
-                }. É contra elas que cada mês é medido.`
-              : "Nenhuma meta congelada ainda. Sem elas o placar do mês não tem contra o que comparar — é o primeiro passo do acompanhamento."}
-          </p>
-
-          {desatualizado && (
-            <p className="font-inter text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 max-w-2xl">
-              O plano mudou desde que as metas foram congeladas. Isso é legítimo
-              — a meta é histórica de propósito — mas vale saber que os meses
-              novos serão medidos contra um alvo anterior às mudanças.
-            </p>
-          )}
-
-          <BotaoCongelarMetas clientId={clientId} jaCongelado={metas !== null} />
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <Card titulo="Abrir um mês" icone={CalendarPlus}>
-          <FormularioAbrirMes
-            clientId={clientId}
-            planId={planoId}
-            sugestao={sugestao}
-          />
-        </Card>
-
-        <Card titulo="Meses acompanhados" icone={FileText} tom="brand">
-          {registros.length === 0 ? (
-            <p className="font-inter text-sm text-slate-500">Nenhum mês aberto ainda.</p>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {registros.map((r) => {
-                const rel = porMes.get(r.ref_mes);
-                const publicado = rel?.status === "publicado";
-                return (
-                  <Link
-                    key={r.id}
-                    href={`/clientes/${clientId}/relatorios/${r.ref_mes.slice(0, 7)}`}
-                    className="group flex items-center gap-4 px-3 py-3 rounded-lg border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-colors"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="font-inter text-sm font-medium text-brand-950">
-                        {rotulo(r.ref_mes)}
-                      </p>
-                      <p className="font-inter text-xs text-slate-500 mt-0.5">
-                        {publicado
-                          ? `Publicado${r.fechado_em ? ` em ${new Date(r.fechado_em).toLocaleDateString("pt-BR")}` : ""}`
-                          : "Rascunho"}
-                      </p>
-                    </div>
-                    <span
-                      className={`font-inter text-xs px-2.5 py-1 rounded-full font-medium ${
-                        publicado
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-slate-100 text-slate-600"
-                      }`}
-                    >
-                      {publicado ? "Publicado" : "Rascunho"}
-                    </span>
-                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-brand-600 transition-colors shrink-0" />
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </Card>
+    <Card titulo="Outras seções deste período" icone={ArrowRight}>
+      <div className="flex flex-wrap gap-2">
+        {OUTRAS_SECOES.map((s) => (
+          <Link
+            key={s.slug}
+            href={`/clientes/${clienteId}/planejamento/real/${s.slug}${query}`}
+            className="inline-flex items-center gap-1.5 font-inter text-sm text-slate-600 hover:text-brand-950 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 transition-colors"
+          >
+            {s.rotulo}
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        ))}
       </div>
-    </>
+    </Card>
   );
 }
 
-const rotulo = (iso: string) =>
-  `${nomeDoMes(Number(iso.slice(0, 4)) * 12 + Number(iso.slice(5, 7)) - 1)} de ${iso.slice(0, 4)}`;
+function SemBase({ clienteId }: { clienteId: string }) {
+  return (
+    <Card titulo="Falta o planejamento HFC" icone={Target} tom="ambar">
+      <p className="font-inter text-sm text-slate-600 max-w-2xl">
+        O Acompanhamento mede cada mês contra o HFC, e é dele que cada período
+        do Real nasce. Sem ele não há o que comparar nem de onde herdar.
+      </p>
+      <Link
+        href={`/clientes/${clienteId}/planejamento/hfc/receita`}
+        className="inline-flex items-center gap-1.5 mt-4 font-inter text-sm text-brand-600 hover:text-brand-900"
+      >
+        Montar o HFC
+        <ArrowRight className="w-3.5 h-3.5" />
+      </Link>
+    </Card>
+  );
+}
+
+function SemPeriodo({ clienteId }: { clienteId: string }) {
+  return (
+    <Card titulo="Nenhum período aberto" icone={Target}>
+      <p className="font-inter text-sm text-slate-600 max-w-2xl">
+        Abra o primeiro período do Planejamento Real pelo botão acima. Ele nasce
+        igual ao HFC; a partir do segundo, herda o HFC mais os ajustes que você
+        marcar como permanentes.
+      </p>
+      <Link
+        href={`/clientes/${clienteId}/planejamento/real/receita`}
+        className="inline-flex items-center gap-1.5 mt-4 font-inter text-sm text-brand-600 hover:text-brand-900"
+      >
+        Ver o Planejamento Real
+        <ArrowRight className="w-3.5 h-3.5" />
+      </Link>
+    </Card>
+  );
+}
 
 /**
- * Primeiro mês do plano que ainda não foi aberto.
+ * Os meses fechados pelo fluxo antigo.
  *
- * Evita que o planejador tenha de lembrar em que mês parou — e evita o erro
- * mais comum, que é abrir de novo um mês já fechado.
+ * Só leitura, e só se existirem: o período do Planejamento Real ocupou o lugar
+ * do "abrir mês", então não há mais por que criar registros novos por aqui. O
+ * que já foi publicado continua alcançável — a Fase 3 decide se vira histórico
+ * arquivado ou se o relatório do cliente é regerado sobre a base nova.
  */
-function proximoMesAberto(inicioPlano: string | null, abertos: string[]): string {
-  const usados = new Set(abertos.map((d) => d.slice(0, 7)));
-  if (!inicioPlano) return "";
+async function Legado({ clienteId }: { clienteId: string }) {
+  const registros = await listRegistrosMensais(clienteId);
+  if (registros.length === 0) return null;
 
-  let p = Number(inicioPlano.slice(0, 4)) * 12 + Number(inicioPlano.slice(5, 7)) - 1;
-  for (let i = 0; i < 240; i++) {
-    const chave = toISO(p).slice(0, 7);
-    if (!usados.has(chave)) return chave;
-    p++;
-  }
-  return `${anoDe(p)}-${String(mesDe(p)).padStart(2, "0")}`;
+  return (
+    <div className="border-t border-slate-200/70 pt-5">
+      <p className="font-inter text-xs text-slate-400 mb-2 inline-flex items-center gap-1.5">
+        <FileText className="w-3.5 h-3.5" />
+        Fechamentos mensais do fluxo anterior
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {registros.map((r) => (
+          <Link
+            key={r.id}
+            href={`/clientes/${clienteId}/relatorios/${r.ref_mes.slice(0, 7)}`}
+            className="font-inter text-xs text-slate-500 hover:text-brand-950 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md px-2.5 py-1.5 transition-colors tabular-nums"
+          >
+            {rotuloDoMes(r.ref_mes)}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }
+
+const rotuloDoMes = (iso: string) => {
+  const p = fromISO(iso);
+  return `${nomeDoMes(p)} de ${anoDe(p)}`;
+};

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import {
+  alternarPersistencia,
   criarLinhaDoGrid,
   removerLinhaDoGrid,
   salvarLinhaDoGrid,
@@ -17,6 +18,7 @@ import {
 import type { Enums } from "@/lib/supabase/database.types";
 import { CelulaEditavel } from "./CelulaEditavel";
 import { IndicadorSalvo } from "./IndicadorSalvo";
+import { PinPermanente } from "./PinPermanente";
 import { useAutosave } from "./useAutosave";
 
 export interface LinhaGrid {
@@ -52,6 +54,7 @@ export function GradeEditavel({
   vazio = "Nenhuma linha ainda — comece a digitar abaixo.",
   colunaTotal,
   titulo,
+  comPin = false,
   aoMudarLinhas,
 }: {
   entidade: ChaveEntidade;
@@ -67,6 +70,13 @@ export function GradeEditavel({
   colunaTotal?: string;
   /** Rótulo acessível da tabela. */
   titulo: string;
+  /**
+   * Mostra a coluna do pin pontual/permanente.
+   *
+   * Só faz sentido no Planejamento Real: em Pré-HFC e HFC não existe "próximo
+   * período" para um ajuste viajar.
+   */
+  comPin?: boolean;
   /**
    * Avisa o pai a cada mudança de linhas (edição, criação, remoção).
    *
@@ -200,6 +210,46 @@ export function GradeEditavel({
     gravar(tempId);
   }
 
+  /**
+   * Fixa ou solta o ajuste da linha.
+   *
+   * Otimista como as células: o pin muda na hora e volta se o servidor negar —
+   * é um clique de conferência visual, e esperar o round-trip faria o
+   * planejador clicar duas vezes.
+   */
+  function alternarPin(linhaId: string) {
+    const anterior = linhasRef.current.find((l) => l.id === linhaId)?.persistencia;
+    const alvo = anterior === "permanente" ? "mes" : "permanente";
+    atualizarLinhas((ls) =>
+      ls.map((l) => (l.id === linhaId ? { ...l, persistencia: alvo } : l)),
+    );
+
+    enfileirar(linhaId, async () => {
+      const real = idReal.current.get(linhaId) ?? (ehProvisorio(linhaId) ? null : linhaId);
+      if (!real) return;
+
+      const form = new FormData();
+      form.set("__entidade", entidade);
+      form.set("__id", real);
+      form.set("__planId", planId);
+      const r = await alternarPersistencia(form);
+
+      if (r.erro) {
+        atualizarLinhas((ls) =>
+          ls.map((l) => (l.id === linhaId ? { ...l, persistencia: anterior } : l)),
+        );
+        reportarErro(r.erro);
+        return;
+      }
+      if (r.persistencia) {
+        atualizarLinhas((ls) =>
+          ls.map((l) => (l.id === linhaId ? { ...l, persistencia: r.persistencia } : l)),
+        );
+      }
+      limparErro();
+    });
+  }
+
   function remover(linhaId: string) {
     setRemovendo(null);
     const indice = linhasRef.current.findIndex((l) => l.id === linhaId);
@@ -269,6 +319,11 @@ export function GradeEditavel({
                   {c.label}
                 </th>
               ))}
+              {comPin && (
+                <th scope="col" className="w-10">
+                  <span className="sr-only">Fixar ajuste</span>
+                </th>
+              )}
               <th scope="col" className="w-10">
                 <span className="sr-only">Ações</span>
               </th>
@@ -279,7 +334,7 @@ export function GradeEditavel({
             {linhas.length === 0 && (
               <tr>
                 <td
-                  colSpan={campos.length + 1}
+                  colSpan={campos.length + (comPin ? 2 : 1)}
                   className="px-2 py-4 font-inter text-sm text-slate-400"
                 >
                   {vazio}
@@ -305,6 +360,14 @@ export function GradeEditavel({
                     />
                   </td>
                 ))}
+                {comPin && (
+                  <td className="px-1 py-0.5 border-t border-slate-50 text-right">
+                    <PinPermanente
+                      persistencia={l.persistencia ?? "herdado"}
+                      aoAlternar={() => alternarPin(l.id)}
+                    />
+                  </td>
+                )}
                 <td className="px-1 py-0.5 border-t border-slate-50 text-right">
                   {removendo === l.id ? (
                     <button
@@ -346,6 +409,7 @@ export function GradeEditavel({
                   />
                 </td>
               ))}
+              {comPin && <td className="border-t border-slate-100" />}
               <td className="border-t border-slate-100" />
             </tr>
           </tbody>
@@ -366,6 +430,7 @@ export function GradeEditavel({
                     )}
                   </td>
                 ))}
+                {comPin && <td className="border-t border-slate-200" />}
                 <td className="border-t border-slate-200" />
               </tr>
             </tfoot>

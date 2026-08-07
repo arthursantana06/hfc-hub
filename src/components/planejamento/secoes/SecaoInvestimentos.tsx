@@ -29,6 +29,7 @@ export async function SecaoInvestimentos({ clienteId, plano }: SecaoProps) {
           }))}
           planId={plano.id}
           clientId={clienteId}
+          comPin={plano.tipo === "real"}
           colunaTotal="valor"
           vazio="Nenhum investimento — é daqui que a projeção parte."
         />

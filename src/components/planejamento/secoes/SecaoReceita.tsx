@@ -29,6 +29,7 @@ export async function SecaoReceita({ clienteId, plano }: SecaoProps) {
           }))}
           planId={plano.id}
           clientId={clienteId}
+          comPin={plano.tipo === "real"}
           colunaTotal="valor"
           vazio="Nenhuma receita — o planejamento começa por aqui."
         />

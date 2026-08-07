@@ -85,21 +85,28 @@ function lerNota(metrica: ScoreMetric, atingido: number | null): string {
 }
 
 /**
- * O placar da primeira página do relatório.
+ * O placar de um mês: quatro métricas, realizado contra meta, com estrelas.
  *
- * Cuidado com o nome: "realizado" aqui é a projeção CORRENTE — que já incorpora
- * tudo que mudou desde o fechamento do plano — comparada à projeção CONGELADA
- * do início. É plano contra plano, não extrato contra plano. Quando houver
- * lançamento de realizado de verdade, esta função passa a receber os dois.
+ * A função é agnóstica quanto à origem das duas séries — ela compara o mês de
+ * uma com o mesmo mês da outra. Hoje serve a dois chamadores:
+ *
+ * - **Acompanhamento** (modelo novo): `realizado` é a projeção do período do
+ *   Planejamento Real e `meta` é a do HFC. É a leitura que o planejador abre
+ *   na reunião, e o que substituiu as estrelas digitadas à mão da planilha.
+ * - **Relatório mensal** (fluxo antigo): `realizado` é a projeção corrente e
+ *   `meta` é a série congelada no fechamento do plano.
+ *
+ * Em ambos é plano contra plano, não extrato contra plano — nenhum dos dois
+ * lados vem de lançamento bancário.
  */
 export function buildScorecard(
   refMes: YearMonth,
-  corrente: ProjectionMonth[],
-  congelada: ProjectionMonth[],
+  realizado: ProjectionMonth[],
+  meta: ProjectionMonth[],
 ): ScoreLine[] {
-  const atual = corrente.find((m) => m.periodo === refMes);
-  const meta = congelada.find((m) => m.periodo === refMes);
-  if (!atual || !meta) return [];
+  const atual = realizado.find((m) => m.periodo === refMes);
+  const alvo = meta.find((m) => m.periodo === refMes);
+  if (!atual || !alvo) return [];
 
   const valores = (m: ProjectionMonth): Record<ScoreMetric, number> => ({
     receitas: m.receitas,
@@ -110,17 +117,17 @@ export function buildScorecard(
   });
 
   const a = valores(atual);
-  const b = valores(meta);
+  const b = valores(alvo);
 
   return (Object.keys(ROTULO) as ScoreMetric[]).map((metrica) => {
-    const realizado = a[metrica];
-    const alvo = b[metrica];
-    const atingido = alvo === 0 ? null : realizado / alvo;
+    const feito = a[metrica];
+    const previsto = b[metrica];
+    const atingido = previsto === 0 ? null : feito / previsto;
     return {
       metrica,
       rotulo: ROTULO[metrica],
-      realizado,
-      meta: alvo,
+      realizado: feito,
+      meta: previsto,
       atingido,
       estrelas: estrelasPara(metrica, atingido),
       leitura: lerNota(metrica, atingido),

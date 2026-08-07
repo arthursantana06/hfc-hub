@@ -13,6 +13,7 @@ export async function SecaoCartao({ clienteId, plano }: SecaoProps) {
         planId={plano.id}
         clientId={clienteId}
         inicioDoPlano={plano.inicio}
+        comPin={plano.tipo === "real"}
         linhas={compras.map((c) => ({
           id: c.id,
           valores: valoresDoRegistro(ENTIDADES.compra_cartao, c),
