@@ -22,8 +22,11 @@ import { project, type ProjectionResult } from "@/lib/planning/project";
 // Clientes
 // ─────────────────────────────────────────────────────────────
 
+// Uma string literal só, sem concatenação: o cliente tipado deduz as colunas do
+// literal, e quebrar a linha com `+` faz a dedução degradar para
+// `GenericStringError` — o erro aparece longe daqui, em quem consome a linha.
 const CAMPOS_CLIENTE =
-  "id, nome, email, risco, avatar_path, nascimento, profissao, adesao, notas";
+  "id, nome, email, risco, avatar_path, nascimento, profissao, adesao, notas, tem_planejamento, tem_investimento";
 
 export const listClients = cache(async (): Promise<Client[]> => {
   await verifySession();
@@ -61,6 +64,8 @@ type ClientRow = {
   profissao: string | null;
   adesao: string | null;
   notas: string | null;
+  tem_planejamento: boolean;
+  tem_investimento: boolean;
 };
 
 async function toClient(
@@ -80,6 +85,8 @@ async function toClient(
     profissao: row.profissao,
     adesao: row.adesao,
     notas: row.notas,
+    temPlanejamento: row.tem_planejamento,
+    temInvestimento: row.tem_investimento,
   };
 }
 
@@ -102,23 +109,27 @@ async function balancosPorCliente(
   if (clientIds.length === 0) return saida;
 
   const supabase = await createClient();
+  // Só o Real: Pré-HFC e HFC também ficam `ativo` para sempre (0024), e sem o
+  // filtro o patrimônio do hub poderia sair de um retrato em vez do corrente.
   const { data: planos } = await supabase
     .from("financial_plan")
     .select("id, client_id, inicio")
     .eq("status", "ativo")
+    .eq("tipo", "real")
     .in("client_id", clientIds);
 
   if (!planos?.length) return saida;
 
   const planIds = planos.map((p) => p.id);
   const [ativos, passivos, carteira, dividas] = await Promise.all([
-    supabase.from("asset").select("valor, plan_id").in("plan_id", planIds),
-    supabase.from("liability").select("valor, plan_id").in("plan_id", planIds),
-    supabase.from("investment").select("valor, plan_id").in("plan_id", planIds),
+    supabase.from("asset").select("valor, plan_id").in("plan_id", planIds).eq("suprimido", false),
+    supabase.from("liability").select("valor, plan_id").in("plan_id", planIds).eq("suprimido", false),
+    supabase.from("investment").select("valor, plan_id").in("plan_id", planIds).eq("suprimido", false),
     supabase
       .from("debt")
       .select("parcela, inicio, fim, saldo, plan_id")
-      .in("plan_id", planIds),
+      .in("plan_id", planIds)
+      .eq("suprimido", false),
   ]);
 
   for (const plano of planos) {
@@ -177,11 +188,12 @@ export const getPlanInput = cache(
       .select("*, client!inner(nascimento)")
       .eq("client_id", clientId);
 
-    // Sem `planId` o período é o corrente. Com ele, a tela está olhando um
-    // período anterior — e a projeção precisa partir daquele retrato, não deste.
+    // Sem `planId` o período é o corrente do Real. Com ele, a tela está olhando
+    // um planejamento específico (Pré-HFC, HFC ou um período anterior do Real) —
+    // e a projeção precisa partir daquele retrato, não deste.
     const { data: plano } = await (planId
       ? consulta.eq("id", planId)
-      : consulta.eq("status", "ativo")
+      : consulta.eq("status", "ativo").eq("tipo", "real")
     ).maybeSingle();
 
     if (!plano) return null;
@@ -198,22 +210,32 @@ export const getPlanInput = cache(
       ativos,
       passivos,
       aposentadoria,
+      compras,
     ] = await Promise.all([
-        supabase.from("plan_income").select("*").eq("plan_id", plano.id).order("ordem"),
+        supabase.from("plan_income").select("*").eq("plan_id", plano.id).eq("suprimido", false).order("ordem"),
         supabase
           .from("plan_expense")
-          .select("*, budget_category(nome, grupo)")
+          .select("*, plan_expense_category(nome)")
           .eq("plan_id", plano.id)
+          .eq("suprimido", false)
           .order("ordem"),
-        supabase.from("debt").select("*").eq("plan_id", plano.id).order("ordem"),
-        supabase.from("plan_pension").select("*").eq("plan_id", plano.id).order("ordem"),
-        supabase.from("plan_insurance").select("*").eq("plan_id", plano.id).order("ordem"),
-        supabase.from("goal").select("*").eq("plan_id", plano.id).order("ordem"),
-        supabase.from("plan_change").select("*").eq("plan_id", plano.id).order("ordem"),
-        supabase.from("investment").select("valor").eq("plan_id", plano.id),
-        supabase.from("asset").select("valor").eq("plan_id", plano.id),
-        supabase.from("liability").select("valor").eq("plan_id", plano.id),
-        supabase.from("retirement_plan").select("*").eq("plan_id", plano.id).maybeSingle(),
+        supabase.from("debt").select("*").eq("plan_id", plano.id).eq("suprimido", false).order("ordem"),
+        supabase.from("plan_pension").select("*").eq("plan_id", plano.id).eq("suprimido", false).order("ordem"),
+        supabase.from("plan_insurance").select("*").eq("plan_id", plano.id).eq("suprimido", false).order("ordem"),
+        supabase.from("goal").select("*").eq("plan_id", plano.id).eq("suprimido", false).order("ordem"),
+        supabase.from("plan_change").select("*").eq("plan_id", plano.id).eq("suprimido", false).order("ordem"),
+        supabase.from("investment").select("valor").eq("plan_id", plano.id).eq("suprimido", false),
+        supabase.from("asset").select("valor").eq("plan_id", plano.id).eq("suprimido", false),
+        supabase.from("liability").select("valor").eq("plan_id", plano.id).eq("suprimido", false),
+        // Por `client_id`, não `plan_id`: a aposentadoria é 1:1 com o cliente e
+        // vale para os três planejamentos — repontá-la a cada período era um
+        // resto do modelo antigo.
+        supabase.from("retirement_plan").select("*").eq("client_id", clientId).maybeSingle(),
+        supabase
+          .from("plan_card_purchase")
+          .select("*")
+          .eq("plan_id", plano.id)
+          .eq("suprimido", false),
       ]);
 
     const nascimento =
@@ -250,10 +272,9 @@ export const getPlanInput = cache(
         meses: r.meses,
       })),
       expenses: (despesas.data ?? []).map((e) => {
-        const cat = e.budget_category as unknown as { nome: string; grupo: string } | null;
+        const cat = e.plan_expense_category as unknown as { nome: string } | null;
         return {
           categoria: cat?.nome ?? e.descricao ?? "—",
-          grupo: cat?.grupo ?? "outros",
           descricao: e.descricao,
           valor: Number(e.valor),
           frequencia: e.frequencia,
@@ -289,6 +310,13 @@ export const getPlanInput = cache(
         inicio: fromISO(m.inicio),
         fim: m.fim ? fromISO(m.fim) : null,
         observacao: m.observacao,
+      })),
+      cardPurchases: (compras.data ?? []).map((c) => ({
+        descricao: c.descricao,
+        cartao: c.cartao,
+        valorParcela: Number(c.valor_parcela),
+        parcelas: c.parcelas,
+        inicio: fromISO(c.inicio),
       })),
     };
   },
@@ -330,9 +358,91 @@ export const getPlanoAtivo = cache(async (clientId: string) => {
     .select("*")
     .eq("client_id", clientId)
     .eq("status", "ativo")
+    .eq("tipo", "real")
     .maybeSingle();
 
   return data;
+});
+
+/**
+ * Um dos três planejamentos do cliente.
+ *
+ * Pré-HFC e HFC são retratos únicos — a consulta é direta pelo tipo. Para o
+ * Real, "o planejamento" é o período corrente (status ativo); períodos
+ * anteriores chegam por `getPlanoDoPeriodo` com o id explícito.
+ */
+export const getPlanejamento = cache(
+  async (clientId: string, tipo: "pre_hfc" | "hfc" | "real") => {
+    await verifySession();
+    const supabase = await createClient();
+
+    const consulta = supabase
+      .from("financial_plan")
+      .select("*")
+      .eq("client_id", clientId)
+      .eq("tipo", tipo);
+
+    const { data } = await (tipo === "real"
+      ? consulta.eq("status", "ativo")
+      : consulta
+    ).maybeSingle();
+
+    return data;
+  },
+);
+
+/**
+ * Os blocos de categoria do grid de Despesa, na ordem do planejador.
+ *
+ * As despesas de cada bloco chegam por `linhasDoPlano("plan_expense", …)` e são
+ * agrupadas na tela por `categoria_plan_id` — duas consultas chatas de juntar
+ * aqui virariam um tipo aninhado que só uma tela consome.
+ */
+export const blocosDeDespesa = cache(async (planId: string) => {
+  await verifySession();
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("plan_expense_category")
+    .select("*")
+    .eq("plan_id", planId)
+    .eq("suprimido", false)
+    .order("ordem");
+
+  return data ?? [];
+});
+
+export const comprasDeCartao = cache(async (planId: string) => {
+  await verifySession();
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("plan_card_purchase")
+    .select("*")
+    .eq("plan_id", planId)
+    .eq("suprimido", false)
+    .order("ordem");
+
+  return data ?? [];
+});
+
+/**
+ * Nomes de categoria já usados na organização, para o autocomplete do bloco.
+ *
+ * Distinct feito aqui e não no SQL: o cliente do Supabase não expõe distinct, e
+ * a lista é pequena (dezenas de nomes). A RLS já limita à org do planejador.
+ */
+export const nomesDeCategoriaDaOrg = cache(async () => {
+  await verifySession();
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("plan_expense_category")
+    .select("nome")
+    .eq("suprimido", false)
+    .order("nome");
+
+  return [...new Set((data ?? []).map((c) => c.nome.trim()).filter(Boolean))];
 });
 
 /**
@@ -345,10 +455,12 @@ export const listPeriodos = cache(async (clientId: string) => {
   await verifySession();
   const supabase = await createClient();
 
+  // Só o Real tem série de períodos; Pré-HFC e HFC são retratos fora do tempo.
   const { data } = await supabase
     .from("financial_plan")
     .select("id, versao, inicio, status, cadencia, created_at")
     .eq("client_id", clientId)
+    .eq("tipo", "real")
     .order("inicio", { ascending: false });
 
   return data ?? [];
@@ -373,7 +485,7 @@ export const getPlanoDoPeriodo = cache(
 
     const { data } = await (planId
       ? consulta.eq("id", planId)
-      : consulta.eq("status", "ativo")
+      : consulta.eq("status", "ativo").eq("tipo", "real")
     ).maybeSingle();
 
     return data;
@@ -457,6 +569,9 @@ export async function linhasDoPlano<T extends TabelaPlano>(
     .from(tabela)
     .select("*")
     .eq("plan_id", planId)
+    // Tombstones do período Real ficam no banco e fora da tela — é o filtro
+    // central; quem precisar das suprimidas consulta por conta própria.
+    .eq("suprimido", false)
     .order("ordem");
   return (data ?? []) as Tables<T>[];
 }

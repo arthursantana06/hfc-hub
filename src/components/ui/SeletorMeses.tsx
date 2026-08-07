@@ -38,6 +38,7 @@ export function SeletorMeses({
   defaultValue,
   required = false,
   id,
+  onChange,
   ...aria
 }: {
   name: string;
@@ -45,6 +46,13 @@ export function SeletorMeses({
   defaultValue?: string;
   required?: boolean;
   id?: string;
+  /**
+   * Avisa cada mudança, no mesmo formato "1,2,3" do input escondido.
+   *
+   * O formulário de diálogo não precisa (o valor viaja no FormData no envio),
+   * mas o grid grava no blur — e sem o aviso ele não teria o que gravar.
+   */
+  onChange?: (valor: string) => void;
   "aria-label"?: string;
   "aria-describedby"?: string;
 }) {
@@ -59,11 +67,13 @@ export function SeletorMeses({
   );
 
   function alternar(mes: number) {
-    setMarcados((atuais) =>
-      atuais.includes(mes)
+    setMarcados((atuais) => {
+      const novos = atuais.includes(mes)
         ? atuais.filter((m) => m !== mes)
-        : [...atuais, mes].sort((a, b) => a - b),
-    );
+        : [...atuais, mes].sort((a, b) => a - b);
+      onChange?.(novos.join(","));
+      return novos;
+    });
   }
 
   return (

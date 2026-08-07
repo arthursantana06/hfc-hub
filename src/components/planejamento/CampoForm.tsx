@@ -2,6 +2,7 @@
 
 import {
   dataParaMes,
+  escreverDecimal,
   escreverMeses,
   escreverMoeda,
   type Campo,
@@ -10,6 +11,7 @@ import { Select } from "@/components/ui/Select";
 import { MesPicker } from "@/components/ui/MesPicker";
 import { SeletorMeses } from "@/components/ui/SeletorMeses";
 import { InputMoeda } from "@/components/ui/InputMoeda";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 export interface OpcoesRef {
   categoria?: { valor: string; rotulo: string; grupo?: string }[];
@@ -104,6 +106,33 @@ export function CampoForm({
           defaultValue={dataParaMes(valor as string | null)}
           onChange={onChange}
         />
+      ) : campo.tipo === "data" ? (
+        <DatePicker
+          id={campo.key}
+          name={campo.key}
+          required={campo.obrigatorio}
+          defaultValue={valor === null || valor === undefined ? "" : String(valor)}
+          onChange={onChange}
+        />
+      ) : campo.tipo === "decimal" ? (
+        // `type="text"` com `inputMode="decimal"`, pelo mesmo motivo do campo
+        // monetário: o numérico do navegador trata a vírgula do teclado pt-BR
+        // como erro. Quem converte é o servidor.
+        <div className="relative">
+          <input
+            {...comum}
+            type="text"
+            inputMode="decimal"
+            defaultValue={escreverDecimal(valor as number | null)}
+            placeholder={campo.placeholder}
+            className={`${base} text-right tabular-nums ${campo.sufixo ? "pr-16" : ""}`}
+          />
+          {campo.sufixo && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 font-inter text-xs text-slate-400 pointer-events-none">
+              {campo.sufixo}
+            </span>
+          )}
+        </div>
       ) : campo.tipo === "meses" ? (
         <SeletorMeses
           id={campo.key}

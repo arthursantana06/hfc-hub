@@ -47,7 +47,7 @@ export function HubSidebar({
         <SideNavLink href="/" icon={LayoutDashboard} label="Visão Geral" exact />
         <SideNavLink href="/clientes" icon={Users} label="Clientes" />
         <SideNavLink href="/agenda" icon={CalendarDays} label="Agenda" />
-        <SideNavLink href="/investimentos" icon={LineChart} label="Investimentos" soon />
+        <SideNavLink href="/investimentos" icon={LineChart} label="Investimentos" />
         <SideNavLink href="/relatorios" icon={FileText} label="Relatórios" soon />
         <SideNavLink href="/indicacoes" icon={Gift} label="Rewards" soon />
       </nav>

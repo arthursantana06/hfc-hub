@@ -5,13 +5,12 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/dal";
+import { mensagem } from "./mensagens";
 import {
   ENTIDADES,
-  camposVisiveis,
-  lerMeses,
   lerMoeda,
   mesParaData,
-  type Campo,
+  montarRegistro,
   type Entidade,
 } from "@/lib/forms/planejamento";
 
@@ -50,84 +49,33 @@ async function autor() {
 // Linhas genéricas (receitas, custos, dívidas, objetivos, …)
 // ─────────────────────────────────────────────────────────────
 
+// `montarRegistro` e `converter` moram em `forms/planejamento.ts` desde a
+// remodelação: o grid precisa da mesma validação e este arquivo, sendo
+// `"use server"`, não pode exportar funções síncronas.
+
+export interface LinhaGravada {
+  id: string;
+  criado: boolean;
+  entidade: Entidade;
+  /** Campos validados que não são coluna — o chamador decide o destino. */
+  virtuais: Record<string, unknown>;
+}
+
 /**
- * Converte o formulário no registro, campo a campo, contra o esquema.
+ * Núcleo da escrita dirigida por esquema, sem revalidar nem formatar mensagem.
  *
- * Nada que não esteja no esquema atravessa: o nome da tabela vem de uma lista
- * branca e as colunas vêm da definição da entidade, nunca do que o navegador
- * mandou. Sem isso, um `role=admin` extra no FormData seria gravado.
+ * Exportado para que uma entidade com efeito colateral próprio possa reusá-lo em
+ * vez de reimplementar a validação: `salvarPosicao` grava a posição por aqui e
+ * depois cuida do retrato datado, que vive em outra tabela.
  */
-function montarRegistro(
-  entidade: Entidade,
+export async function gravarLinha(
   form: FormData,
-): { dados: Record<string, unknown> } | { erro: string } {
-  const brutos: Record<string, string> = {};
-  for (const c of entidade.campos) {
-    brutos[c.key] = String(form.get(c.key) ?? "");
-  }
-
-  const dados: Record<string, unknown> = {};
-  const visiveis = camposVisiveis(entidade, brutos);
-
-  // Campo escondido por `visivelSe` é apagado de propósito: um objetivo que
-  // deixa de ser de curto prazo não pode manter a data-alvo antiga.
-  for (const c of entidade.campos) {
-    if (!visiveis.includes(c)) dados[c.key] = null;
-  }
-
-  for (const c of visiveis) {
-    const bruto = brutos[c.key].trim();
-
-    if (c.obrigatorio && bruto === "" && c.tipo !== "bool") {
-      return { erro: `Preencha "${c.label}".` };
-    }
-
-    const valor = converter(c, bruto);
-    if (valor === undefined) {
-      return { erro: `"${c.label}" está em formato inválido.` };
-    }
-    dados[c.key] = valor;
-  }
-
-  return { dados };
-}
-
-/** `undefined` sinaliza formato inválido; `null` é ausência legítima. */
-function converter(c: Campo, bruto: string): unknown {
-  if (c.tipo === "bool") return bruto === "on" || bruto === "true";
-  if (bruto === "") return c.tipo === "texto" ? null : null;
-
-  switch (c.tipo) {
-    case "moeda": {
-      const n = lerMoeda(bruto);
-      return n === null ? undefined : n;
-    }
-    case "inteiro": {
-      const n = Number(bruto);
-      if (!Number.isInteger(n)) return undefined;
-      if (c.min !== undefined && n < c.min) return undefined;
-      if (c.max !== undefined && n > c.max) return undefined;
-      return n;
-    }
-    case "mes":
-      return mesParaData(bruto) ?? undefined;
-    case "meses": {
-      const meses = lerMeses(bruto);
-      return meses === null || meses.length === 0 ? undefined : meses;
-    }
-    case "select":
-      return c.opcoes?.some((o) => o.valor === bruto) ? bruto || null : undefined;
-    default:
-      return bruto;
-  }
-}
-
-export async function salvarLinha(
-  _estado: Estado,
-  form: FormData,
-): Promise<Estado> {
+): Promise<{ erro: string } | LinhaGravada> {
   const a = await autor();
-  if ("erro" in a) return a;
+  // `a.erro` e não só `"erro" in a`: no ramo bem-sucedido a propriedade existe
+  // como `erro?: undefined`, e o `in` sozinho não a descarta — o retorno aqui é
+  // mais estreito que o `Estado` de antes e cobrava a diferença.
+  if ("erro" in a && a.erro) return { erro: a.erro };
 
   const chave = String(form.get("__entidade") ?? "");
   const entidade = ENTIDADES[chave];
@@ -141,56 +89,110 @@ export async function salvarLinha(
   const clientId = String(form.get("__clientId") ?? "");
   const recordId = String(form.get("__recordId") ?? "");
   const reportId = String(form.get("__reportId") ?? "");
+  const accountId = String(form.get("__accountId") ?? "");
   const supabase = await createClient();
 
   if (id) {
-    const { error } = await generico(supabase)
+    // `select` no update para contar o que foi afetado: uma escrita barrada
+    // pela RLS não é erro para o Postgres — ela simplesmente não encontra a
+    // linha. Sem esta checagem o autosave do grid mostraria "Salvo" para uma
+    // gravação que não aconteceu.
+    const { data: atualizada, error } = await generico(supabase)
       .from(entidade.tabela)
       .update(montado.dados)
-      .eq("id", id);
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
     if (error) return { erro: mensagem(error.message) };
-  } else {
-    const vinculo: Record<string, unknown> = { org_id: a.user.org_id };
-    if (entidade.escopo === "plano") {
-      if (!planId) return { erro: "Este cliente ainda não tem um plano." };
-      vinculo.plan_id = planId;
-      // Dívida, objetivo, ativo, passivo e carteira pertencem ao período desde
-      // a Fase 2, mas mantêm o `client_id not null` de quando eram do cliente.
-      if (entidade.vinculaAoCliente) {
-        if (!clientId) return { erro: "Cliente não identificado." };
-        vinculo.client_id = clientId;
-      }
-    } else if (entidade.escopo === "registro") {
-      if (!recordId) return { erro: "Mês não identificado." };
-      vinculo.record_id = recordId;
-    } else if (entidade.escopo === "relatorio") {
-      if (!reportId) return { erro: "Relatório não identificado." };
-      vinculo.report_id = reportId;
-    } else {
+    if (!atualizada) return { erro: "Nada foi gravado — a linha não existe ou não é sua." };
+    return { id, criado: false, entidade, virtuais: montado.virtuais };
+  }
+
+  const vinculo: Record<string, unknown> = { org_id: a.user.org_id };
+  if (entidade.escopo === "plano") {
+    if (!planId) return { erro: "Este cliente ainda não tem um plano." };
+    vinculo.plan_id = planId;
+    // Dívida, objetivo, ativo, passivo e carteira pertencem ao período desde
+    // a Fase 2, mas mantêm o `client_id not null` de quando eram do cliente.
+    if (entidade.vinculaAoCliente) {
       if (!clientId) return { erro: "Cliente não identificado." };
       vinculo.client_id = clientId;
     }
-
-    // `income_entry`, `expense_entry` e `card_statement` não têm coluna `ordem`;
-    // são lançamentos de um mês, e a ordem que importa é a do valor.
-    const temOrdem = !["income_entry", "expense_entry", "card_statement"].includes(
-      entidade.tabela,
-    );
-
-    const { error } = await generico(supabase)
-      .from(entidade.tabela)
-      .insert({
-        ...vinculo,
-        ...montado.dados,
-        ...(temOrdem
-          ? { ordem: await proximaOrdem(entidade, planId, clientId, recordId, reportId) }
-          : {}),
-      });
-    if (error) return { erro: mensagem(error.message) };
+    // A despesa pendura no bloco de categoria do grid, e o bloco é vínculo,
+    // não campo: a linha já está visualmente dentro dele quando é criada.
+    if (entidade.tabela === "plan_expense") {
+      const categoriaPlanId = String(form.get("__categoriaPlanId") ?? "");
+      if (!categoriaPlanId) return { erro: "Categoria não identificada." };
+      vinculo.categoria_plan_id = categoriaPlanId;
+    }
+  } else if (entidade.escopo === "conta") {
+    if (!accountId) return { erro: "Conta não identificada." };
+    vinculo.account_id = accountId;
+    // A posição também carrega `client_id`, para que "a carteira deste cliente"
+    // não precise passar pela conta só para chegar no dono.
+    if (entidade.vinculaAoCliente) {
+      if (!clientId) return { erro: "Cliente não identificado." };
+      vinculo.client_id = clientId;
+    }
+  } else if (entidade.escopo === "registro") {
+    if (!recordId) return { erro: "Mês não identificado." };
+    vinculo.record_id = recordId;
+  } else if (entidade.escopo === "relatorio") {
+    if (!reportId) return { erro: "Relatório não identificado." };
+    vinculo.report_id = reportId;
+  } else {
+    if (!clientId) return { erro: "Cliente não identificado." };
+    vinculo.client_id = clientId;
   }
 
+  // `income_entry`, `expense_entry` e `card_statement` não têm coluna `ordem`;
+  // são lançamentos de um mês, e a ordem que importa é a do valor.
+  const temOrdem = !["income_entry", "expense_entry", "card_statement"].includes(
+    entidade.tabela,
+  );
+
+  const { data, error } = await generico(supabase)
+    .from(entidade.tabela)
+    .insert({
+      ...vinculo,
+      ...montado.dados,
+      ...(temOrdem
+        ? {
+            ordem: await proximaOrdem(entidade, {
+              planId,
+              clientId,
+              recordId,
+              reportId,
+              accountId,
+            }),
+          }
+        : {}),
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) return { erro: mensagem(error?.message ?? "") };
+  return {
+    id: (data as { id: string }).id,
+    criado: true,
+    entidade,
+    virtuais: montado.virtuais,
+  };
+}
+
+export async function salvarLinha(
+  _estado: Estado,
+  form: FormData,
+): Promise<Estado> {
+  const r = await gravarLinha(form);
+  if ("erro" in r) return r;
+
   revalidatePath("/", "layout");
-  return { ok: id ? `${entidade.singular} atualizada.` : `${entidade.singular} adicionada.` };
+  return {
+    ok: r.criado
+      ? `${r.entidade.singular} adicionada.`
+      : `${r.entidade.singular} atualizada.`,
+  };
 }
 
 export async function removerLinha(form: FormData): Promise<Estado> {
@@ -215,17 +217,21 @@ export async function removerLinha(form: FormData): Promise<Estado> {
 /** Novas linhas vão para o fim da lista, sem embaralhar o que já existe. */
 async function proximaOrdem(
   entidade: Entidade,
-  planId: string,
-  clientId: string,
-  recordId = "",
-  reportId = "",
+  ids: {
+    planId: string;
+    clientId: string;
+    recordId: string;
+    reportId: string;
+    accountId: string;
+  },
 ) {
   const supabase = await createClient();
   const { coluna, valor } = {
-    plano: { coluna: "plan_id", valor: planId },
-    cliente: { coluna: "client_id", valor: clientId },
-    registro: { coluna: "record_id", valor: recordId },
-    relatorio: { coluna: "report_id", valor: reportId },
+    plano: { coluna: "plan_id", valor: ids.planId },
+    cliente: { coluna: "client_id", valor: ids.clientId },
+    registro: { coluna: "record_id", valor: ids.recordId },
+    relatorio: { coluna: "report_id", valor: ids.reportId },
+    conta: { coluna: "account_id", valor: ids.accountId },
   }[entidade.escopo];
 
   const { data } = await generico(supabase)
@@ -264,6 +270,11 @@ export async function salvarCliente(
     profissao: String(form.get("profissao") ?? "").trim() || null,
     adesao: String(form.get("adesao") ?? "").trim() || null,
     notas: String(form.get("notas") ?? "").trim() || null,
+    // Caixa desmarcada não aparece no FormData: ausência é `false`, não "não
+    // mexeu". As duas caixas estão sempre na tela, então gravar as duas a cada
+    // salvamento é o que mantém o banco igual ao que o planejador está vendo.
+    tem_planejamento: form.get("tem_planejamento") !== null,
+    tem_investimento: form.get("tem_investimento") !== null,
   };
 
   const supabase = await createClient();
@@ -353,12 +364,15 @@ export async function salvarPlano(
     return { ok: "Premissas atualizadas." };
   }
 
-  // O índice parcial garante um plano ativo por cliente; a versão nova pega o
-  // número seguinte para não colidir com planos arquivados.
+  // O índice parcial garante um período ativo do Real por cliente; a versão
+  // nova pega o número seguinte para não colidir com períodos arquivados.
+  // `tipo = 'real'`: este formulário cria o Real — Pré-HFC e HFC nascem por
+  // `garantirPlanejamento` e numeram à parte.
   const { data: ultimo } = await supabase
     .from("financial_plan")
     .select("versao")
     .eq("client_id", clientId)
+    .eq("tipo", "real")
     .order("versao", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -375,6 +389,60 @@ export async function salvarPlano(
 
   revalidatePath("/", "layout");
   return { ok: "Plano criado. Agora monte o fluxo de caixa." };
+}
+
+/**
+ * Cria o Pré-HFC ou o HFC do cliente, se ainda não existir.
+ *
+ * Nasce com as premissas default da tabela e `inicio` no mês corrente — os dois
+ * são retratos, não períodos, e o planejador ajusta as premissas na Projeção.
+ * O índice parcial `financial_plan_foto_unica_idx` garante no máximo um de cada
+ * tipo por cliente; a corrida entre dois cliques vira um erro de duplicidade
+ * legível em vez de dois retratos.
+ */
+export async function garantirPlanejamento(
+  _estado: Estado,
+  form: FormData,
+): Promise<Estado> {
+  const a = await autor();
+  if ("erro" in a) return a;
+
+  const clientId = String(form.get("__clientId") ?? "");
+  const tipo = String(form.get("__tipo") ?? "");
+  if (!clientId) return { erro: "Cliente não identificado." };
+  if (tipo !== "pre_hfc" && tipo !== "hfc") {
+    return { erro: "Tipo de planejamento desconhecido." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("financial_plan").insert({
+    org_id: a.user.org_id,
+    client_id: clientId,
+    tipo,
+    versao: 1,
+    status: "ativo",
+    inicio: mesCorrente(),
+  });
+
+  if (error) {
+    return {
+      erro: error.message.includes("duplicate")
+        ? "Este planejamento já existe."
+        : mensagem(error.message),
+    };
+  }
+
+  revalidatePath("/", "layout");
+  return { ok: tipo === "hfc" ? "Planejamento HFC criado." : "Planejamento Pré-HFC criado." };
+}
+
+/** Primeiro dia do mês corrente em São Paulo — o único fuso da consultoria. */
+function mesCorrente(): string {
+  // `en-CA` formata como YYYY-MM-DD, que é o que a coluna `date` espera.
+  const hoje = new Date().toLocaleDateString("en-CA", {
+    timeZone: "America/Sao_Paulo",
+  });
+  return `${hoje.slice(0, 7)}-01`;
 }
 
 /** Quantos meses cada cadência anda entre um período e o seguinte. */
@@ -417,11 +485,13 @@ export async function abrirPeriodo(
   if (!clientId) return { erro: "Cliente não identificado." };
 
   const supabase = await createClient();
+  // Só o Real tem períodos — Pré-HFC e HFC também são `ativo`, mas são retratos.
   const { data: atual } = await supabase
     .from("financial_plan")
     .select("*")
     .eq("client_id", clientId)
     .eq("status", "ativo")
+    .eq("tipo", "real")
     .maybeSingle();
 
   if (!atual) {
@@ -600,28 +670,6 @@ function inteiro(v: FormDataEntryValue | null, min: number, max: number) {
   return Number.isInteger(n) && n >= min && n <= max ? n : null;
 }
 
-/** Traduz o que o Postgres devolve no que o planejador precisa saber. */
-function mensagem(raw: string): string {
-  if (raw.includes("row-level security")) {
-    return "Você não tem permissão para esta alteração.";
-  }
-  if (raw.includes("financial_plan_um_ativo_idx")) {
-    return "Este cliente já tem um plano ativo. Arquive-o antes de criar outro.";
-  }
-  if (raw.includes("violates foreign key")) {
-    return "Há um vínculo inválido no formulário. Recarregue a página.";
-  }
-  if (raw.includes("_fim_apos_inicio")) {
-    return "A data final não pode ser anterior à inicial.";
-  }
-  if (raw.includes("card_statement_record_id_cartao_categoria_key")) {
-    return "Já existe uma linha para esse cartão nessa categoria. Edite a existente.";
-  }
-  if (raw.includes("monthly_record_client_id_ref_mes_key")) {
-    return "Este mês já foi aberto.";
-  }
-  return "Não foi possível salvar. Tente de novo.";
-}
 
 // ─────────────────────────────────────────────────────────────
 // Metas congeladas

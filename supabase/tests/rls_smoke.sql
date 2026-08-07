@@ -4,7 +4,8 @@
 -- resíduo no banco. Seguro rodar contra o projeto de dev.
 --
 -- Como rodar: cole no SQL Editor do Supabase, ou via MCP (execute_sql).
--- Todas as 27 linhas do resultado devem sair como PASS.
+-- TODAS as linhas do resultado devem sair como PASS — a contagem não está fixada
+-- aqui de propósito, para que acrescentar um caso não exija editar este cabeçalho.
 --
 -- ATENÇÃO ao escrever novos casos: `set local request.jwt.claims` PERSISTE
 -- entre blocos da mesma transação. Trocar apenas o `role` para anon sem
@@ -50,6 +51,35 @@ delete from public.app_user
 insert into public.client (id, org_id, nome) values
   ('22222222-2222-4222-8222-00000000000a','00000000-0000-4000-8000-0000000000aa','Cliente da A'),
   ('22222222-2222-4222-8222-00000000000b','00000000-0000-4000-8000-0000000000bb','Cliente da B');
+
+-- ── Carteira em cada org (área de Investimentos, 0022/0023) ─────
+-- Existe uma carteira na B para que os casos da A possam provar que não a veem.
+insert into public.investment_account (id, org_id, client_id, apelido, instituicao) values
+  ('33333333-3333-4333-8333-00000000000a','00000000-0000-4000-8000-0000000000aa','22222222-2222-4222-8222-00000000000a','Conta da A','XP'),
+  ('33333333-3333-4333-8333-00000000000b','00000000-0000-4000-8000-0000000000bb','22222222-2222-4222-8222-00000000000b','Conta da B','BTG');
+
+insert into public.investment_position (id, org_id, account_id, client_id, classe, nome) values
+  ('44444444-4444-4444-8444-00000000000a','00000000-0000-4000-8000-0000000000aa','33333333-3333-4333-8333-00000000000a','22222222-2222-4222-8222-00000000000a','renda_fixa','CDB da A'),
+  ('44444444-4444-4444-8444-00000000000b','00000000-0000-4000-8000-0000000000bb','33333333-3333-4333-8333-00000000000b','22222222-2222-4222-8222-00000000000b','renda_fixa','CDB da B');
+
+insert into public.position_snapshot (org_id, position_id, data_referencia, valor_bruto) values
+  ('00000000-0000-4000-8000-0000000000aa','44444444-4444-4444-8444-00000000000a','2026-08-01',1000),
+  ('00000000-0000-4000-8000-0000000000bb','44444444-4444-4444-8444-00000000000b','2026-08-01',2000);
+
+-- ── Planejamento em cada org (remodelação 0024) ─────────────────
+-- Um HFC por org, com um bloco de despesa e uma compra de cartão, para que os
+-- casos da A provem que não veem os da B.
+insert into public.financial_plan (id, org_id, client_id, tipo, versao, status, inicio) values
+  ('55555555-5555-4555-8555-00000000000a','00000000-0000-4000-8000-0000000000aa','22222222-2222-4222-8222-00000000000a','hfc',1,'ativo','2026-08-01'),
+  ('55555555-5555-4555-8555-00000000000b','00000000-0000-4000-8000-0000000000bb','22222222-2222-4222-8222-00000000000b','hfc',1,'ativo','2026-08-01');
+
+insert into public.plan_expense_category (id, org_id, plan_id, nome) values
+  ('66666666-6666-4666-8666-00000000000a','00000000-0000-4000-8000-0000000000aa','55555555-5555-4555-8555-00000000000a','Moradia da A'),
+  ('66666666-6666-4666-8666-00000000000b','00000000-0000-4000-8000-0000000000bb','55555555-5555-4555-8555-00000000000b','Moradia da B');
+
+insert into public.plan_card_purchase (org_id, plan_id, descricao, cartao, valor_parcela, parcelas, inicio) values
+  ('00000000-0000-4000-8000-0000000000aa','55555555-5555-4555-8555-00000000000a','Sofá da A','Nubank',500,10,'2026-08-01'),
+  ('00000000-0000-4000-8000-0000000000bb','55555555-5555-4555-8555-00000000000b','Sofá da B','XP',700,10,'2026-08-01');
 
 create temp table r (ord serial, teste text, esperado text, obtido text);
 grant all on table r to authenticated, anon;
@@ -111,6 +141,49 @@ insert into r (teste,esperado,obtido) select 'planner A deleta cliente da B','0 
 
 insert into r (teste,esperado,obtido)
 select 'planner A ve membros da propria org','3',count(*)::text from public.app_user;
+
+-- ── Área de Investimentos ───────────────────────────────────────
+insert into r (teste,esperado,obtido)
+select 'planner A ve apenas contas da A','Conta da A',coalesce(string_agg(apelido,','),'<nada>')
+  from public.investment_account;
+insert into r (teste,esperado,obtido)
+select 'planner A ve apenas posicoes da A','CDB da A',coalesce(string_agg(nome,','),'<nada>')
+  from public.investment_position;
+insert into r (teste,esperado,obtido)
+select 'planner A ve apenas retratos da A','1',count(*)::text from public.position_snapshot;
+
+-- O caso que justifica `security_invoker = true` na visão: `anon` e
+-- `authenticated` têm SELECT nela por padrão do Supabase, então sem o
+-- security_invoker ela rodaria com os privilégios da dona e entregaria a carteira
+-- da org B para quem consultasse. Se este caso falhar, há vazamento entre orgs.
+insert into r (teste,esperado,obtido)
+select 'position_latest respeita a RLS (security_invoker)','1000',
+       coalesce(string_agg(valor_bruto::text,','),'<nada>') from public.position_latest;
+
+do $t$ begin
+  insert into public.investment_position (org_id, account_id, client_id, classe, nome)
+  values ('00000000-0000-4000-8000-0000000000bb','33333333-3333-4333-8333-00000000000b',
+          '22222222-2222-4222-8222-00000000000b','renda_fixa','Invasora');
+  insert into r (teste,esperado,obtido) values ('planner A insere posicao na org B','BLOQUEADO','PASSOU (falha!)');
+exception when others then
+  insert into r (teste,esperado,obtido) values ('planner A insere posicao na org B','BLOQUEADO','BLOQUEADO');
+end $t$;
+
+-- ── Planejamento remodelado (0024) ──────────────────────────────
+insert into r (teste,esperado,obtido)
+select 'planner A ve apenas blocos de despesa da A','Moradia da A',coalesce(string_agg(nome,','),'<nada>')
+  from public.plan_expense_category;
+insert into r (teste,esperado,obtido)
+select 'planner A ve apenas compras de cartao da A','Sofá da A',coalesce(string_agg(descricao,','),'<nada>')
+  from public.plan_card_purchase;
+
+do $t$ begin
+  insert into public.plan_expense_category (org_id, plan_id, nome)
+  values ('00000000-0000-4000-8000-0000000000bb','55555555-5555-4555-8555-00000000000b','Bloco invasor');
+  insert into r (teste,esperado,obtido) values ('planner A insere bloco na org B','BLOQUEADO','PASSOU (falha!)');
+exception when others then
+  insert into r (teste,esperado,obtido) values ('planner A insere bloco na org B','BLOQUEADO','BLOQUEADO');
+end $t$;
 
 do $t$ begin
   update public.organization set name='renomeada por planner' where id='00000000-0000-4000-8000-0000000000aa';
@@ -196,6 +269,12 @@ insert into r (teste,esperado,obtido) select 'anon: orgs','0',count(*)::text fro
 insert into r (teste,esperado,obtido) select 'anon: app_user','0',count(*)::text from public.app_user;
 insert into r (teste,esperado,obtido) select 'anon: goals','0',count(*)::text from public.goal;
 insert into r (teste,esperado,obtido) select 'anon: categorias de orcamento','0',count(*)::text from public.budget_category;
+insert into r (teste,esperado,obtido) select 'anon: contas de investimento','0',count(*)::text from public.investment_account;
+insert into r (teste,esperado,obtido) select 'anon: posicoes','0',count(*)::text from public.investment_position;
+insert into r (teste,esperado,obtido) select 'anon: retratos de posicao','0',count(*)::text from public.position_snapshot;
+insert into r (teste,esperado,obtido) select 'anon: position_latest','0',count(*)::text from public.position_latest;
+insert into r (teste,esperado,obtido) select 'anon: blocos de despesa','0',count(*)::text from public.plan_expense_category;
+insert into r (teste,esperado,obtido) select 'anon: compras de cartao','0',count(*)::text from public.plan_card_purchase;
 insert into r (teste,esperado,obtido)
 select 'anon: current_org_id() e NULL','NULL',coalesce(public.current_org_id()::text,'NULL');
 

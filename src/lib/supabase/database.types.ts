@@ -54,33 +54,49 @@ export type Database = {
       }
       asset: {
         Row: {
+          base_id: string | null
           client_id: string
           id: string
           nome: string
           ordem: number
           org_id: string
+          persistencia: Database["public"]["Enums"]["row_persistence"]
           plan_id: string | null
+          suprimido: boolean
           valor: number
         }
         Insert: {
+          base_id?: string | null
           client_id: string
           id?: string
           nome: string
           ordem?: number
           org_id: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string | null
+          suprimido?: boolean
           valor?: number
         }
         Update: {
+          base_id?: string | null
           client_id?: string
           id?: string
           nome?: string
           ordem?: number
           org_id?: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string | null
+          suprimido?: boolean
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "asset_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "asset"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "asset_client_id_fkey"
             columns: ["client_id"]
@@ -93,6 +109,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organization"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "financial_plan"
             referencedColumns: ["id"]
           },
         ]
@@ -237,6 +260,8 @@ export type Database = {
           portal_user_id: string | null
           profissao: string | null
           risco: Database["public"]["Enums"]["risk_profile"] | null
+          tem_investimento: boolean
+          tem_planejamento: boolean
           tier: Database["public"]["Enums"]["reward_tier"]
         }
         Insert: {
@@ -255,6 +280,8 @@ export type Database = {
           portal_user_id?: string | null
           profissao?: string | null
           risco?: Database["public"]["Enums"]["risk_profile"] | null
+          tem_investimento?: boolean
+          tem_planejamento?: boolean
           tier?: Database["public"]["Enums"]["reward_tier"]
         }
         Update: {
@@ -273,6 +300,8 @@ export type Database = {
           portal_user_id?: string | null
           profissao?: string | null
           risco?: Database["public"]["Enums"]["risk_profile"] | null
+          tem_investimento?: boolean
+          tem_planejamento?: boolean
           tier?: Database["public"]["Enums"]["reward_tier"]
         }
         Relationships: [
@@ -301,6 +330,7 @@ export type Database = {
       }
       debt: {
         Row: {
+          base_id: string | null
           client_id: string
           credor: string | null
           descricao: string
@@ -311,11 +341,14 @@ export type Database = {
           org_id: string
           parcela: number | null
           parcelas_total: number | null
+          persistencia: Database["public"]["Enums"]["row_persistence"]
           plan_id: string | null
           saldo: number | null
+          suprimido: boolean
           total: number
         }
         Insert: {
+          base_id?: string | null
           client_id: string
           credor?: string | null
           descricao: string
@@ -326,11 +359,14 @@ export type Database = {
           org_id: string
           parcela?: number | null
           parcelas_total?: number | null
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string | null
           saldo?: number | null
+          suprimido?: boolean
           total?: number
         }
         Update: {
+          base_id?: string | null
           client_id?: string
           credor?: string | null
           descricao?: string
@@ -341,11 +377,20 @@ export type Database = {
           org_id?: string
           parcela?: number | null
           parcelas_total?: number | null
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string | null
           saldo?: number | null
+          suprimido?: boolean
           total?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "debt_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "debt"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "debt_client_id_fkey"
             columns: ["client_id"]
@@ -443,6 +488,7 @@ export type Database = {
           modo_valor: Database["public"]["Enums"]["plan_value_mode"]
           org_id: string
           status: Database["public"]["Enums"]["plan_lifecycle"]
+          tipo: Database["public"]["Enums"]["plan_kind"]
           updated_at: string
           versao: number
         }
@@ -464,6 +510,7 @@ export type Database = {
           modo_valor?: Database["public"]["Enums"]["plan_value_mode"]
           org_id: string
           status?: Database["public"]["Enums"]["plan_lifecycle"]
+          tipo?: Database["public"]["Enums"]["plan_kind"]
           updated_at?: string
           versao?: number
         }
@@ -485,6 +532,7 @@ export type Database = {
           modo_valor?: Database["public"]["Enums"]["plan_value_mode"]
           org_id?: string
           status?: Database["public"]["Enums"]["plan_lifecycle"]
+          tipo?: Database["public"]["Enums"]["plan_kind"]
           updated_at?: string
           versao?: number
         }
@@ -509,6 +557,7 @@ export type Database = {
         Row: {
           alvo: number
           atual: number
+          base_id: string | null
           client_id: string
           concluido: boolean
           created_at: string
@@ -517,14 +566,17 @@ export type Database = {
           ordem: number
           org_id: string
           periodicidade_anos: number | null
+          persistencia: Database["public"]["Enums"]["row_persistence"]
           plan_id: string | null
           prazo: Database["public"]["Enums"]["goal_term"]
           prioridade: number
+          suprimido: boolean
           titulo: string
         }
         Insert: {
           alvo?: number
           atual?: number
+          base_id?: string | null
           client_id: string
           concluido?: boolean
           created_at?: string
@@ -533,14 +585,17 @@ export type Database = {
           ordem?: number
           org_id: string
           periodicidade_anos?: number | null
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string | null
           prazo?: Database["public"]["Enums"]["goal_term"]
           prioridade?: number
+          suprimido?: boolean
           titulo: string
         }
         Update: {
           alvo?: number
           atual?: number
+          base_id?: string | null
           client_id?: string
           concluido?: boolean
           created_at?: string
@@ -549,12 +604,21 @@ export type Database = {
           ordem?: number
           org_id?: string
           periodicidade_anos?: number | null
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string | null
           prazo?: Database["public"]["Enums"]["goal_term"]
           prioridade?: number
+          suprimido?: boolean
           titulo?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "goal_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "goal"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "goal_client_id_fkey"
             columns: ["client_id"]
@@ -574,6 +638,57 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "financial_plan"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_batch: {
+        Row: {
+          arquivo_nome: string | null
+          created_at: string
+          criado_por: string | null
+          data_referencia: string | null
+          fonte: Database["public"]["Enums"]["import_source"]
+          id: string
+          linhas_ok: number | null
+          linhas_total: number | null
+          org_id: string
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_referencia?: string | null
+          fonte: Database["public"]["Enums"]["import_source"]
+          id?: string
+          linhas_ok?: number | null
+          linhas_total?: number | null
+          org_id: string
+        }
+        Update: {
+          arquivo_nome?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_referencia?: string | null
+          fonte?: Database["public"]["Enums"]["import_source"]
+          id?: string
+          linhas_ok?: number | null
+          linhas_total?: number | null
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_batch_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "app_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_batch_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organization"
             referencedColumns: ["id"]
           },
         ]
@@ -619,6 +734,7 @@ export type Database = {
       }
       investment: {
         Row: {
+          base_id: string | null
           classe: Database["public"]["Enums"]["investment_class"]
           client_id: string
           id: string
@@ -627,10 +743,13 @@ export type Database = {
           nome: string | null
           ordem: number
           org_id: string
+          persistencia: Database["public"]["Enums"]["row_persistence"]
           plan_id: string | null
+          suprimido: boolean
           valor: number
         }
         Insert: {
+          base_id?: string | null
           classe: Database["public"]["Enums"]["investment_class"]
           client_id: string
           id?: string
@@ -639,10 +758,13 @@ export type Database = {
           nome?: string | null
           ordem?: number
           org_id: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string | null
+          suprimido?: boolean
           valor?: number
         }
         Update: {
+          base_id?: string | null
           classe?: Database["public"]["Enums"]["investment_class"]
           client_id?: string
           id?: string
@@ -651,10 +773,19 @@ export type Database = {
           nome?: string | null
           ordem?: number
           org_id?: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string | null
+          suprimido?: boolean
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "investment_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "investment"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "investment_client_id_fkey"
             columns: ["client_id"]
@@ -669,37 +800,208 @@ export type Database = {
             referencedRelation: "organization"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "investment_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "financial_plan"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_account: {
+        Row: {
+          apelido: string
+          ativo: boolean
+          client_id: string
+          created_at: string
+          custodiante: string | null
+          id: string
+          instituicao: string
+          numero: string | null
+          ordem: number
+          org_id: string
+          titular_tipo: Database["public"]["Enums"]["holder_type"]
+        }
+        Insert: {
+          apelido: string
+          ativo?: boolean
+          client_id: string
+          created_at?: string
+          custodiante?: string | null
+          id?: string
+          instituicao: string
+          numero?: string | null
+          ordem?: number
+          org_id: string
+          titular_tipo?: Database["public"]["Enums"]["holder_type"]
+        }
+        Update: {
+          apelido?: string
+          ativo?: boolean
+          client_id?: string
+          created_at?: string
+          custodiante?: string | null
+          id?: string
+          instituicao?: string
+          numero?: string | null
+          ordem?: number
+          org_id?: string
+          titular_tipo?: Database["public"]["Enums"]["holder_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_account_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investment_account_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organization"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_position: {
+        Row: {
+          account_id: string
+          classe: Database["public"]["Enums"]["investment_class"]
+          client_id: string
+          coberto_fgc: boolean
+          created_at: string
+          custo: number | null
+          data_aplicacao: string | null
+          emissor_nome: string | null
+          id: string
+          indexador: Database["public"]["Enums"]["position_indexer"]
+          isento_ir: boolean
+          liquidez: string | null
+          nome: string
+          ordem: number
+          org_id: string
+          origem: Database["public"]["Enums"]["position_origin"]
+          quantidade: number | null
+          taxa: number | null
+          tipo_instrumento: string | null
+          vencimento: string | null
+        }
+        Insert: {
+          account_id: string
+          classe: Database["public"]["Enums"]["investment_class"]
+          client_id: string
+          coberto_fgc?: boolean
+          created_at?: string
+          custo?: number | null
+          data_aplicacao?: string | null
+          emissor_nome?: string | null
+          id?: string
+          indexador?: Database["public"]["Enums"]["position_indexer"]
+          isento_ir?: boolean
+          liquidez?: string | null
+          nome: string
+          ordem?: number
+          org_id: string
+          origem?: Database["public"]["Enums"]["position_origin"]
+          quantidade?: number | null
+          taxa?: number | null
+          tipo_instrumento?: string | null
+          vencimento?: string | null
+        }
+        Update: {
+          account_id?: string
+          classe?: Database["public"]["Enums"]["investment_class"]
+          client_id?: string
+          coberto_fgc?: boolean
+          created_at?: string
+          custo?: number | null
+          data_aplicacao?: string | null
+          emissor_nome?: string | null
+          id?: string
+          indexador?: Database["public"]["Enums"]["position_indexer"]
+          isento_ir?: boolean
+          liquidez?: string | null
+          nome?: string
+          ordem?: number
+          org_id?: string
+          origem?: Database["public"]["Enums"]["position_origin"]
+          quantidade?: number | null
+          taxa?: number | null
+          tipo_instrumento?: string | null
+          vencimento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_position_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "investment_account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investment_position_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investment_position_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organization"
+            referencedColumns: ["id"]
+          },
         ]
       }
       liability: {
         Row: {
+          base_id: string | null
           client_id: string
           id: string
           nome: string
           ordem: number
           org_id: string
+          persistencia: Database["public"]["Enums"]["row_persistence"]
           plan_id: string | null
+          suprimido: boolean
           valor: number
         }
         Insert: {
+          base_id?: string | null
           client_id: string
           id?: string
           nome: string
           ordem?: number
           org_id: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string | null
+          suprimido?: boolean
           valor?: number
         }
         Update: {
+          base_id?: string | null
           client_id?: string
           id?: string
           nome?: string
           ordem?: number
           org_id?: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string | null
+          suprimido?: boolean
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "liability_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "liability"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "liability_client_id_fkey"
             columns: ["client_id"]
@@ -712,6 +1014,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organization"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "liability_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "financial_plan"
             referencedColumns: ["id"]
           },
         ]
@@ -893,8 +1202,79 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_card_purchase: {
+        Row: {
+          base_id: string | null
+          cartao: string
+          created_at: string
+          descricao: string
+          id: string
+          inicio: string
+          ordem: number
+          org_id: string
+          parcelas: number
+          persistencia: Database["public"]["Enums"]["row_persistence"]
+          plan_id: string
+          suprimido: boolean
+          valor_parcela: number
+        }
+        Insert: {
+          base_id?: string | null
+          cartao: string
+          created_at?: string
+          descricao: string
+          id?: string
+          inicio: string
+          ordem?: number
+          org_id: string
+          parcelas?: number
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
+          plan_id: string
+          suprimido?: boolean
+          valor_parcela?: number
+        }
+        Update: {
+          base_id?: string | null
+          cartao?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          inicio?: string
+          ordem?: number
+          org_id?: string
+          parcelas?: number
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
+          plan_id?: string
+          suprimido?: boolean
+          valor_parcela?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_card_purchase_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "plan_card_purchase"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_card_purchase_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organization"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_card_purchase_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "financial_plan"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_change: {
         Row: {
+          base_id: string | null
           categoria: Database["public"]["Enums"]["change_category"]
           created_at: string
           fim: string | null
@@ -905,11 +1285,14 @@ export type Database = {
           ordem: number
           org_id: string
           parcelas: number | null
+          persistencia: Database["public"]["Enums"]["row_persistence"]
           plan_id: string
+          suprimido: boolean
           titulo: string
           valor: number
         }
         Insert: {
+          base_id?: string | null
           categoria: Database["public"]["Enums"]["change_category"]
           created_at?: string
           fim?: string | null
@@ -920,11 +1303,14 @@ export type Database = {
           ordem?: number
           org_id: string
           parcelas?: number | null
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id: string
+          suprimido?: boolean
           titulo: string
           valor?: number
         }
         Update: {
+          base_id?: string | null
           categoria?: Database["public"]["Enums"]["change_category"]
           created_at?: string
           fim?: string | null
@@ -935,11 +1321,20 @@ export type Database = {
           ordem?: number
           org_id?: string
           parcelas?: number | null
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string
+          suprimido?: boolean
           titulo?: string
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "plan_change_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "plan_change"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "plan_change_org_id_fkey"
             columns: ["org_id"]
@@ -958,8 +1353,9 @@ export type Database = {
       }
       plan_expense: {
         Row: {
+          base_id: string | null
           bucket: Database["public"]["Enums"]["budget_bucket"]
-          categoria_id: string
+          categoria_plan_id: string
           descricao: string | null
           frequencia: Database["public"]["Enums"]["entry_frequency"]
           id: string
@@ -967,12 +1363,16 @@ export type Database = {
           meses: number[] | null
           ordem: number
           org_id: string
+          pagamento: Database["public"]["Enums"]["payment_method"]
+          persistencia: Database["public"]["Enums"]["row_persistence"]
           plan_id: string
+          suprimido: boolean
           valor: number
         }
         Insert: {
+          base_id?: string | null
           bucket?: Database["public"]["Enums"]["budget_bucket"]
-          categoria_id: string
+          categoria_plan_id: string
           descricao?: string | null
           frequencia?: Database["public"]["Enums"]["entry_frequency"]
           id?: string
@@ -980,12 +1380,16 @@ export type Database = {
           meses?: number[] | null
           ordem?: number
           org_id: string
+          pagamento?: Database["public"]["Enums"]["payment_method"]
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id: string
+          suprimido?: boolean
           valor?: number
         }
         Update: {
+          base_id?: string | null
           bucket?: Database["public"]["Enums"]["budget_bucket"]
-          categoria_id?: string
+          categoria_plan_id?: string
           descricao?: string | null
           frequencia?: Database["public"]["Enums"]["entry_frequency"]
           id?: string
@@ -993,15 +1397,25 @@ export type Database = {
           meses?: number[] | null
           ordem?: number
           org_id?: string
+          pagamento?: Database["public"]["Enums"]["payment_method"]
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string
+          suprimido?: boolean
           valor?: number
         }
         Relationships: [
           {
-            foreignKeyName: "plan_expense_categoria_id_fkey"
-            columns: ["categoria_id"]
+            foreignKeyName: "plan_expense_base_id_fkey"
+            columns: ["base_id"]
             isOneToOne: false
-            referencedRelation: "budget_category"
+            referencedRelation: "plan_expense"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_expense_categoria_plan_id_fkey"
+            columns: ["categoria_plan_id"]
+            isOneToOne: false
+            referencedRelation: "plan_expense_category"
             referencedColumns: ["id"]
           },
           {
@@ -1020,8 +1434,67 @@ export type Database = {
           },
         ]
       }
+      plan_expense_category: {
+        Row: {
+          base_id: string | null
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          org_id: string
+          persistencia: Database["public"]["Enums"]["row_persistence"]
+          plan_id: string
+          suprimido: boolean
+        }
+        Insert: {
+          base_id?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          org_id: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
+          plan_id: string
+          suprimido?: boolean
+        }
+        Update: {
+          base_id?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          org_id?: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
+          plan_id?: string
+          suprimido?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_expense_category_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "plan_expense_category"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_expense_category_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organization"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_expense_category_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "financial_plan"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_income: {
         Row: {
+          base_id: string | null
           derivado: Database["public"]["Enums"]["derived_income"] | null
           fonte: string
           frequencia: Database["public"]["Enums"]["entry_frequency"]
@@ -1030,10 +1503,13 @@ export type Database = {
           meses: number[] | null
           ordem: number
           org_id: string
+          persistencia: Database["public"]["Enums"]["row_persistence"]
           plan_id: string
+          suprimido: boolean
           valor: number
         }
         Insert: {
+          base_id?: string | null
           derivado?: Database["public"]["Enums"]["derived_income"] | null
           fonte: string
           frequencia?: Database["public"]["Enums"]["entry_frequency"]
@@ -1042,10 +1518,13 @@ export type Database = {
           meses?: number[] | null
           ordem?: number
           org_id: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id: string
+          suprimido?: boolean
           valor?: number
         }
         Update: {
+          base_id?: string | null
           derivado?: Database["public"]["Enums"]["derived_income"] | null
           fonte?: string
           frequencia?: Database["public"]["Enums"]["entry_frequency"]
@@ -1054,10 +1533,19 @@ export type Database = {
           meses?: number[] | null
           ordem?: number
           org_id?: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string
+          suprimido?: boolean
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "plan_income_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "plan_income"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "plan_income_org_id_fkey"
             columns: ["org_id"]
@@ -1076,30 +1564,46 @@ export type Database = {
       }
       plan_insurance: {
         Row: {
+          base_id: string | null
           id: string
           nome: string
           ordem: number
           org_id: string
+          persistencia: Database["public"]["Enums"]["row_persistence"]
           plan_id: string
+          suprimido: boolean
           valor: number
         }
         Insert: {
+          base_id?: string | null
           id?: string
           nome: string
           ordem?: number
           org_id: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id: string
+          suprimido?: boolean
           valor?: number
         }
         Update: {
+          base_id?: string | null
           id?: string
           nome?: string
           ordem?: number
           org_id?: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string
+          suprimido?: boolean
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "plan_insurance_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "plan_insurance"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "plan_insurance_org_id_fkey"
             columns: ["org_id"]
@@ -1118,30 +1622,46 @@ export type Database = {
       }
       plan_pension: {
         Row: {
+          base_id: string | null
           id: string
           nome: string
           ordem: number
           org_id: string
+          persistencia: Database["public"]["Enums"]["row_persistence"]
           plan_id: string
+          suprimido: boolean
           valor: number
         }
         Insert: {
+          base_id?: string | null
           id?: string
           nome: string
           ordem?: number
           org_id: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id: string
+          suprimido?: boolean
           valor?: number
         }
         Update: {
+          base_id?: string | null
           id?: string
           nome?: string
           ordem?: number
           org_id?: string
+          persistencia?: Database["public"]["Enums"]["row_persistence"]
           plan_id?: string
+          suprimido?: boolean
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "plan_pension_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "plan_pension"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "plan_pension_org_id_fkey"
             columns: ["org_id"]
@@ -1200,6 +1720,65 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organization"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      position_snapshot: {
+        Row: {
+          created_at: string
+          data_referencia: string
+          id: string
+          import_batch_id: string | null
+          org_id: string
+          position_id: string
+          valor_bruto: number
+        }
+        Insert: {
+          created_at?: string
+          data_referencia: string
+          id?: string
+          import_batch_id?: string | null
+          org_id: string
+          position_id: string
+          valor_bruto?: number
+        }
+        Update: {
+          created_at?: string
+          data_referencia?: string
+          id?: string
+          import_batch_id?: string | null
+          org_id?: string
+          position_id?: string
+          valor_bruto?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "position_snapshot_import_batch_id_fkey"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_batch"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "position_snapshot_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organization"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "position_snapshot_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "investment_position"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "position_snapshot_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "position_latest"
+            referencedColumns: ["position_id"]
           },
         ]
       }
@@ -1679,7 +2258,31 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      position_latest: {
+        Row: {
+          account_id: string | null
+          client_id: string | null
+          data_referencia: string | null
+          position_id: string | null
+          valor_bruto: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_position_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "investment_account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investment_position_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_write: { Args: never; Returns: boolean }
@@ -1747,13 +2350,25 @@ export type Database = {
         | "filhos_pets"
         | "outros"
       goal_term: "curto" | "longo"
+      holder_type: "pf" | "pj"
+      import_source:
+        | "manual"
+        | "eleva_csv"
+        | "xp_csv"
+        | "btg_csv"
+        | "open_finance"
+        | "api"
       investment_class: "renda_fixa" | "renda_variavel" | "previdencia"
+      payment_method: "credito" | "debito"
       plan_cadence: "mensal" | "bimestral" | "trimestral"
       plan_horizon: "curto" | "longo"
+      plan_kind: "pre_hfc" | "hfc" | "real"
       plan_lifecycle: "rascunho" | "ativo" | "arquivado"
       plan_status: "ativo" | "diagnostico" | "pendente"
       plan_value_mode: "nominal" | "real"
       point_event_type: "meta" | "indicacao" | "engajamento" | "ajuste"
+      position_indexer: "cdi" | "ipca" | "prefixado" | "selic" | "nao_aplica"
+      position_origin: "manual" | "importado"
       projection_horizon: "curta" | "longa" | "aposentadoria"
       redemption_status: "solicitado" | "entregue" | "cancelado"
       referral_status: "pendente" | "convertido" | "cancelado"
@@ -1761,6 +2376,7 @@ export type Database = {
       report_status: "rascunho" | "publicado"
       reward_tier: "bronze" | "prata" | "ouro"
       risk_profile: "conservador" | "moderado" | "arrojado"
+      row_persistence: "herdado" | "mes" | "permanente"
       user_role: "admin" | "planner" | "assistant" | "client"
     }
     CompositeTypes: {
@@ -1911,13 +2527,26 @@ export const Constants = {
         "outros",
       ],
       goal_term: ["curto", "longo"],
+      holder_type: ["pf", "pj"],
+      import_source: [
+        "manual",
+        "eleva_csv",
+        "xp_csv",
+        "btg_csv",
+        "open_finance",
+        "api",
+      ],
       investment_class: ["renda_fixa", "renda_variavel", "previdencia"],
+      payment_method: ["credito", "debito"],
       plan_cadence: ["mensal", "bimestral", "trimestral"],
       plan_horizon: ["curto", "longo"],
+      plan_kind: ["pre_hfc", "hfc", "real"],
       plan_lifecycle: ["rascunho", "ativo", "arquivado"],
       plan_status: ["ativo", "diagnostico", "pendente"],
       plan_value_mode: ["nominal", "real"],
       point_event_type: ["meta", "indicacao", "engajamento", "ajuste"],
+      position_indexer: ["cdi", "ipca", "prefixado", "selic", "nao_aplica"],
+      position_origin: ["manual", "importado"],
       projection_horizon: ["curta", "longa", "aposentadoria"],
       redemption_status: ["solicitado", "entregue", "cancelado"],
       referral_status: ["pendente", "convertido", "cancelado"],
@@ -1925,6 +2554,7 @@ export const Constants = {
       report_status: ["rascunho", "publicado"],
       reward_tier: ["bronze", "prata", "ouro"],
       risk_profile: ["conservador", "moderado", "arrojado"],
+      row_persistence: ["herdado", "mes", "permanente"],
       user_role: ["admin", "planner", "assistant", "client"],
     },
   },

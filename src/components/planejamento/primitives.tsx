@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileQuestion, type LucideIcon } from "lucide-react";
+import { FileQuestion, WalletMinimal, type LucideIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/types";
 
 /** Cartão padrão das telas de planejamento. */
@@ -141,14 +141,44 @@ export function SemPlano({ clienteId }: { clienteId: string }) {
         Este cliente ainda não tem um plano
       </p>
       <p className="font-inter text-sm text-slate-500 mt-1 max-w-md">
-        O raio-x começa pelo fluxo de caixa: receitas, custos e parcelas. A partir
-        daí a projeção se monta sozinha.
+        O raio-x começa pela receita do planejamento HFC. A partir daí a
+        projeção se monta sozinha.
       </p>
       <Link
-        href={`/clientes/${clienteId}/planejamento/fluxo-de-caixa`}
+        href={`/clientes/${clienteId}/planejamento/hfc/receita`}
         className="mt-6 bg-brand-600 hover:bg-brand-900 transition-colors text-white font-poppins font-medium px-4 py-2 rounded-lg text-sm"
       >
         Começar o raio-x
+      </Link>
+    </div>
+  );
+}
+
+/**
+ * Estado para quem não contratou o serviço de Investimento.
+ *
+ * Não é 404 nem erro de permissão: a página existe e a pessoa existe — o que não
+ * existe é a contratação. Mandar para o cadastro é o que resolve, então é para lá
+ * que o botão aponta.
+ */
+export function SemServicoInvestimento({ clienteId }: { clienteId: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+        <WalletMinimal className="w-7 h-7 text-slate-400" />
+      </div>
+      <p className="font-poppins text-lg text-brand-950">
+        Este cliente não tem Investimento contratado
+      </p>
+      <p className="font-inter text-sm text-slate-500 mt-1 max-w-md">
+        A carteira, os vencimentos e a alocação aparecem aqui depois que o serviço
+        for marcado no cadastro.
+      </p>
+      <Link
+        href={`/clientes/${clienteId}/cadastro`}
+        className="mt-6 bg-brand-600 hover:bg-brand-900 transition-colors text-white font-poppins font-medium px-4 py-2 rounded-lg text-sm"
+      >
+        Abrir o cadastro
       </Link>
     </div>
   );

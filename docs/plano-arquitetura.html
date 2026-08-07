@@ -329,6 +329,50 @@
   .erd-note b { color: var(--ink); font-weight: 600; }
   @media (max-width: 900px) { .erd { grid-template-columns: 1fr 1fr; } .erd-invest-row { grid-template-columns: 1fr; } }
   @media (max-width: 600px) { .erd { grid-template-columns: 1fr; } }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  /* ——— Remodelação do Planejamento ——————————————————————
+     A seção se apresenta como a coisa que descreve: uma planilha.
+     A matriz é 8 seções × 3 planejamentos — a estrutura real do produto. */
+  .plan-kinds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+  .kind {
+    background: var(--surface); border: 1px solid var(--line);
+    border-top: 3px solid var(--kc, var(--accent));
+    border-radius: 12px; padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .kind .kn { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; color: var(--kc); }
+  .kind .kw { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
+  .kind p { font-size: 0.88rem; color: var(--ink-soft); }
+
+  .sheet-wrap { overflow-x: auto; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); }
+  table.sheet { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 0.86rem; }
+  table.sheet th, table.sheet td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 9px 14px; text-align: left; }
+  table.sheet th:last-child, table.sheet td:last-child { border-right: 0; }
+  table.sheet tr:last-child th, table.sheet tr:last-child td { border-bottom: 0; }
+  table.sheet thead th {
+    background: var(--surface-2); font-family: var(--font-mono);
+    font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 700; white-space: nowrap;
+  }
+  table.sheet tbody th { font-weight: 600; color: var(--ink); white-space: nowrap; }
+  table.sheet td { color: var(--ink-soft); }
+  table.sheet caption {
+    caption-side: top; text-align: left; padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent); font-weight: 700;
+  }
+
+  .plan-notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
+  .pnote { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .pnote h4 { font-size: 0.95rem; margin-bottom: 5px; }
+  .pnote p { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.55; }
+  @media (max-width: 820px) { .plan-kinds, .plan-notes { grid-template-columns: 1fr; } }
 </style>
 
 <header class="hero">
@@ -342,9 +386,9 @@
     <div class="meta-row">
       <div class="meta"><span class="k">Produto</span><span class="v">HFC Hub</span></div>
       <div class="meta"><span class="k">Documento</span><span class="v">Plano mestre v1</span></div>
-      <div class="meta"><span class="k">Atualizado</span><span class="v">26 jul 2026</span></div>
+      <div class="meta"><span class="k">Atualizado</span><span class="v">7 ago 2026</span></div>
       <div class="meta"><span class="k">Stack</span><span class="v">Next.js 16 · Supabase</span></div>
-      <div class="meta"><span class="k">Fase atual</span><span class="v"><span class="dot" style="background:var(--good)"></span>Fase 0 concluída</span></div>
+      <div class="meta"><span class="k">Fase atual</span><span class="v"><span class="dot" style="background:var(--good)"></span>Planejamento remodelado — Fase&nbsp;1 no ar</span></div>
     </div>
   </div>
 </header>
@@ -356,13 +400,33 @@
     <div class="sec-head">
       <span class="eyebrow">00 · Progresso</span>
       <h2>O que já está de pé</h2>
-      <p>Fase 0 aplicada e verificada em produção; o Planejamento saiu do papel e já roda por período, com o motor traduzido da planilha.</p>
+      <p>A ferramenta de Planejamento foi <b>remodelada por inteiro</b> — o novo modelo de três planejamentos com tabelas tipo planilha está no ar (Fase&nbsp;1 da remodelação), sobre o motor traduzido e validado contra a planilha original.</p>
     </div>
     <div class="decisions">
       <div class="decision">
-        <span class="k">Planejamento por período</span>
-        <span class="v">O Ponto de Partida virou o primeiro de muitos</span>
-        <p class="note">Cada período de acompanhamento — mês, bimestre ou trimestre — é uma versão completa do plano, clonada da anterior. O planejador abre a ferramenta, escolhe o período no canto superior direito e mexe no que mudou enquanto conversa com o cliente; o período anterior fica intacto. O "Ponto de Partida" é simplesmente a versão&nbsp;1. Ativos, passivos, carteira, dívidas e objetivos passaram a pertencer ao período, e não ao cliente — sem isso todo período mostraria o mesmo patrimônio.</p>
+        <span class="k">Remodelação · o modelo</span>
+        <span class="v">Três planejamentos: Pré-HFC · HFC · Real</span>
+        <p class="note">Cada cliente passa a ter três planejamentos. O <b>Pré-HFC</b> é a foto de como ele vivia antes da consultoria; o <b>HFC</b> é o plano traçado a partir da primeira conversa — a referência de tudo; o <b>Real</b> é a série de períodos mensais editada a cada reunião de acompanhamento. Os dois primeiros são retratos únicos e sempre editáveis; só o Real tem linha do tempo. Comparar os três é mostrar, em números, o efeito da consultoria.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Remodelação · a edição</span>
+        <span class="v">Tabelas tipo planilha, com autosave por célula</span>
+        <p class="note">O padrão lista-e-formulário deu lugar a <b>grids editáveis como uma planilha</b>: clique na célula, digite, Enter cria a linha de baixo e o foco segue. Cada célula grava sozinha ao confirmar (indicador salvando/salvo, reversão automática em erro), a moeda formata o milhar enquanto se digita e os totais se movem em tempo real. Oito seções por planejamento: Receita, Despesa, Cartão, Ativos, Passivos, Investimentos, Objetivos e Mudanças, Projeção.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Remodelação · despesa e cartão</span>
+        <span class="v">Blocos livres por categoria · fatura projetada</span>
+        <p class="note">A despesa se organiza em <b>blocos de categoria criados na hora</b> (Moradia, Transporte, Filhos…), com título editável, subtotal por bloco e autocomplete dos nomes já usados na consultoria — flexibilidade de planilha com convergência natural entre clientes. Cada linha carrega fixo/variável e crédito/débito. A seção <b>Cartão</b> registra compras parceladas e deriva a fatura projetada de cada cartão, mês a mês — as parcelas atravessam a virada do ano sem tabela auxiliar.</p>
+      </div>
+      <div class="decision">
+        <span class="k">Remodelação · o Real</span>
+        <span class="v">Períodos que nascem do HFC, com memória</span>
+        <p class="note">Cada período mensal do Real nasce como cópia do HFC, e toda linha sabe de onde veio: um ajuste feito na reunião é <b>pontual</b> (vale só naquele mês) ou <b>permanente</b> (viaja para os períodos seguintes). O modelo de dados já está no banco — a abertura de período com essa herança e o pin pontual/permanente são a Fase&nbsp;2, junto com o novo Acompanhamento (síntese com estrelas calculadas por regra, não mais digitadas à mão).</p>
+      </div>
+      <div class="decision">
+        <span class="k">Área de Investimentos</span>
+        <span class="v">CRM de carteiras: conta → posição → retrato datado</span>
+        <p class="note">A aba de Investimentos ganhou o modelo real de carteira: contas por instituição, posições com atributos fiscais (custo de aquisição, isenção, FGC) e o valor guardado como <b>retrato datado</b> — nunca sobrescrito, para o histórico e a rentabilidade futura não se perderem. Toda tela mostra a data ao lado do valor. Lançamento manual é caminho permanente, não provisório.</p>
       </div>
       <div class="decision">
         <span class="k">Balanço patrimonial</span>
@@ -372,7 +436,7 @@
       <div class="decision">
         <span class="k">Backend &amp; dados</span>
         <span class="v">Supabase aplicado e verificado</span>
-        <p class="note">23 tabelas, RLS em todas, 93 políticas em <code>public</code> + 4 no bucket de relatórios. 27/27 asserções de RLS passando. <code>org_id</code> multi-tenant desde o dia 1.</p>
+        <p class="note">29 tabelas, RLS em todas, políticas uniformes por <code>org_id</code> + 4 no bucket de relatórios. 43/43 asserções do smoke de RLS passando. Multi-tenant desde o dia 1.</p>
       </div>
       <div class="decision">
         <span class="k">Autenticação</span>
@@ -388,6 +452,97 @@
         <span class="k">Design &amp; navegação</span>
         <span class="v">Casca unificada, abas reorganizadas</span>
         <p class="note">Cabeçalho e rodapé fixos com o scroll contido no lugar certo, marca com selo "HFC Consultoria". Abas redesenhadas em cima do domínio real do banco — Clientes, Agenda, Investimentos, Relatórios, Indicações &amp; Recompensas — todas clicáveis, com conteúdo "Em breve" onde ainda não há dado real por trás.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- REMODELAÇÃO DO PLANEJAMENTO -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">00b · Em destaque</span>
+      <h2>A remodelação do Planejamento</h2>
+      <p>Semanas de teste e discussão interna produziram um modelo novo para a ferramenta que é a alma da consultoria. Ela deixa de ser uma tela por assunto e passa a ser uma <b>base de dados do cliente em três tempos</b> — antes, no plano e no realizado —, editada como se fosse uma planilha, só que sem os defeitos de uma.</p>
+    </div>
+
+    <div class="plan-kinds">
+      <div class="kind" style="--kc:var(--ink-soft)">
+        <span class="kw">Retrato · antes</span>
+        <span class="kn">Pré-HFC</span>
+        <p>Como o cliente vivia antes da consultoria. Preenchido uma vez e sempre editável, é o termo de comparação que dá a medida do trabalho feito.</p>
+      </div>
+      <div class="kind" style="--kc:var(--m-plan)">
+        <span class="kw">Retrato · o plano</span>
+        <span class="kn">HFC</span>
+        <p>O plano traçado a partir da primeira conversa. É a referência de todo o resto: o Real herda dele, e o Acompanhamento mede cada mês contra ele.</p>
+      </div>
+      <div class="kind" style="--kc:var(--good)">
+        <span class="kw">Série · o realizado</span>
+        <span class="kn">Real</span>
+        <p>Um período por mês, editado na reunião de acompanhamento. Cada período nasce do HFC e guarda o que de fato aconteceu naquele mês.</p>
+      </div>
+    </div>
+
+    <div class="sheet-wrap">
+      <table class="sheet">
+        <caption>As mesmas oito seções nos três planejamentos — é o que torna os três comparáveis</caption>
+        <thead>
+          <tr>
+            <th scope="col">Seção</th>
+            <th scope="col">O que o planejador registra</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Receita</th><td>Fontes com valor cheio, frequência (mensal, anual ou meses escolhidos), 13º e férias</td></tr>
+          <tr><th scope="row">Despesa</th><td>Blocos de categoria criados na hora; por linha: valor, fixo ou variável, crédito ou débito, frequência</td></tr>
+          <tr><th scope="row">Cartão</th><td>Compras parceladas — a fatura projetada de cada cartão sai daqui, mês a mês</td></tr>
+          <tr><th scope="row">Ativos</th><td>Bens que não rendem juros: imóveis, veículos, participações</td></tr>
+          <tr><th scope="row">Passivos</th><td>Dívidas parceladas (parcela, credor, prazo, saldo) e passivos sem parcela</td></tr>
+          <tr><th scope="row">Investimentos</th><td>A carteira daquele retrato — é dela que a projeção parte</td></tr>
+          <tr><th scope="row">Objetivos e Mudanças</th><td>Aonde o cliente quer chegar e o que muda no fluxo a partir de certo mês</td></tr>
+          <tr><th scope="row">Projeção</th><td>O motor rodando sobre aquele planejamento: fluxo, patrimônio, aposentadoria e as premissas</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="plan-notes">
+      <div class="pnote">
+        <h4>Edita-se como planilha</h4>
+        <p>Clique na célula e digite; Enter cria a linha de baixo e leva o foco junto. Cada célula grava sozinha ao confirmar, com indicador de salvamento e reversão automática se algo falhar. A moeda separa o milhar enquanto se digita e os totais se movem em tempo real — a fluência da planilha, sem fórmula quebrada nem célula perdida.</p>
+      </div>
+      <div class="pnote">
+        <h4>A despesa se organiza sozinha</h4>
+        <p>O planejador cria o bloco digitando o nome — Moradia, Transporte, Filhos — e o sistema sugere os nomes já usados na consultoria. Cada bloco tem título editável e subtotal próprio. Liberdade de planilha, com os nomes convergindo naturalmente entre clientes: é o que tornará possível comparar carteiras no Dashboard.</p>
+      </div>
+      <div class="pnote">
+        <h4>Cada linha sabe de onde veio</h4>
+        <p>No Real, toda linha carrega sua origem no HFC. Um ajuste feito na reunião é <b>pontual</b> (vale só naquele mês) ou <b>permanente</b> (viaja para os meses seguintes) — e remover uma linha herdada não a apaga, registra que ela foi tirada de propósito. É o que faz o mês seguinte nascer certo sem redigitar a vida do cliente.</p>
+      </div>
+    </div>
+
+    <div class="roadmap" style="margin-top:26px">
+      <div class="phase">
+        <div class="pnum">1<small>Entregue</small></div>
+        <div class="pbody">
+          <h3>Aba Planejamento <span class="pill now">No ar · 7 ago 2026</span></h3>
+          <p>Os três planejamentos com as oito seções, os grids editáveis com autosave, os blocos de despesa, a fatura de cartão e a projeção por planejamento. As quatro abas antigas saíram. Percorrido no navegador com dado real — criar planejamento, digitar receita e despesa, ver a projeção se mover.</p>
+          <div class="chips"><span class="chip">43/43 no smoke de RLS</span><span class="chip">164 testes</span><span class="chip">paridade com a planilha intacta</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="pnum">2<small>A seguir</small></div>
+        <div class="pbody">
+          <h3>Aba Acompanhamento <span class="pill next">Próxima</span></h3>
+          <p>A página que o planejador abre <i>durante</i> a reunião: a síntese do mês (Receitas, Despesas, Sobras e Investimentos — realizado contra meta, com estrelas <b>calculadas por regra</b>, encerrando o improviso da planilha, onde eram digitadas à mão) e, logo abaixo, a edição do período do Real. Abrir um período passa a herdar do HFC, carregando adiante o que foi marcado como permanente.</p>
+          <div class="chips"><span class="chip">Síntese com estrelas</span><span class="chip">Abertura de período por herança</span><span class="chip">Pontual × permanente</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="pnum">3<small>Depois</small></div>
+        <div class="pbody">
+          <h3>Aba Dashboard <span class="pill later">Planejada</span></h3>
+          <p>As estatísticas do cliente sobre a base nova: evolução do patrimônio período a período, desempenho médio nas metas, desvio por categoria entre o planejado e o realizado, fatura futura por cartão e o comparativo Pré-HFC × hoje — o efeito da consultoria em números. É também quando se decide o destino do fluxo antigo de relatórios.</p>
+          <div class="chips"><span class="chip">Evolução do patrimônio</span><span class="chip">Desvio por categoria</span><span class="chip">Efeito HFC</span></div>
+        </div>
       </div>
     </div>
   </section>
@@ -431,8 +586,8 @@
       </div>
       <div class="decision">
         <span class="k">Integração rendafixa</span>
-        <span class="v">Sincronização via API</span>
-        <p class="note">O módulo de Investimentos puxa carteira e rentabilidade da rendafixa por API. Requer um contrato de API do lado da rendafixa; até lá, a costura fica isolada por um adaptador.</p>
+        <span class="v">Referência de análise — não fonte de carteira</span>
+        <p class="note">Correção de rumo (ago/26): a rendafixa <b>não fornece carteira nem rentabilidade, e não tem API</b>. Ela é o scorer de risco de crédito de emissores e o otimizador de alocação por indexador. A carteira é do Hub, lançada e mantida aqui; dado da rendafixa entra copiado, numa direção só — nome, CPF e patrimônio de cliente nunca vão para lá.</p>
       </div>
       <div class="decision">
         <span class="k">Dados da planilha atual</span>
@@ -476,31 +631,31 @@
         </ul>
       </div>
       <div class="mod" style="--mc:var(--m-plan)">
-        <div class="mhead"><h3>Planejamento (Raio-X)</h3><span class="pill now">MVP</span></div>
-        <span class="tag">nativo · dentro do CRM</span>
-        <p>O “Ponto de Partida” de cada cliente, alimentado pelos dados mensais que o planejador coleta.</p>
+        <div class="mhead"><h3>Planejamento</h3><span class="pill now">Remodelado · no ar</span></div>
+        <span class="tag">a alma do produto · base de dados do cliente</span>
+        <p>Três planejamentos por cliente — Pré-HFC, HFC e Real — cada um com oito seções editadas em tabelas tipo planilha, com autosave por célula.</p>
         <ul>
-          <li>Fluxo de caixa · Orçamento (ideal × real) · Sobras</li>
-          <li>Patrimônio (ativos × passivos) · Objetivos ★–★★★★★</li>
-          <li>Linha do tempo · Projeções · Aposentadoria</li>
+          <li>Receita · Despesa (blocos livres) · Cartão (fatura projetada)</li>
+          <li>Ativos · Passivos · Investimentos · Objetivos e Mudanças</li>
+          <li>Projeção por planejamento (motor validado · aposentadoria)</li>
         </ul>
       </div>
       <div class="mod" style="--mc:var(--m-inv-an)">
         <div class="mhead"><h3>Análise de Investimentos</h3><span class="pill link">rendafixa</span></div>
-        <span class="tag">sistema externo · via API</span>
-        <p>A rendafixa (em desenvolvimento) faz a análise. O Hub apenas se conecta e traz os dados.</p>
+        <span class="tag">sistema externo · referência de análise</span>
+        <p>A rendafixa pontua risco de crédito de emissores e otimiza alocação por indexador. Sem API: o dado entra no Hub copiado, numa direção só.</p>
         <ul>
-          <li>Deep-link + sincronização de carteira por API</li>
-          <li>Adaptador isola a integração até a API existir</li>
+          <li>Nota de risco e alvo de alocação como referência</li>
+          <li>A carteira é do Hub — nunca vai para a rendafixa</li>
         </ul>
       </div>
       <div class="mod" style="--mc:var(--m-inv)">
-        <div class="mhead"><h3>Investimentos</h3><span class="pill later">Fase 5</span></div>
-        <span class="tag">CRM adaptado · área de investimentos</span>
-        <p>Uma adaptação do CRM focada na área de investimentos: alocação, rentabilidade e acompanhamento de carteira.</p>
+        <div class="mhead"><h3>Investimentos</h3><span class="pill now">Fase A no ar</span></div>
+        <span class="tag">CRM de carteiras · valor sempre datado</span>
+        <p>Contas por instituição, posições com atributos fiscais e o valor como retrato datado — o histórico nunca se perde.</p>
         <ul>
-          <li>Renda fixa · variável · previdência</li>
-          <li>Consome dados sincronizados da rendafixa</li>
+          <li>Conta → posição → retrato (renda fixa · variável · previdência)</li>
+          <li>Custo de aquisição, isenção de IR e FGC lançados à mão — a base do futuro motor de imposto</li>
         </ul>
       </div>
       <div class="mod" style="--mc:var(--m-inv)">
@@ -804,10 +959,10 @@
             <li>external_id<span class="ty">text</span></li>
             <li>synced_at<span class="ty">timestamp</span></li>
           </ul>
-          <div class="ent-rel">↔ sincroniza com a rendafixa via API</div>
+          <div class="ent-rel">▸ vínculo de referência com a rendafixa</div>
         </div>
         <div class="erd-note">
-          <b>Costura com a rendafixa.</b> A rendafixa é o sistema externo de análise de investimentos. O módulo Investimentos consome a carteira e a rentabilidade sincronizadas; <code>rendafixa_link</code> guarda o vínculo (adaptador), isolando a integração enquanto a API é construída.
+          <b>Dois modelos que convivem de propósito.</b> <code>investment</code> é a foto da carteira <i>dentro de cada planejamento</i> — o número de que a projeção parte, clonado por período. A carteira real vive no CRM de Investimentos (Fase&nbsp;A, ago/26): <code>investment_account</code> → <code>investment_position</code> → <code>position_snapshot</code>, com o valor sempre num retrato datado. A rendafixa entra só como referência de análise (nota de risco, alvo de alocação), copiada numa direção — ela não fornece carteira e não tem API.
         </div>
       </div>
     </div>
@@ -935,10 +1090,10 @@
       <div class="phase">
         <div class="pnum">1<small>MVP</small></div>
         <div class="pbody">
-          <h3>Planejamento / Raio-X real <span class="pill now">Em curso · Marco MVP</span></h3>
-          <p>O “Ponto de Partida” virou <b>espaço de trabalho por período</b>: o planejador escolhe mês, bimestre ou trimestre no canto e edita o retrato daquela reunião — fluxo de caixa, patrimônio, objetivos e mudanças —, enquanto o período anterior fica guardado como estava. Cada versão do plano é um retrato; a versão&nbsp;1 é o ponto de partida.</p>
-          <p style="margin-top:8px"><b>Detalhamento completo:</b> <a href="./plano-planejamento.html">plano-planejamento.html</a> — mapa das 13 abas da planilha para o modelo de dados, as fórmulas do motor de projeção e as cinco sub-fases (P1–P5).</p>
-          <div class="chips"><span class="chip">Períodos versionados</span><span class="chip">Fluxo de caixa</span><span class="chip">Meses escolhidos</span><span class="chip">Patrimônio unificado</span><span class="chip">Objetivos e mudanças</span><span class="chip">Horizonte ajustável</span><span class="chip">Registro mensal</span><span class="chip">Aposentadoria</span></div>
+          <h3>Planejamento remodelado <span class="pill now">Fase 1 no ar · ago/26</span></h3>
+          <p>A remodelação definida pela equipe após semanas de teste interno, em três fases. <b>Fase&nbsp;1 (entregue):</b> os três planejamentos — Pré-HFC, HFC e Real — com oito seções cada, editados em tabelas tipo planilha com autosave por célula; despesa em blocos livres de categoria; cartão com fatura projetada; projeção do motor validado rodando por planejamento. <b>Fase&nbsp;2 (a seguir):</b> o novo Acompanhamento — a página da reunião mensal, com a síntese Realizado × Meta e estrelas calculadas por regra, editando o período do Real que nasce do HFC com ajustes pontuais ou permanentes. <b>Fase&nbsp;3:</b> o Dashboard do cliente sobre a nova base.</p>
+          <p style="margin-top:8px"><b>Motor:</b> o mesmo validado número a número contra a planilha original — curta, longa e aposentadoria como recortes de uma única série mensal.</p>
+          <div class="chips"><span class="chip">Pré-HFC · HFC · Real</span><span class="chip">Grid tipo planilha</span><span class="chip">Autosave por célula</span><span class="chip">Blocos de despesa</span><span class="chip">Fatura de cartão</span><span class="chip">Linhagem pontual/permanente</span><span class="chip">Projeção por planejamento</span><span class="chip">Estrelas por regra</span></div>
         </div>
       </div>
       <div class="phase">
@@ -968,9 +1123,9 @@
       <div class="phase">
         <div class="pnum">5<small>Invest.</small></div>
         <div class="pbody">
-          <h3>Investimentos + rendafixa <span class="pill later">Planejado</span></h3>
-          <p>Módulo de investimentos consumindo a API da rendafixa: alocação, rentabilidade e carteira sincronizadas.</p>
-          <div class="chips"><span class="chip">Adaptador rendafixa</span><span class="chip">Sync de carteira</span><span class="chip">Alocação &amp; rentab.</span></div>
+          <h3>Investimentos <span class="pill now">Fase A no ar · ago/26</span></h3>
+          <p>O CRM de carteiras entregue: contas, posições com atributos fiscais e retratos datados de valor, no painel do cliente e no cockpit da firma. Próximos degraus: importadores de arquivo (Eleva/XP/BTG), motor de imposto e o módulo de taxas &amp; cashback.</p>
+          <div class="chips"><span class="chip">Conta → posição → retrato</span><span class="chip">Cockpit cross-client</span><span class="chip">Importadores (próximo)</span><span class="chip">Motor de IR (próximo)</span></div>
         </div>
       </div>
       <div class="phase">
@@ -1001,8 +1156,8 @@
     </div>
     <div class="risks">
       <div class="risk">
-        <div class="q">API da rendafixa ainda não existe</div>
-        <div class="a"><b>Mitigação:</b> desenhar o contrato de dados agora e isolar tudo atrás de um adaptador, para o módulo de Investimentos não travar esperando a rendafixa.</div>
+        <div class="q">Carteira sem fonte automática</div>
+        <div class="a"><b>Resolvido por decisão (ago/26):</b> a rendafixa não fornece carteira e não terá API; nenhum agregador de Open Finance entrega custo de aquisição nem data de compra — os dois campos que o imposto exige. O lançamento manual é o caminho permanente, com importadores de arquivo como aceleradores: um importador só <i>acrescenta</i> retratos, nunca sobrescreve o que foi lançado à mão.</div>
       </div>
       <div class="risk">
         <div class="q">Paridade com o Excel é ampla</div>
@@ -1032,7 +1187,7 @@
   </section>
 
   <footer>
-    HFC Hub · Plano mestre v1 · 26 jul 2026 — documento vivo de acompanhamento do projeto.
+    HFC Hub · Plano mestre · atualizado em 7 ago 2026 — documento vivo de acompanhamento do projeto.
   </footer>
 
 </div>
@@ -1058,7 +1213,7 @@
     { id: 'AUTH', x: 30,  y: 412, w: 200, h: 66, kind: 'data',   kick: 'Supabase',          title: 'Auth',                  sub: 'papéis + sessão',       desc: 'Login sólido com papéis (admin / planejador / assistente / cliente). Base do controle de acesso refletido nas políticas de RLS.' },
     { id: 'DB',   x: 250, y: 410, w: 220, h: 72, kind: 'data',   kick: 'Supabase',          title: 'Postgres',              sub: 'RLS · org_id em tudo',  desc: 'Banco relacional com Row-Level Security por organização. Fonte da verdade de clientes, planejamento, patrimônio e metas.' },
     { id: 'ST',   x: 510, y: 412, w: 190, h: 66, kind: 'data',   kick: 'Supabase',          title: 'Storage',               sub: 'arquivos',              desc: 'Guarda os PDFs de relatório e anexos, com acesso controlado por políticas.' },
-    { id: 'RF',   x: 760, y: 150, w: 210, h: 66, kind: 'integ',  kick: 'Integração',        title: 'rendafixa API',         sub: 'carteira · rentab.',    desc: 'Sistema de análise de investimentos (em desenvolvimento). O Hub puxa carteira e rentabilidade por API, isolado atrás de um adaptador.' },
+    { id: 'RF',   x: 760, y: 150, w: 210, h: 66, kind: 'integ',  kick: 'Referência',        title: 'rendafixa',             sub: 'risco · alocação',      desc: 'Sistema externo de análise: pontua risco de crédito de emissores e otimiza alocação por indexador. Não fornece carteira nem rentabilidade, e não tem API — o dado entra copiado, numa direção só.' },
     { id: 'GC',   x: 760, y: 281, w: 210, h: 66, kind: 'integ',  kick: 'Integração',        title: 'Google Calendar',       sub: 'OAuth · 2 vias',        desc: 'Sincroniza as reuniões por cliente com a agenda Google do planejador.' },
     { id: 'OF',   x: 760, y: 412, w: 210, h: 66, kind: 'future', kick: 'Integração · futuro', title: 'MyFinancialGeek',     sub: 'Open Finance',          desc: 'Projeto de Open Finance para acompanhamento automático de gastos. Fora do escopo atual; a costura fica reservada.' }
   ];
@@ -1072,7 +1227,7 @@
     { a: 'API', b: 'AUTH', t: 'core',   rel: 'valida sessão e papel' },
     { a: 'API', b: 'DB',   t: 'core',   rel: 'lê e grava dados (RLS)' },
     { a: 'PDF', b: 'ST',   t: 'core',   rel: 'arquiva o PDF' },
-    { a: 'API', b: 'RF',   t: 'integ',  rel: 'sincroniza carteira (adaptador)' },
+    { a: 'API', b: 'RF',   t: 'integ',  rel: 'consulta risco e alocação (cópia, 1 via)' },
     { a: 'API', b: 'GC',   t: 'integ',  rel: 'sincroniza reuniões (2 vias)', bow: { x: 600, y: 432 } },
     { a: 'API', b: 'OF',   t: 'future', rel: 'conexão reservada (futuro)' }
   ];

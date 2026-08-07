@@ -1,4 +1,5 @@
 import type { YearMonth } from "./period";
+import type { CardPurchaseLine } from "./cartao";
 
 export type ValueMode = "nominal" | "real";
 /**
@@ -37,7 +38,12 @@ export interface IncomeLine {
 
 export interface ExpenseLine {
   categoria: string;
-  grupo: string;
+  /**
+   * Grupo por natureza da taxonomia fixa (`expense_group`). Opcional desde a
+   * remodelação de 0024: as categorias do planejamento passaram a ser livres e
+   * não carregam grupo — só os fixtures de paridade antigos ainda o têm.
+   */
+  grupo?: string;
   descricao?: string | null;
   valor: number;
   frequencia: Frequency;
@@ -99,6 +105,11 @@ export interface PlanInput {
   insurances: NamedAmount[];
   goals: GoalLine[];
   changes: ChangeLine[];
+  /**
+   * Compras parceladas no cartão (remodelação 0024). Opcional porque os
+   * fixtures de paridade antecedem a sub-tab Cartão — ausente = nenhuma.
+   */
+  cardPurchases?: CardPurchaseLine[];
   /** Patrimônio investido no mês zero — a carteira, e só ela, é o que rende. */
   patrimonioInicial: number;
   /** Bens que não estão investidos (imóvel, veículo). Não rendem na projeção. */

@@ -1,4 +1,5 @@
 import { summarizeBaseline } from "./baseline";
+import { faturaEm } from "./cartao";
 import { deltaEm, expandChanges } from "./changes";
 import { anoDe, fromISO, idadeEm, mesDe, ym, type YearMonth } from "./period";
 import type {
@@ -71,7 +72,12 @@ export function project(plan: PlanInput): ProjectionResult {
         correcao +
       delta.despesa;
 
-    const dividas = -parcelasEm(plan, p) + delta.divida;
+    // A fatura do cartão entra no balde das dívidas: compra parcelada é dívida
+    // de consumo, com parcela contratual — e, como a parcela de dívida, não é
+    // corrigida pela inflação. Fixtures antigos não têm compras; a paridade
+    // com a planilha continua intacta.
+    const dividas =
+      -parcelasEm(plan, p) - faturaEm(plan.cardPurchases ?? [], p) + delta.divida;
     const previdencia = aposentado ? 0 : -base.previdenciaMensal * correcao;
 
     const sobras = receitas + despesas + dividas + previdencia;

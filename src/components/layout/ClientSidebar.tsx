@@ -10,8 +10,14 @@ import {
   Gift,
   Calculator,
   SquarePen,
+  Wallet,
 } from "lucide-react";
-import type { Client } from "@/lib/types";
+import {
+  servicoDe,
+  SERVICO_LABEL,
+  SERVICO_STYLE,
+  type Client,
+} from "@/lib/types";
 import { Avatar } from "@/components/ui/Avatar";
 import { SideNavLink } from "./SideNavLink";
 
@@ -19,6 +25,7 @@ export function ClientSidebar({ client }: { client: Client }) {
   const pathname = usePathname();
   const cadastro = `/clientes/${client.id}/cadastro`;
   const noCadastro = pathname === cadastro;
+  const servico = servicoDe(client);
 
   return (
     <aside className="w-64 bg-brand-900 flex flex-col shrink-0 shadow-lg z-10">
@@ -48,6 +55,15 @@ export function ClientSidebar({ client }: { client: Client }) {
           />
           <h2 className="font-poppins text-xl font-medium text-white mb-2">{client.nome}</h2>
 
+          {/* O serviço contratado explica por que este menu tem as abas que tem.
+              Sem o selo, um cliente só de investimento pareceria um painel de
+              planejamento com metade das abas faltando. */}
+          <span
+            className={`mb-2 text-[0.6875rem] px-2 py-0.5 rounded-full font-medium font-inter ${SERVICO_STYLE[servico]}`}
+          >
+            {SERVICO_LABEL[servico]}
+          </span>
+
           {/* No lugar do antigo selo de status do plano — que era digitado à
               mão e envelhecia sozinho — o atalho para editar quem é a pessoa.
               É o que se quer clicar quando se está olhando para o nome dela. */}
@@ -65,8 +81,21 @@ export function ClientSidebar({ client }: { client: Client }) {
 
       <nav className="flex-1 px-4 mt-8 flex flex-col gap-2 overflow-y-auto">
         <SideNavLink href={`/clientes/${client.id}`} icon={LayoutDashboard} label="Dashboard" exact />
-        <SideNavLink href={`/clientes/${client.id}/planejamento`} icon={Compass} label="Planejamento" />
-        <SideNavLink href={`/clientes/${client.id}/acompanhamento`} icon={LineChart} label="Acompanhamento" />
+
+        {/* As abas seguem o serviço contratado. Um cliente só de investimento não
+            tem plano nem acompanhamento mensal para abrir, e mostrar as abas
+            vazias seria oferecer uma porta que não leva a lugar nenhum. */}
+        {client.temPlanejamento && (
+          <>
+            <SideNavLink href={`/clientes/${client.id}/planejamento`} icon={Compass} label="Planejamento" />
+            <SideNavLink href={`/clientes/${client.id}/acompanhamento`} icon={LineChart} label="Acompanhamento" />
+          </>
+        )}
+
+        {client.temInvestimento && (
+          <SideNavLink href={`/clientes/${client.id}/investimentos`} icon={Wallet} label="Investimentos" />
+        )}
+
         <SideNavLink href={`/clientes/${client.id}/indicacoes`} icon={Gift} label="Rewards" soon />
         <SideNavLink
           href={`/clientes/${client.id}/simuladores`}

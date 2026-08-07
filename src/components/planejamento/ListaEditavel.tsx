@@ -30,7 +30,16 @@ export interface Vinculo {
   clientId?: string;
   recordId?: string;
   reportId?: string;
+  accountId?: string;
 }
+
+/**
+ * A Server Action que grava o diálogo.
+ *
+ * `salvarLinha` serve a quase toda entidade. Quem tem efeito colateral próprio
+ * — a posição, que grava o valor num retrato datado à parte — passa a sua.
+ */
+export type AcaoLinha = (estado: Estado, form: FormData) => Promise<Estado>;
 
 export function ListaEditavel({
   entidade,
@@ -39,9 +48,11 @@ export function ListaEditavel({
   clientId,
   recordId,
   reportId,
+  accountId,
   opcoesRef,
   vazio,
   extra,
+  acao,
   somenteLeitura = false,
   comScroll = false,
 }: Vinculo & {
@@ -51,6 +62,7 @@ export function ListaEditavel({
   opcoesRef?: OpcoesRef;
   vazio?: string;
   extra?: React.ReactNode;
+  acao?: AcaoLinha;
   /** Um mês publicado não se edita mais sem reabrir o relatório. */
   somenteLeitura?: boolean;
   /** Lista longa rola dentro do próprio cartão em vez de esticar a página. */
@@ -63,7 +75,8 @@ export function ListaEditavel({
   const [erroGeral, setErroGeral] = useState<string | null>(null);
 
   const precisaPlano = def.escopo === "plano" && !planId;
-  const bloqueado = precisaPlano || somenteLeitura;
+  const precisaConta = def.escopo === "conta" && !accountId;
+  const bloqueado = precisaPlano || precisaConta || somenteLeitura;
 
   async function remover(id: string) {
     setRemovendo(id);
@@ -167,7 +180,13 @@ export function ListaEditavel({
         type="button"
         onClick={() => setAberto("novo")}
         disabled={bloqueado}
-        title={precisaPlano ? "Crie o plano antes, em Cadastro." : undefined}
+        title={
+          precisaPlano
+            ? "Crie o plano antes, em Cadastro."
+            : precisaConta
+              ? "Cadastre uma conta antes."
+              : undefined
+        }
         className="mt-4 inline-flex items-center gap-1.5 font-inter text-sm text-brand-600 hover:text-brand-900 transition-colors cursor-pointer disabled:text-slate-300 disabled:cursor-not-allowed"
       >
         <Plus className="w-4 h-4" />
@@ -183,6 +202,8 @@ export function ListaEditavel({
           clientId={clientId}
           recordId={recordId}
           reportId={reportId}
+          accountId={accountId}
+          acao={acao}
           opcoesRef={opcoesRef}
           onFechar={() => setAberto(null)}
         />
@@ -198,18 +219,21 @@ function Dialogo({
   clientId,
   recordId,
   reportId,
+  accountId,
+  acao: acaoPropria,
   opcoesRef,
   onFechar,
 }: Vinculo & {
   entidade: string;
   linha: LinhaDados | null;
   clientId: string;
+  acao?: AcaoLinha;
   opcoesRef?: OpcoesRef;
   onFechar: () => void;
 }) {
   const def = ENTIDADES[entidade];
   const [estado, acao, pendente] = useActionState<Estado, FormData>(
-    salvarLinha,
+    acaoPropria ?? salvarLinha,
     undefined,
   );
 
@@ -270,6 +294,7 @@ function Dialogo({
           <input type="hidden" name="__clientId" value={clientId} />
           <input type="hidden" name="__recordId" value={recordId ?? ""} />
           <input type="hidden" name="__reportId" value={reportId ?? ""} />
+          <input type="hidden" name="__accountId" value={accountId ?? ""} />
 
           <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {visiveis.map((campo) => (

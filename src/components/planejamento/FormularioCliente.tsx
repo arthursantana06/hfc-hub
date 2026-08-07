@@ -18,6 +18,8 @@ export interface DadosCliente {
   profissao?: string | null;
   adesao?: string | null;
   notas?: string | null;
+  temPlanejamento?: boolean;
+  temInvestimento?: boolean;
 }
 
 export function FormularioCliente({ cliente }: { cliente?: DadosCliente }) {
@@ -94,6 +96,29 @@ export function FormularioCliente({ cliente }: { cliente?: DadosCliente }) {
         {/* O status do plano também saiu: era um rótulo digitado à mão que
             envelhecia sozinho. Quem tem período aberto, o banco responde. */}
 
+        {/* Governa a navegação do painel: sem investimento contratado, a aba
+            Investimentos não existe para este cliente. É por isso que mora no
+            cadastro e não numa tela de configuração — é um fato comercial sobre
+            a pessoa, da mesma natureza que a data de adesão. */}
+        <Campo
+          label="Serviços contratados"
+          span2
+          ajuda="Define quais áreas do painel deste cliente existem."
+        >
+          <div className="flex flex-col gap-2 sm:flex-row sm:gap-6 pt-1">
+            <Marcador
+              name="tem_planejamento"
+              label="Planejamento"
+              defaultChecked={cliente?.temPlanejamento ?? true}
+            />
+            <Marcador
+              name="tem_investimento"
+              label="Investimento"
+              defaultChecked={cliente?.temInvestimento ?? false}
+            />
+          </div>
+        </Campo>
+
         <Campo
           label="Observações"
           span2
@@ -131,6 +156,36 @@ export function FormularioCliente({ cliente }: { cliente?: DadosCliente }) {
         </button>
       </div>
     </form>
+  );
+}
+
+/**
+ * Caixa de marcação.
+ *
+ * Desmarcada, a caixa não vai no FormData — e é justamente por isso que a Server
+ * Action lê ausência como `false` em vez de exigir um valor.
+ */
+function Marcador({
+  name,
+  label,
+  defaultChecked,
+}: {
+  name: string;
+  label: string;
+  defaultChecked: boolean;
+}) {
+  return (
+    <label className="flex items-center gap-2 cursor-pointer group">
+      <input
+        type="checkbox"
+        name={name}
+        defaultChecked={defaultChecked}
+        className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-2 focus:ring-brand-300 cursor-pointer accent-brand-600"
+      />
+      <span className="font-inter text-sm text-slate-700 group-hover:text-brand-900 transition-colors">
+        {label}
+      </span>
+    </label>
   );
 }
 

@@ -158,7 +158,7 @@ function Conteudo({
             ))
           )}
           <Link
-            href={`/clientes/${id}/planejamento/objetivos`}
+            href={`/clientes/${id}/planejamento/hfc/objetivos`}
             className="inline-flex items-center gap-1.5 mt-4 font-inter text-sm text-brand-600 hover:text-brand-900 transition-colors"
           >
             Ver objetivos e mudanças

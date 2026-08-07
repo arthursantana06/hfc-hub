@@ -58,6 +58,8 @@ export default async function Cadastro({
                 profissao: cliente.profissao,
                 adesao: cliente.adesao,
                 notas: cliente.notas,
+                temPlanejamento: cliente.temPlanejamento,
+                temInvestimento: cliente.temInvestimento,
               }}
             />
           </Card>

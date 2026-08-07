@@ -5,7 +5,15 @@ import { listClients } from "@/lib/planning-dal";
 import { Page } from "@/components/layout/Page";
 import { Avatar } from "@/components/ui/Avatar";
 import { ClientSearch } from "@/components/clientes/ClientSearch";
-import { formatCurrency, RISK_LABEL, RISK_STYLE } from "@/lib/types";
+import { ClientServiceFilter } from "@/components/clientes/ClientServiceFilter";
+import {
+  formatCurrency,
+  RISK_LABEL,
+  RISK_STYLE,
+  servicoDe,
+  SERVICO_LABEL,
+  SERVICO_STYLE,
+} from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Clientes — HFC Hub",
@@ -14,22 +22,30 @@ export const metadata: Metadata = {
 export default async function ClientesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; servico?: string }>;
 }) {
-  const [{ q }, todos] = await Promise.all([searchParams, listClients()]);
+  const [{ q, servico }, todos] = await Promise.all([searchParams, listClients()]);
 
   // Busca no servidor, sobre a lista já filtrada pela RLS. Com a carteira em
   // dezenas de clientes isso é mais rápido que ir ao banco de novo a cada tecla.
   const busca = (q ?? "").trim().toLowerCase();
-  const clientes = busca
-    ? todos.filter(
-        (c) =>
-          c.nome.toLowerCase().includes(busca) ||
-          (c.email ?? "").toLowerCase().includes(busca),
-      )
-    : todos;
 
-  const legenda = busca
+  // "Planejamento" inclui quem tem os dois: o filtro responde "quem eu atendo
+  // nisto?", não "quem tem exatamente este serviço e nenhum outro".
+  const clientes = todos.filter((c) => {
+    if (busca) {
+      const bate =
+        c.nome.toLowerCase().includes(busca) ||
+        (c.email ?? "").toLowerCase().includes(busca);
+      if (!bate) return false;
+    }
+    if (servico === "planejamento") return c.temPlanejamento;
+    if (servico === "investimento") return c.temInvestimento;
+    return true;
+  });
+
+  const filtrando = Boolean(busca) || servico === "planejamento" || servico === "investimento";
+  const legenda = filtrando
     ? `${clientes.length} de ${todos.length} ${todos.length === 1 ? "cliente" : "clientes"}`
     : `${todos.length} ${todos.length === 1 ? "cliente" : "clientes"} na carteira`;
 
@@ -39,6 +55,7 @@ export default async function ClientesPage({
       subtitle={legenda}
       actions={
         <>
+          <ClientServiceFilter />
           <ClientSearch />
           <Link
             href="/clientes/novo"
@@ -56,14 +73,16 @@ export default async function ClientesPage({
             <Users className="w-7 h-7 text-slate-400" />
           </div>
           <p className="font-poppins text-lg text-brand-950">
-            {busca ? "Nenhum cliente encontrado" : "Nenhum cliente ainda"}
+            {filtrando ? "Nenhum cliente encontrado" : "Nenhum cliente ainda"}
           </p>
           <p className="font-inter text-sm text-slate-500 mt-1 max-w-sm">
             {busca
               ? `Nada corresponde a “${q}”.`
-              : "Cadastre o primeiro cliente para começar o raio-x financeiro."}
+              : filtrando
+                ? "Nenhum cliente tem este serviço contratado."
+                : "Cadastre o primeiro cliente para começar o raio-x financeiro."}
           </p>
-          {!busca && (
+          {!filtrando && (
             <Link
               href="/clientes/novo"
               className="mt-6 bg-brand-600 hover:bg-brand-900 transition-colors text-white font-poppins font-medium px-4 py-2 rounded-lg text-sm"
@@ -92,6 +111,17 @@ export default async function ClientesPage({
               </div>
 
               <div className="flex flex-col gap-4 flex-1">
+                <div className="flex flex-col items-start gap-1">
+                  <span className="font-inter text-xs text-slate-500">Serviço</span>
+                  <span
+                    className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                      SERVICO_STYLE[servicoDe(client)]
+                    }`}
+                  >
+                    {SERVICO_LABEL[servicoDe(client)]}
+                  </span>
+                </div>
+
                 <div className="flex flex-col items-start gap-1">
                   <span className="font-inter text-xs text-slate-500">
                     Perfil de Risco

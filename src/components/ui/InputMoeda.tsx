@@ -54,8 +54,13 @@ export function InputMoeda({
   );
 }
 
-/** "1234567,8" digitado → "1.234.567,8" — milhar automático, vírgula do usuário. */
-function formatarEnquantoDigita(bruto: string): string {
+/**
+ * "1234567,8" digitado → "1.234.567,8" — milhar automático, vírgula do usuário.
+ *
+ * Exportada para a célula de moeda do grid, que precisa da mesma formatação
+ * sem o invólucro deste componente.
+ */
+export function formatarEnquantoDigita(bruto: string): string {
   const temVirgula = bruto.includes(",");
   const [parteInt, parteDecBruta = ""] = bruto.split(",");
 
